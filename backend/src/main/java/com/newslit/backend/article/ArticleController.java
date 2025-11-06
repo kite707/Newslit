@@ -1,7 +1,11 @@
-package com.newslit.backend.controller;
+package com.newslit.backend.article;
 
+import com.newslit.backend.article.dto.ArticleResponseDto;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -9,14 +13,22 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/test")
-public class test {
-
+@RequiredArgsConstructor
+@RequestMapping("/api/article")
+public class ArticleController {
+    private final ArticleService articleService;
     @Value("${spring.application.name}")
     private String publicMessage;
 
     @Value("${app.secret-message}")
     private String secretMessage;
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ArticleResponseDto> getArticle(@PathVariable Long id){
+        ArticleResponseDto article = articleService.getArticle(id);
+        return ResponseEntity.ok(article);
+
+    }
 
 
     @GetMapping("/properties")
