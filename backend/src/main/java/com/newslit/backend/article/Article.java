@@ -1,5 +1,6 @@
 package com.newslit.backend.article;
 
+import com.newslit.backend.vocabulary.Vocabulary;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,6 +12,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -52,6 +54,6 @@ public class Article {
 //    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
 //    private List<Sentence> sentences = new ArrayList<>();
 //
-//    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
-//    private List<ArticleVocabulary> vocabularies = new ArrayList<>();
+    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
+    private List<Vocabulary> vocabularies = new ArrayList<>();
 }
