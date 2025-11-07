@@ -1,6 +1,9 @@
 package com.newslit.backend.article;
 
 import com.newslit.backend.article.dto.ArticleResponseDto;
+import com.newslit.backend.vocabulary.VocabularyService;
+import com.newslit.backend.vocabulary.dto.VocabularyResponseDto;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -9,15 +12,17 @@ import org.springframework.stereotype.Service;
 public class ArticleService {
 
     private final ArticleRepository articleRepository;
+    private final VocabularyService vocabularyService;
 
     public ArticleResponseDto getArticle(Long id) {
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Article not found with id: " + id));
+        List<VocabularyResponseDto> vocabularies = vocabularyService.findByArticleId(id);
 
-        return convertToDto(article);
+        return convertToDto(article,vocabularies);
     }
 
-    private ArticleResponseDto convertToDto(Article article) {
+    private ArticleResponseDto convertToDto(Article article, List<VocabularyResponseDto>vocabularies) {
         return ArticleResponseDto.builder()
                 .id(article.getId())
                 .title(article.getTitle())
@@ -27,6 +32,7 @@ public class ArticleService {
                 .publishedDate(article.getPublishedDate())
                 .displayDate(article.getDisplayDate())
                 .createdAt(article.getCreatedAt())
+                .vocabularies(vocabularies)
                 .build();
     }
 }

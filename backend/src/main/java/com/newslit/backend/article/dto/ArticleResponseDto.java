@@ -1,7 +1,9 @@
 package com.newslit.backend.article.dto;
 
+import com.newslit.backend.vocabulary.dto.VocabularyResponseDto;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,5 +24,5 @@ public class ArticleResponseDto {
     private LocalDate displayDate;
     private LocalDateTime createdAt;
 //    private List<SentenceResponseDto> sentences;
-//    private List<VocabularyResponseDto> vocabularies;
+    private List<VocabularyResponseDto> vocabularies;
 }
