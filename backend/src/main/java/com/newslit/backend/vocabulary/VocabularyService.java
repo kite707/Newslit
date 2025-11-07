@@ -23,7 +23,7 @@ public class VocabularyService {
                 .articleId(vocabulary.getArticleId())
                 .word(vocabulary.getWord())
                 .meaning(vocabulary.getMeaning())
-                .partOfSpeech(vocabulary.getPartOfSpeech())
+                .partOfSpeech(vocabulary.getPartOfSpeech().getKorean())
                 .exampleSentence(vocabulary.getExampleSentence())
                 .createdAt(vocabulary.getCreatedAt())
                 .build();

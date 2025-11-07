@@ -17,7 +17,7 @@ public class VocabularyResponseDto {
     private Long articleId;
     private String word;
     private String meaning;
-    private PartOfSpeech partOfSpeech;
+    private String partOfSpeech;
     private String exampleSentence;
     private LocalDateTime createdAt;
 }
