@@ -27,7 +27,6 @@ public class ArticleController {
     public ResponseEntity<ArticleResponseDto> getArticle(@PathVariable Long id){
         ArticleResponseDto article = articleService.getArticle(id);
         return ResponseEntity.ok(article);
-
     }
 
 
