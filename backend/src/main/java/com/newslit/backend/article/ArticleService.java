@@ -3,6 +3,8 @@ package com.newslit.backend.article;
 import com.newslit.backend.article.dto.ArticleResponseDto;
 import com.newslit.backend.vocabulary.VocabularyService;
 import com.newslit.backend.vocabulary.dto.VocabularyResponseDto;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,15 +16,23 @@ public class ArticleService {
     private final ArticleRepository articleRepository;
     private final VocabularyService vocabularyService;
 
-    public ArticleResponseDto getArticle(Long id) {
+    public ArticleResponseDto getArticleById(Long id) {
         Article article = articleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Article not found with id: " + id));
         List<VocabularyResponseDto> vocabularies = vocabularyService.findByArticleId(id);
 
-        return convertToDto(article,vocabularies);
+        return convertToDto(article, vocabularies);
     }
 
-    private ArticleResponseDto convertToDto(Article article, List<VocabularyResponseDto>vocabularies) {
+    public ArticleResponseDto getArticleByDate(LocalDate date) {
+        Article article = articleRepository.findArticleByDisplayDate(date)
+                .orElseThrow(() -> new RuntimeException("Article not found with date: " + date));
+        List<VocabularyResponseDto> vocabularies = vocabularyService.findByArticleId(article.getId());
+
+        return convertToDto(article, vocabularies);
+    }
+
+    private ArticleResponseDto convertToDto(Article article, List<VocabularyResponseDto> vocabularies) {
         return ArticleResponseDto.builder()
                 .id(article.getId())
                 .title(article.getTitle())
@@ -35,5 +45,10 @@ public class ArticleService {
                 .source(article.getSource())
                 .vocabularies(vocabularies)
                 .build();
+    }
+
+    private LocalDate StringToLocalDate(String date) {
+        DateTimeFormatter formatter1 = DateTimeFormatter.ofPattern("yyyyMMdd");
+        return LocalDate.parse(date, formatter1);
     }
 }

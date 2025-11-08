@@ -1,16 +1,18 @@
 package com.newslit.backend.article;
 
 import com.newslit.backend.article.dto.ArticleResponseDto;
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -24,8 +26,15 @@ public class ArticleController {
     private String secretMessage;
 
     @GetMapping("/{id}")
-    public ResponseEntity<ArticleResponseDto> getArticle(@PathVariable Long id){
-        ArticleResponseDto article = articleService.getArticle(id);
+    public ResponseEntity<ArticleResponseDto> getArticleById(@PathVariable Long id) {
+        ArticleResponseDto article = articleService.getArticleById(id);
+        return ResponseEntity.ok(article);
+    }
+
+    @GetMapping
+    public ResponseEntity<ArticleResponseDto> getArticleByDate(
+            @RequestParam @DateTimeFormat(pattern = "yyyyMMdd") LocalDate date) {
+        ArticleResponseDto article = articleService.getArticleByDate(date);
         return ResponseEntity.ok(article);
     }
 
