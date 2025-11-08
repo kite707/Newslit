@@ -32,6 +32,7 @@ public class ArticleService {
                 .publishedDate(article.getPublishedDate())
                 .displayDate(article.getDisplayDate())
                 .createdAt(article.getCreatedAt())
+                .source(article.getSource())
                 .vocabularies(vocabularies)
                 .build();
     }

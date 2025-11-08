@@ -51,6 +51,9 @@ public class Article {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "source")
+    private String source;
+
 //    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
 //    private List<Sentence> sentences = new ArrayList<>();
 //

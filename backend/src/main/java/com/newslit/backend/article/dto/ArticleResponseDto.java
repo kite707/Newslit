@@ -23,6 +23,7 @@ public class ArticleResponseDto {
     private LocalDate publishedDate;
     private LocalDate displayDate;
     private LocalDateTime createdAt;
+    private String source;
 //    private List<SentenceResponseDto> sentences;
     private List<VocabularyResponseDto> vocabularies;
 }
