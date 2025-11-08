@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Volume2,
   Check,
@@ -13,44 +13,42 @@ export default function EnglishLearningApp() {
   const [showTranslation, setShowTranslation] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [showExample, setShowExample] = useState({});
   const [showMeaning, setShowMeaning] = useState({});
+  const [articleData, setArticleData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-  // 샘플 데이터
-  const todayParagraph = {
-    title: "Scientists Sound Alarm on Climate Change",
-    text: "Climate change is one of the most pressing issues of our time. Scientists worldwide are working to understand its effects on our planet. Rising temperatures, melting ice caps, and extreme weather events are becoming more common. It is crucial that we take action now to protect our environment for future generations.",
-    translation:
-      "기후 변화는 우리 시대의 가장 시급한 문제 중 하나입니다. 전 세계의 과학자들은 지구에 미치는 영향을 이해하기 위해 노력하고 있습니다. 기온 상승, 빙하 융해, 극한 기상 현상이 점점 더 흔해지고 있습니다. 미래 세대를 위해 환경을 보호하기 위한 조치를 지금 취하는 것이 중요합니다.",
-    words: [
-      {
-        word: "pressing",
-        meaning: "긴급한, 시급한",
-        pos: "a",
-        example: "The company is facing pressing financial problems.",
-        exampleTranslation: "그 회사는 긴박한 재정 문제에 직면하고 있다.",
-      },
-      {
-        word: "crucial",
-        meaning: "결정적인, 중대한",
-        pos: "a",
-        example: "Experience is crucial for this job.",
-        exampleTranslation: "이 직무에는 경험이 중요하다.",
-      },
-      {
-        word: "extreme",
-        meaning: "극단적인, 극심한",
-        pos: "a",
-      },
-    ],
-    source: "VOA Learning English",
-  };
+  useEffect(() => {
+    const fetchArticle = async () => {
+      try {
+        setLoading(true);
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+        const day = String(currentDate.getDate()).padStart(2, "0");
+        const dateString = `${year}${month}${day}`;
+        const response = await fetch(
+          `http://localhost:8080/api/article?date=${dateString}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch article");
+        }
+        const data = await response.json();
+        setArticleData(data);
+        setError(null);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // 학습 완료한 날짜들 (샘플)
+    fetchArticle();
+  }, [currentDate]);
+
   const completedDates = [1, 3, 5, 7, 10, 12, 15, 18, 20, 23, 25, 28];
 
   const playAudio = () => {
-    // TTS 기능은 백엔드 연동 후 구현
     alert("음성 재생 기능은 백엔드 연동 후 사용 가능합니다.");
   };
 
@@ -58,21 +56,18 @@ export default function EnglishLearningApp() {
     setCompleted(!completed);
   };
 
-  const toggleExample = (idx) => {
-    setShowExample((prev) => ({
-      ...prev,
-      [idx]: !prev[idx],
-    }));
-  };
-
-  const toggleMeaning = (idx) => {
-    setShowMeaning((prev) => ({
-      ...prev,
-      [idx]: !prev[idx],
-    }));
+  const getShortPos = (pos) => {
+    const posMap = {
+      명사: "n",
+      동사: "v",
+      형용사: "a",
+      부사: "adv",
+    };
+    return posMap[pos] || pos;
   };
 
   const getPosColor = (pos) => {
+    const shortPos = getShortPos(pos);
     const colors = {
       n: darkMode ? "bg-blue-900 text-blue-200" : "bg-blue-100 text-blue-700",
       v: darkMode
@@ -86,27 +81,19 @@ export default function EnglishLearningApp() {
         : "bg-orange-100 text-orange-700",
     };
     return (
-      colors[pos] ||
+      colors[shortPos] ||
       (darkMode ? "bg-gray-700 text-gray-200" : "bg-gray-100 text-gray-700")
     );
   };
 
-  // 달력 생성 로직
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-
     const days = [];
-    // 빈 칸 추가
-    for (let i = 0; i < firstDay; i++) {
-      days.push(null);
-    }
-    // 날짜 추가
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(i);
-    }
+    for (let i = 0; i < firstDay; i++) days.push(null);
+    for (let i = 1; i <= daysInMonth; i++) days.push(i);
     return days;
   };
 
@@ -131,13 +118,54 @@ export default function EnglishLearningApp() {
     );
   };
 
+  const changeDate = (day) => {
+    if (day === null) return;
+    setCurrentDate(
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading article...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error: {error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!articleData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-600">No article data available</p>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`min-h-screen transition-colors duration-300 ${
         darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
       }`}
     >
-      {/* Header */}
       <header
         className={`sticky top-0 z-10 ${
           darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
@@ -163,7 +191,6 @@ export default function EnglishLearningApp() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-        {/* 오늘의 문단 카드 */}
         <section
           className={`rounded-xl shadow-lg overflow-hidden ${
             darkMode ? "bg-gray-800" : "bg-white"
@@ -180,12 +207,15 @@ export default function EnglishLearningApp() {
                     darkMode ? "text-gray-400" : "text-gray-500"
                   }`}
                 >
-                  {new Date().toLocaleDateString("en-US", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
+                  {new Date(articleData.displayDate).toLocaleDateString(
+                    "en-US",
+                    {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }
+                  )}
                 </p>
               </div>
               <span
@@ -195,11 +225,10 @@ export default function EnglishLearningApp() {
                     : "bg-blue-100 text-blue-800"
                 }`}
               >
-                {todayParagraph.source}
+                {articleData.source}
               </span>
             </div>
 
-            {/* 기사 제목 */}
             <div
               className={`border-l-4 ${
                 darkMode
@@ -207,19 +236,19 @@ export default function EnglishLearningApp() {
                   : "border-yellow-500 bg-yellow-50"
               } pl-4 py-2`}
             >
-              <h3 className="text-2xl font-bold">{todayParagraph.title}</h3>
+              <h3 className="text-2xl font-bold">{articleData.title}</h3>
             </div>
 
-            {/* 영어 문단 */}
             <div
               className={`p-4 rounded-lg ${
                 darkMode ? "bg-gray-700" : "bg-gray-50"
               }`}
             >
-              <p className="text-lg leading-relaxed">{todayParagraph.text}</p>
+              <p className="text-lg leading-relaxed">
+                {articleData.originalText}
+              </p>
             </div>
 
-            {/* 번역 토글 */}
             <button
               onClick={() => setShowTranslation(!showTranslation)}
               className={`text-sm font-medium ${
@@ -239,21 +268,20 @@ export default function EnglishLearningApp() {
                     : "bg-blue-50 border-blue-400"
                 }`}
               >
-                <p className="leading-relaxed">{todayParagraph.translation}</p>
+                <p className="leading-relaxed">{articleData.translatedText}</p>
               </div>
             )}
 
-            {/* 주요 단어 */}
             <div>
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-semibold">Key Words</h3>
                 <button
                   onClick={() => {
-                    const allShown = todayParagraph.words.every(
+                    const allShown = articleData.vocabularies.every(
                       (_, idx) => showMeaning[idx]
                     );
                     const newState = {};
-                    todayParagraph.words.forEach((_, idx) => {
+                    articleData.vocabularies.forEach((_, idx) => {
                       newState[idx] = !allShown;
                     });
                     setShowMeaning(newState);
@@ -264,15 +292,15 @@ export default function EnglishLearningApp() {
                       : "bg-gray-200 hover:bg-gray-300 text-gray-700"
                   }`}
                 >
-                  {todayParagraph.words.every((_, idx) => showMeaning[idx])
+                  {articleData.vocabularies.every((_, idx) => showMeaning[idx])
                     ? "뜻 숨기기"
                     : "뜻 보기"}
                 </button>
               </div>
               <div className="grid gap-3">
-                {todayParagraph.words.map((item, idx) => (
+                {articleData.vocabularies.map((item, idx) => (
                   <div
-                    key={idx}
+                    key={item.id}
                     className={`p-4 rounded-lg transition-all ${
                       darkMode ? "bg-gray-700" : "bg-gray-50"
                     }`}
@@ -284,10 +312,10 @@ export default function EnglishLearningApp() {
                         </span>
                         <span
                           className={`px-2 py-0.5 rounded text-xs font-medium ${getPosColor(
-                            item.pos
+                            item.partOfSpeech
                           )}`}
                         >
-                          {item.pos}
+                          {getShortPos(item.partOfSpeech)}
                         </span>
                       </div>
                     </div>
@@ -300,7 +328,7 @@ export default function EnglishLearningApp() {
                         {item.meaning}
                       </div>
                     )}
-                    {item.example && showMeaning[idx] && (
+                    {item.exampleSentence && showMeaning[idx] && (
                       <div
                         className={`mt-3 pt-3 border-t space-y-1 ${
                           darkMode ? "border-gray-600" : "border-gray-200"
@@ -311,15 +339,17 @@ export default function EnglishLearningApp() {
                             darkMode ? "text-gray-300" : "text-gray-600"
                           }`}
                         >
-                          "{item.example}"
+                          "{item.exampleSentence}"
                         </div>
-                        <div
-                          className={`text-sm ${
-                            darkMode ? "text-gray-400" : "text-gray-500"
-                          }`}
-                        >
-                          {item.exampleTranslation}
-                        </div>
+                        {item.exampleTranslation && (
+                          <div
+                            className={`text-sm ${
+                              darkMode ? "text-gray-400" : "text-gray-500"
+                            }`}
+                          >
+                            {item.exampleTranslation}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -327,7 +357,6 @@ export default function EnglishLearningApp() {
               </div>
             </div>
 
-            {/* 액션 버튼들 */}
             <div className="flex gap-3">
               <button
                 onClick={playAudio}
@@ -359,7 +388,6 @@ export default function EnglishLearningApp() {
           </div>
         </section>
 
-        {/* 학습 기록 달력 */}
         <section
           className={`rounded-xl shadow-lg p-6 ${
             darkMode ? "bg-gray-800" : "bg-white"
@@ -391,7 +419,6 @@ export default function EnglishLearningApp() {
             </div>
           </div>
 
-          {/* 달력 그리드 */}
           <div className="grid grid-cols-7 gap-2">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
               <div
@@ -404,26 +431,33 @@ export default function EnglishLearningApp() {
               </div>
             ))}
             {getDaysInMonth(currentMonth).map((day, idx) => (
-              <div
-                key={idx}
-                className={`aspect-square flex items-center justify-center rounded-lg text-sm ${
-                  day === null
-                    ? ""
-                    : completedDates.includes(day)
-                    ? darkMode
-                      ? "bg-green-900 text-green-100 font-bold"
-                      : "bg-green-100 text-green-800 font-bold"
-                    : darkMode
-                    ? "bg-gray-700 hover:bg-gray-600"
-                    : "bg-gray-50 hover:bg-gray-100"
+              <button
+                onClick={() => changeDate(day)
+                }
+                className={`p-2 rounded-lg transition-colors ${
+                  darkMode ? "hover:bg-gray-600" : "hover:bg-gray-100"
                 }`}
               >
-                {day}
-              </div>
+                <div
+                  key={idx}
+                  className={`aspect-square flex items-center justify-center rounded-lg text-sm ${
+                    day === null
+                      ? ""
+                      : completedDates.includes(day)
+                      ? darkMode
+                        ? "bg-green-900 text-green-100 font-bold"
+                        : "bg-green-100 text-green-800 font-bold"
+                      : darkMode
+                      ? "bg-gray-700 hover:bg-gray-600"
+                      : "bg-gray-50 hover:bg-gray-100"
+                  }`}
+                >
+                  {day}
+                </div>
+              </button>
             ))}
           </div>
 
-          {/* 범례 */}
           <div className="flex gap-4 mt-6 text-sm">
             <div className="flex items-center gap-2">
               <div
