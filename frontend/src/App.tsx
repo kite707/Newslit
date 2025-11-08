@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Volume2,
   Check,
@@ -13,16 +13,33 @@ export default function EnglishLearningApp() {
   const [showTranslation, setShowTranslation] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [showExample, setShowExample] = useState({});
+  const [showMeaning, setShowMeaning] = useState({});
 
   // 샘플 데이터
   const todayParagraph = {
+    title: "Scientists Sound Alarm on Climate Change",
     text: "Climate change is one of the most pressing issues of our time. Scientists worldwide are working to understand its effects on our planet. Rising temperatures, melting ice caps, and extreme weather events are becoming more common. It is crucial that we take action now to protect our environment for future generations.",
     translation:
       "기후 변화는 우리 시대의 가장 시급한 문제 중 하나입니다. 전 세계의 과학자들은 지구에 미치는 영향을 이해하기 위해 노력하고 있습니다. 기온 상승, 빙하 융해, 극한 기상 현상이 점점 더 흔해지고 있습니다. 미래 세대를 위해 환경을 보호하기 위한 조치를 지금 취하는 것이 중요합니다.",
     words: [
-      { word: "pressing", meaning: "긴급한, 시급한" },
-      { word: "crucial", meaning: "결정적인, 중대한" },
-      { word: "extreme", meaning: "극단적인, 극심한" },
+      {
+        word: "pressing",
+        meaning: "긴급한, 시급한",
+        pos: "a",
+        example: "The company is facing pressing financial problems.",
+      },
+      {
+        word: "crucial",
+        meaning: "결정적인, 중대한",
+        pos: "a",
+        example: "Experience is crucial for this job.",
+      },
+      {
+        word: "extreme",
+        meaning: "극단적인, 극심한",
+        pos: "a",
+      },
     ],
     source: "VOA Learning English",
   };
@@ -39,8 +56,41 @@ export default function EnglishLearningApp() {
     setCompleted(!completed);
   };
 
+  const toggleExample = (idx) => {
+    setShowExample((prev) => ({
+      ...prev,
+      [idx]: !prev[idx],
+    }));
+  };
+
+  const toggleMeaning = (idx) => {
+    setShowMeaning((prev) => ({
+      ...prev,
+      [idx]: !prev[idx],
+    }));
+  };
+
+  const getPosColor = (pos) => {
+    const colors = {
+      n: darkMode ? "bg-blue-900 text-blue-200" : "bg-blue-100 text-blue-700",
+      v: darkMode
+        ? "bg-green-900 text-green-200"
+        : "bg-green-100 text-green-700",
+      a: darkMode
+        ? "bg-purple-900 text-purple-200"
+        : "bg-purple-100 text-purple-700",
+      adv: darkMode
+        ? "bg-orange-900 text-orange-200"
+        : "bg-orange-100 text-orange-700",
+    };
+    return (
+      colors[pos] ||
+      (darkMode ? "bg-gray-700 text-gray-200" : "bg-gray-100 text-gray-700")
+    );
+  };
+
   // 달력 생성 로직
-  const getDaysInMonth = (date: Date) => {
+  const getDaysInMonth = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
@@ -73,7 +123,7 @@ export default function EnglishLearningApp() {
     "December",
   ];
 
-  const changeMonth = (delta: number) => {
+  const changeMonth = (delta) => {
     setCurrentMonth(
       new Date(currentMonth.getFullYear(), currentMonth.getMonth() + delta, 1)
     );
@@ -120,7 +170,9 @@ export default function EnglishLearningApp() {
           <div className="p-6 space-y-6">
             <div className="flex justify-between items-start">
               <div>
-                <h2 className="text-2xl font-bold mb-1">Today's Paragraph</h2>
+                <h2 className="text-xl font-bold mb-1 text-blue-600">
+                  Today's Paragraph
+                </h2>
                 <p
                   className={`text-sm ${
                     darkMode ? "text-gray-400" : "text-gray-500"
@@ -143,6 +195,17 @@ export default function EnglishLearningApp() {
               >
                 {todayParagraph.source}
               </span>
+            </div>
+
+            {/* 기사 제목 */}
+            <div
+              className={`border-l-4 ${
+                darkMode
+                  ? "border-yellow-500 bg-gray-750"
+                  : "border-yellow-500 bg-yellow-50"
+              } pl-4 py-2`}
+            >
+              <h3 className="text-2xl font-bold">{todayParagraph.title}</h3>
             </div>
 
             {/* 영어 문단 */}
@@ -180,21 +243,72 @@ export default function EnglishLearningApp() {
 
             {/* 주요 단어 */}
             <div>
-              <h3 className="font-semibold mb-3">Key Words</h3>
-              <div className="grid gap-2">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-semibold">Key Words</h3>
+                <button
+                  onClick={() => {
+                    const allShown = todayParagraph.words.every(
+                      (_, idx) => showMeaning[idx]
+                    );
+                    const newState = {};
+                    todayParagraph.words.forEach((_, idx) => {
+                      newState[idx] = !allShown;
+                    });
+                    setShowMeaning(newState);
+                  }}
+                  className={`text-xs font-medium px-3 py-1 rounded-full transition-colors ${
+                    darkMode
+                      ? "bg-gray-600 hover:bg-gray-500 text-gray-300"
+                      : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                  }`}
+                >
+                  {todayParagraph.words.every((_, idx) => showMeaning[idx])
+                    ? "뜻 숨기기"
+                    : "뜻 보기"}
+                </button>
+              </div>
+              <div className="grid gap-3">
                 {todayParagraph.words.map((item, idx) => (
                   <div
                     key={idx}
-                    className={`flex justify-between items-center p-3 rounded-lg ${
+                    className={`p-4 rounded-lg transition-all ${
                       darkMode ? "bg-gray-700" : "bg-gray-50"
                     }`}
                   >
-                    <span className="font-medium">{item.word}</span>
-                    <span
-                      className={darkMode ? "text-gray-400" : "text-gray-600"}
-                    >
-                      {item.meaning}
-                    </span>
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-lg">
+                          {item.word}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded text-xs font-medium ${getPosColor(
+                            item.pos
+                          )}`}
+                        >
+                          {item.pos}
+                        </span>
+                      </div>
+                    </div>
+                    {showMeaning[idx] && (
+                      <div
+                        className={`text-sm mb-2 ${
+                          darkMode ? "text-gray-300" : "text-gray-600"
+                        }`}
+                      >
+                        {item.meaning}
+                      </div>
+                    )}
+                    {item.example && showMeaning[idx] && (
+                      <div
+                        className={`mt-2 pt-2 border-t text-sm italic ${
+                          darkMode
+                            ? "border-gray-600 text-gray-400"
+                            : "border-gray-200 text-gray-500"
+                        }`}
+                      >
+                        "{item.example}"
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
