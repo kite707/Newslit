@@ -26,6 +26,14 @@ interface ArticleData {
   vocabularies: Vocabulary[];
 }
 
+interface HistoryData {
+  id: number;
+  userId: number;
+  articleId: number;
+  readDate: string;
+  createdAt: string;
+}
+
 export default function EnglishLearningApp() {
   const [darkMode, setDarkMode] = useState<boolean>(false);
   const [showTranslation, setShowTranslation] = useState<boolean>(false);
@@ -36,6 +44,7 @@ export default function EnglishLearningApp() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [completedDates, setCompletedDates] = useState<number[]>([]);
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -64,7 +73,34 @@ export default function EnglishLearningApp() {
     fetchArticle();
   }, [currentDate]);
 
-  const completedDates: number[] = [1, 3, 5, 7, 10, 12, 15, 18, 20, 23, 25, 28];
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        setLoading(true);
+        const year = currentMonth.getFullYear();
+        const month = String(currentMonth.getMonth() + 1).padStart(2, "0");
+        const dateString = `${year}${month}`;
+        const response = await fetch(
+          `http://localhost:8080/api/reading-history?userId=1&date=${dateString}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch readingDate");
+        }
+        const data = await response.json();
+        setCompletedDates(
+          data.histories.map((h: HistoryData) => new Date(h.readDate).getDate())
+        );
+        setError(null);
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHistory();
+  }, [currentMonth]);
+
+  //const completedDates: number[] = [1, 3, 5, 7, 10, 12, 15, 18, 20, 23, 25, 28];
 
   const playAudio = (): void => {
     alert("음성 재생 기능은 백엔드 연동 후 사용 가능합니다.");
