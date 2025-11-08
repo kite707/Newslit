@@ -58,13 +58,13 @@ export default function EnglishLearningApp() {
           `http://localhost:8080/api/article?date=${dateString}`
         );
         if (!response.ok) {
-          throw new Error("Failed to fetch article");
+          throw new Error("해당 날짜에 단락이없습니다");
         }
         const data: ArticleData = await response.json();
         setArticleData(data);
         setError(null);
       } catch (err) {
-        setError((err as Error).message);
+        alert((err as Error).message);
       } finally {
         setLoading(false);
       }
@@ -72,6 +72,37 @@ export default function EnglishLearningApp() {
 
     fetchArticle();
   }, [currentDate]);
+
+  const handleDateClick = async (day: number | null) => {
+    if (day === null) return;
+
+    try {
+      const selectedDate = new Date(
+        currentMonth.getFullYear(),
+        currentMonth.getMonth(),
+        day
+      );
+
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+      const date = String(selectedDate.getDate()).padStart(2, "0");
+      const dateString = `${year}${month}${date}`;
+
+      const response = await fetch(
+        `http://localhost:8080/api/article?date=${dateString}`
+      );
+
+      if (!response.ok) {
+        throw new Error("No article available for this date");
+      }
+
+      const data: ArticleData = await response.json();
+      setArticleData(data);
+      setCurrentDate(selectedDate);
+    } catch (err) {
+      alert((err as Error).message);
+    }
+  };
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -99,8 +130,6 @@ export default function EnglishLearningApp() {
     };
     fetchHistory();
   }, [currentMonth]);
-
-  //const completedDates: number[] = [1, 3, 5, 7, 10, 12, 15, 18, 20, 23, 25, 28];
 
   const playAudio = (): void => {
     alert("음성 재생 기능은 백엔드 연동 후 사용 가능합니다.");
@@ -169,13 +198,6 @@ export default function EnglishLearningApp() {
   const changeMonth = (delta: number): void => {
     setCurrentMonth(
       new Date(currentMonth.getFullYear(), currentMonth.getMonth() + delta, 1)
-    );
-  };
-
-  const changeDate = (day: number | null): void => {
-    if (day === null) return;
-    setCurrentDate(
-      new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
     );
   };
 
@@ -493,7 +515,7 @@ export default function EnglishLearningApp() {
             {getDaysInMonth(currentMonth).map((day, idx) => (
               <button
                 key={idx}
-                onClick={() => changeDate(day)}
+                onClick={() => handleDateClick(day)}
                 className={`p-2 rounded-lg transition-colors ${
                   darkMode ? "hover:bg-gray-600" : "hover:bg-gray-100"
                 }`}
