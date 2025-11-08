@@ -28,12 +28,14 @@ export default function EnglishLearningApp() {
         meaning: "긴급한, 시급한",
         pos: "a",
         example: "The company is facing pressing financial problems.",
+        exampleTranslation: "그 회사는 긴박한 재정 문제에 직면하고 있다.",
       },
       {
         word: "crucial",
         meaning: "결정적인, 중대한",
         pos: "a",
         example: "Experience is crucial for this job.",
+        exampleTranslation: "이 직무에는 경험이 중요하다.",
       },
       {
         word: "extreme",
@@ -300,13 +302,24 @@ export default function EnglishLearningApp() {
                     )}
                     {item.example && showMeaning[idx] && (
                       <div
-                        className={`mt-2 pt-2 border-t text-sm italic ${
-                          darkMode
-                            ? "border-gray-600 text-gray-400"
-                            : "border-gray-200 text-gray-500"
+                        className={`mt-3 pt-3 border-t space-y-1 ${
+                          darkMode ? "border-gray-600" : "border-gray-200"
                         }`}
                       >
-                        "{item.example}"
+                        <div
+                          className={`text-sm italic ${
+                            darkMode ? "text-gray-300" : "text-gray-600"
+                          }`}
+                        >
+                          "{item.example}"
+                        </div>
+                        <div
+                          className={`text-sm ${
+                            darkMode ? "text-gray-400" : "text-gray-500"
+                          }`}
+                        >
+                          {item.exampleTranslation}
+                        </div>
                       </div>
                     )}
                   </div>
