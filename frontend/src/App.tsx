@@ -8,16 +8,34 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+interface Vocabulary {
+  id: number;
+  word: string;
+  partOfSpeech: string;
+  meaning: string;
+  exampleSentence?: string;
+  exampleTranslation?: string;
+}
+
+interface ArticleData {
+  displayDate: string;
+  source: string;
+  title: string;
+  originalText: string;
+  translatedText: string;
+  vocabularies: Vocabulary[];
+}
+
 export default function EnglishLearningApp() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [showTranslation, setShowTranslation] = useState(false);
-  const [completed, setCompleted] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [showMeaning, setShowMeaning] = useState({});
-  const [articleData, setArticleData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [showTranslation, setShowTranslation] = useState<boolean>(false);
+  const [completed, setCompleted] = useState<boolean>(false);
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [showMeaning, setShowMeaning] = useState<Record<number, boolean>>({});
+  const [articleData, setArticleData] = useState<ArticleData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -33,11 +51,11 @@ export default function EnglishLearningApp() {
         if (!response.ok) {
           throw new Error("Failed to fetch article");
         }
-        const data = await response.json();
+        const data: ArticleData = await response.json();
         setArticleData(data);
         setError(null);
       } catch (err) {
-        setError(err.message);
+        setError((err as Error).message);
       } finally {
         setLoading(false);
       }
@@ -46,18 +64,18 @@ export default function EnglishLearningApp() {
     fetchArticle();
   }, [currentDate]);
 
-  const completedDates = [1, 3, 5, 7, 10, 12, 15, 18, 20, 23, 25, 28];
+  const completedDates: number[] = [1, 3, 5, 7, 10, 12, 15, 18, 20, 23, 25, 28];
 
-  const playAudio = () => {
+  const playAudio = (): void => {
     alert("음성 재생 기능은 백엔드 연동 후 사용 가능합니다.");
   };
 
-  const handleComplete = () => {
+  const handleComplete = (): void => {
     setCompleted(!completed);
   };
 
-  const getShortPos = (pos) => {
-    const posMap = {
+  const getShortPos = (pos: string): string => {
+    const posMap: Record<string, string> = {
       명사: "n",
       동사: "v",
       형용사: "a",
@@ -66,9 +84,9 @@ export default function EnglishLearningApp() {
     return posMap[pos] || pos;
   };
 
-  const getPosColor = (pos) => {
+  const getPosColor = (pos: string): string => {
     const shortPos = getShortPos(pos);
-    const colors = {
+    const colors: Record<string, string> = {
       n: darkMode ? "bg-blue-900 text-blue-200" : "bg-blue-100 text-blue-700",
       v: darkMode
         ? "bg-green-900 text-green-200"
@@ -86,18 +104,18 @@ export default function EnglishLearningApp() {
     );
   };
 
-  const getDaysInMonth = (date) => {
+  const getDaysInMonth = (date: Date): (number | null)[] => {
     const year = date.getFullYear();
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const days = [];
+    const days: (number | null)[] = [];
     for (let i = 0; i < firstDay; i++) days.push(null);
     for (let i = 1; i <= daysInMonth; i++) days.push(i);
     return days;
   };
 
-  const monthNames = [
+  const monthNames: string[] = [
     "January",
     "February",
     "March",
@@ -112,13 +130,13 @@ export default function EnglishLearningApp() {
     "December",
   ];
 
-  const changeMonth = (delta) => {
+  const changeMonth = (delta: number): void => {
     setCurrentMonth(
       new Date(currentMonth.getFullYear(), currentMonth.getMonth() + delta, 1)
     );
   };
 
-  const changeDate = (day) => {
+  const changeDate = (day: number | null): void => {
     if (day === null) return;
     setCurrentDate(
       new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
@@ -191,6 +209,7 @@ export default function EnglishLearningApp() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+        {/* === Article Section === */}
         <section
           className={`rounded-xl shadow-lg overflow-hidden ${
             darkMode ? "bg-gray-800" : "bg-white"
@@ -272,6 +291,7 @@ export default function EnglishLearningApp() {
               </div>
             )}
 
+            {/* === Vocabulary Section === */}
             <div>
               <div className="flex justify-between items-center mb-3">
                 <h3 className="font-semibold">Key Words</h3>
@@ -280,7 +300,7 @@ export default function EnglishLearningApp() {
                     const allShown = articleData.vocabularies.every(
                       (_, idx) => showMeaning[idx]
                     );
-                    const newState = {};
+                    const newState: Record<number, boolean> = {};
                     articleData.vocabularies.forEach((_, idx) => {
                       newState[idx] = !allShown;
                     });
@@ -297,6 +317,7 @@ export default function EnglishLearningApp() {
                     : "뜻 보기"}
                 </button>
               </div>
+
               <div className="grid gap-3">
                 {articleData.vocabularies.map((item, idx) => (
                   <div
@@ -319,6 +340,7 @@ export default function EnglishLearningApp() {
                         </span>
                       </div>
                     </div>
+
                     {showMeaning[idx] && (
                       <div
                         className={`text-sm mb-2 ${
@@ -328,6 +350,7 @@ export default function EnglishLearningApp() {
                         {item.meaning}
                       </div>
                     )}
+
                     {item.exampleSentence && showMeaning[idx] && (
                       <div
                         className={`mt-3 pt-3 border-t space-y-1 ${
@@ -357,6 +380,7 @@ export default function EnglishLearningApp() {
               </div>
             </div>
 
+            {/* === Buttons === */}
             <div className="flex gap-3">
               <button
                 onClick={playAudio}
@@ -376,8 +400,6 @@ export default function EnglishLearningApp() {
                     ? darkMode
                       ? "bg-green-900 text-green-100"
                       : "bg-green-100 text-green-800"
-                    : darkMode
-                    ? "bg-blue-600 hover:bg-blue-700 text-white"
                     : "bg-blue-600 hover:bg-blue-700 text-white"
                 }`}
               >
@@ -388,6 +410,7 @@ export default function EnglishLearningApp() {
           </div>
         </section>
 
+        {/* === Calendar Section === */}
         <section
           className={`rounded-xl shadow-lg p-6 ${
             darkMode ? "bg-gray-800" : "bg-white"
@@ -430,16 +453,16 @@ export default function EnglishLearningApp() {
                 {day}
               </div>
             ))}
+
             {getDaysInMonth(currentMonth).map((day, idx) => (
               <button
-                onClick={() => changeDate(day)
-                }
+                key={idx}
+                onClick={() => changeDate(day)}
                 className={`p-2 rounded-lg transition-colors ${
                   darkMode ? "hover:bg-gray-600" : "hover:bg-gray-100"
                 }`}
               >
                 <div
-                  key={idx}
                   className={`aspect-square flex items-center justify-center rounded-lg text-sm ${
                     day === null
                       ? ""
