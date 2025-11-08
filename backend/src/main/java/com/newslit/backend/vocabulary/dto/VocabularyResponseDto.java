@@ -18,5 +18,6 @@ public class VocabularyResponseDto {
     private String meaning;
     private String partOfSpeech;
     private String exampleSentence;
+    private String exampleTranslation;
     private LocalDateTime createdAt;
 }
