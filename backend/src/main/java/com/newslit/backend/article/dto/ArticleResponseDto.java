@@ -9,7 +9,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-// ArticleResponseDto.java
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,6 +23,6 @@ public class ArticleResponseDto {
     private LocalDate displayDate;
     private LocalDateTime createdAt;
     private String source;
-//    private List<SentenceResponseDto> sentences;
+    //    private List<SentenceResponseDto> sentences;
     private List<VocabularyResponseDto> vocabularies;
 }
