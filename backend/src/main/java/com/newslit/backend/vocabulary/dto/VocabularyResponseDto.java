@@ -1,6 +1,5 @@
 package com.newslit.backend.vocabulary.dto;
 
-import com.newslit.backend.vocabulary.PartOfSpeech;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
