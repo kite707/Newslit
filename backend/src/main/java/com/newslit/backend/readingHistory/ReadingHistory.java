@@ -13,6 +13,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.Data;
+import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
 @Table(name = "reading_history")
@@ -32,6 +33,7 @@ public class ReadingHistory {
     @Column(name = "read_date")
     private LocalDate readDate;
 
+    @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

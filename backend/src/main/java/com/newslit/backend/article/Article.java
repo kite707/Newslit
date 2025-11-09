@@ -17,6 +17,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
 @Table(name = "articles")
@@ -48,13 +49,14 @@ public class Article {
     @Column(unique = true)
     private LocalDate displayDate;
 
+    @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "source")
     private String source;
 
-//    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
+    //    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
 //    private List<Sentence> sentences = new ArrayList<>();
 //
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
