@@ -1,4 +1,4 @@
-package com.newslit.backend.rss;
+package com.newslit.backend.common.enums;
 
 public enum Status {
     PENDING,

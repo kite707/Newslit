@@ -1,5 +1,6 @@
 package com.newslit.backend.rss;
 
+import com.newslit.backend.common.enums.Status;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
