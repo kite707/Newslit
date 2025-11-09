@@ -2,6 +2,8 @@ package com.newslit.backend.rss;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -27,6 +29,10 @@ public class Rss {
 
     @Column(nullable = false, length = 500, unique = true)
     private String url;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Status status;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
