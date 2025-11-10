@@ -5,6 +5,8 @@ import com.newslit.backend.vocabulary.Vocabulary;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -18,6 +20,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
@@ -38,7 +41,7 @@ public class Article {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String originalText;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "TEXT")
     private String translatedText;
 
     @Column(length = 1000)
@@ -57,8 +60,11 @@ public class Article {
     @Column(name = "source")
     private String source;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "translation_status", nullable = false)
-    private Status translationStatus;
+    @ColumnDefault("'PENDING'")
+    @Builder.Default
+    private Status translationStatus = Status.PENDING;
 
     //    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
 //    private List<Sentence> sentences = new ArrayList<>();

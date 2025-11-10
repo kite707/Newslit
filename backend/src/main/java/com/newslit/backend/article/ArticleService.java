@@ -1,5 +1,6 @@
 package com.newslit.backend.article;
 
+import com.newslit.backend.article.dto.ArticleRequestDto;
 import com.newslit.backend.article.dto.ArticleResponseDto;
 import com.newslit.backend.vocabulary.VocabularyService;
 import com.newslit.backend.vocabulary.dto.VocabularyResponseDto;
@@ -7,6 +8,7 @@ import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +31,16 @@ public class ArticleService {
         List<VocabularyResponseDto> vocabularies = vocabularyService.findByArticleId(article.getId());
 
         return convertToDto(article, vocabularies);
+    }
+
+    @Transactional
+    public Article saveArticle(ArticleRequestDto articleRequestDto) {
+        Article article = Article.builder().title(articleRequestDto.getTitle())
+                .originalText(articleRequestDto.getOriginalText())
+                .sourceUrl(articleRequestDto.getSourceUrl())
+                .publishedDate(articleRequestDto.getPublishedDate())
+                .source(articleRequestDto.getSource()).build();
+        return articleRepository.save(article);
     }
 
     private ArticleResponseDto convertToDto(Article article, List<VocabularyResponseDto> vocabularies) {
