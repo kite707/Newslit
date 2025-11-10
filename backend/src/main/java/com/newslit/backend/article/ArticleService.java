@@ -4,7 +4,6 @@ import com.newslit.backend.article.dto.ArticleResponseDto;
 import com.newslit.backend.vocabulary.VocabularyService;
 import com.newslit.backend.vocabulary.dto.VocabularyResponseDto;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -45,10 +44,5 @@ public class ArticleService {
                 .source(article.getSource())
                 .vocabularies(vocabularies)
                 .build();
-    }
-
-    private LocalDate StringToLocalDate(String date) {
-        DateTimeFormatter formatter1 = DateTimeFormatter.ofPattern("yyyyMMdd");
-        return LocalDate.parse(date, formatter1);
     }
 }
