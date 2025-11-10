@@ -1,5 +1,6 @@
 package com.newslit.backend.article;
 
+import com.newslit.backend.common.enums.Status;
 import com.newslit.backend.vocabulary.Vocabulary;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -55,6 +56,9 @@ public class Article {
 
     @Column(name = "source")
     private String source;
+
+    @Column(name = "translation_status", nullable = false)
+    private Status translationStatus;
 
     //    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
 //    private List<Sentence> sentences = new ArrayList<>();
