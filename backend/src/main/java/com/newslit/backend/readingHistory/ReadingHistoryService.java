@@ -1,6 +1,5 @@
 package com.newslit.backend.readingHistory;
 
-import com.newslit.backend.readingHistory.dto.ReadingHistoryListResponseDto;
 import com.newslit.backend.readingHistory.dto.ReadingHistoryResponseDto;
 import java.time.LocalDate;
 import java.util.Collections;
@@ -14,7 +13,7 @@ import org.springframework.stereotype.Service;
 public class ReadingHistoryService {
     private final ReadingHistoryRepository readingHistoryRepository;
 
-    public ReadingHistoryListResponseDto getReadingHistoryByUserId(Long id, LocalDate date) {
+    public List<ReadingHistoryResponseDto> getReadingHistoryByUserId(Long id, LocalDate date) {
 
         Optional<List<ReadingHistory>> histories = readingHistoryRepository.findAllByUserIdAndReadDateBetween(id, date,
                 date.plusMonths(1).minusDays(1));
@@ -25,9 +24,7 @@ public class ReadingHistoryService {
                 .map(this::convertToDto)
                 .toList();
 
-        return ReadingHistoryListResponseDto.builder()
-                .histories(historyDtos)
-                .build();
+        return historyDtos;
     }
 
     private ReadingHistoryResponseDto convertToDto(ReadingHistory history) {
