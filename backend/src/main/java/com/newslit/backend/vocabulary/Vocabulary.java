@@ -1,5 +1,6 @@
 package com.newslit.backend.vocabulary;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.newslit.backend.article.Article;
 import com.newslit.backend.common.enums.PartOfSpeech;
 import jakarta.persistence.Column;
@@ -32,17 +33,15 @@ public class Vocabulary {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "article_id", insertable = false, updatable = false)
-    private Long articleId;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "article_id", nullable = false)
+    @JsonIgnore
     private Article article;
 
     @Column(nullable = false, length = 100)
     private String word;
 
-    @Column(nullable = false, length = 500)
+    @Column(length = 500)
     private String meaning;
 
     @Enumerated(EnumType.STRING)

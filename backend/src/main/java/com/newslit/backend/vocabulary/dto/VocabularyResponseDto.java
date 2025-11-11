@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class VocabularyResponseDto {
-
     private Long id;
     private Long articleId;
     private String word;
