@@ -31,94 +31,6 @@ def crawl_voa_rss_links_simple():
         return None, None
 
 
-def crawl_voa_rss_links_playwright():
-    """Playwright로 크롤링"""
-    try:
-        from playwright.sync_api import sync_playwright
-    except ImportError:
-        print("\n❌ Playwright가 설치되지 않았습니다.")
-        print("설치: pip install playwright")
-        print("브라우저 설치: playwright install chromium")
-        return []
-
-    url = 'https://learningenglish.voanews.com/rssfeeds'
-
-    with sync_playwright() as p:
-        try:
-            print("브라우저 실행 중...")
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-
-            print(f"페이지 로딩 중: {url}")
-            page.goto(url, wait_until='networkidle')
-            page.wait_for_timeout(2000)
-
-            links = page.query_selector_all('a.link-service')
-            print(f"\n총 {len(links)}개의 RSS 링크를 찾았습니다.\n")
-
-            rss_data = []
-
-            for idx, link in enumerate(links, 1):
-                try:
-                    href = link.get_attribute('href')
-                    text = link.inner_text().strip()
-
-                    # 제목 찾기
-                    title_js = """
-                    (element) => {
-                        let parent = element.parentElement;
-                        for (let i = 0; i < 10; i++) {
-                            if (!parent) break;
-                            const title = parent.querySelector('h4.media-block__title');
-                            if (title) return title.innerText.trim();
-                            parent = parent.parentElement;
-                        }
-                        return '제목 없음';
-                    }
-                    """
-                    title = link.evaluate(title_js)
-
-                    # 카테고리 찾기
-                    category_js = """
-                    (element) => {
-                        let parent = element.parentElement;
-                        for (let i = 0; i < 10; i++) {
-                            if (!parent) break;
-                            const heading = parent.querySelector('h2, h3');
-                            if (heading) return heading.innerText.trim();
-                            parent = parent.parentElement;
-                        }
-                        return '기타';
-                    }
-                    """
-                    category = link.evaluate(category_js)
-
-                    rss_data.append({
-                        'index': idx,
-                        'category': category,
-                        'title': title,
-                        'name': text,
-                        'url': href
-                    })
-
-                    print(f"{idx}. [{category}] {title}")
-                    print(f"   링크: {text}")
-                    print(f"   URL: {href}\n")
-
-                except Exception as e:
-                    print(f"링크 {idx} 처리 중 오류: {e}")
-
-            browser.close()
-            return rss_data
-
-        except Exception as e:
-            print(f"Playwright 오류: {e}")
-            if "Executable doesn't exist" in str(e):
-                print("\n💡 해결 방법:")
-                print("   playwright install chromium")
-            return []
-
-
 def process_simple_mode(links, soup):
     """Simple Mode로 가져온 링크 처리"""
     rss_data = []
@@ -228,10 +140,6 @@ if __name__ == "__main__":
     if links:
         # Simple Mode 성공
         rss_data = process_simple_mode(links, soup)
-    else:
-        # Playwright 모드
-        print("\nPlaywright 모드로 전환...\n")
-        rss_data = crawl_voa_rss_links_playwright()
 
     if rss_data:
         save_results(rss_data)
