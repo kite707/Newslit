@@ -1,4 +1,4 @@
-package com.newslit.backend.common.enums;
+package com.newslit.backend.global.common.enums;
 
 import lombok.Getter;
 

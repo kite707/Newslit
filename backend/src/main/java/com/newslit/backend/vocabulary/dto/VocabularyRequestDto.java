@@ -1,6 +1,6 @@
 package com.newslit.backend.vocabulary.dto;
 
-import com.newslit.backend.common.enums.PartOfSpeech;
+import com.newslit.backend.global.common.enums.PartOfSpeech;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

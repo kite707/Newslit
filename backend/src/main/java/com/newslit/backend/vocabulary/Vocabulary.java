@@ -2,7 +2,7 @@ package com.newslit.backend.vocabulary;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.newslit.backend.article.Article;
-import com.newslit.backend.common.enums.PartOfSpeech;
+import com.newslit.backend.global.common.enums.PartOfSpeech;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

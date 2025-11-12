@@ -1,6 +1,6 @@
 package com.newslit.backend.rss;
 
-import com.newslit.backend.common.enums.Status;
+import com.newslit.backend.global.common.enums.Status;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -16,7 +16,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Getter
-@Table(name = "rss_feeds")
+@Table(name = "rss")
 public class Rss {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

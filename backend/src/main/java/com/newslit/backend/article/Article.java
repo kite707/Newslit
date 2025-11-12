@@ -1,6 +1,6 @@
 package com.newslit.backend.article;
 
-import com.newslit.backend.common.enums.Status;
+import com.newslit.backend.global.common.enums.Status;
 import com.newslit.backend.vocabulary.Vocabulary;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
