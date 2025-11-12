@@ -35,6 +35,10 @@ public class ArticleService {
 
     @Transactional
     public Article saveArticle(ArticleRequestDto articleRequestDto) {
+        articleRepository.findByTitleAndSource(articleRequestDto.getTitle(),
+                articleRequestDto.getSource()).ifPresent(article -> {
+            throw new IllegalStateException("Article already exist : " + articleRequestDto.getTitle());
+        });
         Article article = Article.builder().title(articleRequestDto.getTitle())
                 .originalText(articleRequestDto.getOriginalText())
                 .sourceUrl(articleRequestDto.getSourceUrl())

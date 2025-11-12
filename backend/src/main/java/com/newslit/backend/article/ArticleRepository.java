@@ -10,4 +10,6 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     Optional<Article> findById(Long id);
 
     Optional<Article> findArticleByDisplayDate(LocalDate date);
+
+    Optional<Article> findByTitleAndSource(String title, String source);
 }
