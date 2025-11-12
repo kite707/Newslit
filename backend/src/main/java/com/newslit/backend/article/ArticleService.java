@@ -2,6 +2,7 @@ package com.newslit.backend.article;
 
 import com.newslit.backend.article.dto.ArticleRequestDto;
 import com.newslit.backend.article.dto.ArticleResponseDto;
+import com.newslit.backend.article.exception.DuplicateArticleException;
 import com.newslit.backend.vocabulary.VocabularyService;
 import com.newslit.backend.vocabulary.dto.VocabularyResponseDto;
 import java.time.LocalDate;
@@ -37,7 +38,7 @@ public class ArticleService {
     public Article saveArticle(ArticleRequestDto articleRequestDto) {
         articleRepository.findByTitleAndSource(articleRequestDto.getTitle(),
                 articleRequestDto.getSource()).ifPresent(article -> {
-            throw new IllegalStateException("Article already exist : " + articleRequestDto.getTitle());
+            throw new DuplicateArticleException("Article already exist : " + articleRequestDto.getTitle());
         });
         Article article = Article.builder().title(articleRequestDto.getTitle())
                 .originalText(articleRequestDto.getOriginalText())
