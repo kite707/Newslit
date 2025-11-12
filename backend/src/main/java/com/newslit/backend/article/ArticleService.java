@@ -2,6 +2,7 @@ package com.newslit.backend.article;
 
 import com.newslit.backend.article.dto.ArticleRequestDto;
 import com.newslit.backend.article.dto.ArticleResponseDto;
+import com.newslit.backend.article.exception.ArticleNotFoundException;
 import com.newslit.backend.article.exception.DuplicateArticleException;
 import com.newslit.backend.vocabulary.VocabularyService;
 import com.newslit.backend.vocabulary.dto.VocabularyResponseDto;
@@ -20,7 +21,7 @@ public class ArticleService {
 
     public ArticleResponseDto getArticleById(Long id) {
         Article article = articleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Article not found with id: " + id));
+                .orElseThrow(() -> new ArticleNotFoundException());
         List<VocabularyResponseDto> vocabularies = vocabularyService.findByArticleId(id);
 
         return convertToDto(article, vocabularies);
@@ -28,7 +29,7 @@ public class ArticleService {
 
     public ArticleResponseDto getArticleByDate(LocalDate date) {
         Article article = articleRepository.findArticleByDisplayDate(date)
-                .orElseThrow(() -> new RuntimeException("Article not found with date: " + date));
+                .orElseThrow(() -> new ArticleNotFoundException());
         List<VocabularyResponseDto> vocabularies = vocabularyService.findByArticleId(article.getId());
 
         return convertToDto(article, vocabularies);
@@ -38,7 +39,7 @@ public class ArticleService {
     public Article saveArticle(ArticleRequestDto articleRequestDto) {
         articleRepository.findByTitleAndSource(articleRequestDto.getTitle(),
                 articleRequestDto.getSource()).ifPresent(article -> {
-            throw new DuplicateArticleException("Article already exist : " + articleRequestDto.getTitle());
+            throw new DuplicateArticleException();
         });
         Article article = Article.builder().title(articleRequestDto.getTitle())
                 .originalText(articleRequestDto.getOriginalText())
