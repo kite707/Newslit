@@ -9,7 +9,7 @@ import re
 feed = feedparser.parse('https://learningenglish.voanews.com/api/zbmroml-vomx-tpeqboo_')
 
 # 각 아이템에서 링크 추출 및 크롤링
-for entry in feed.entries[:3]:
+for entry in feed.entries:
     title = entry.title
     link = entry.link
 
@@ -66,6 +66,7 @@ for entry in feed.entries[:3]:
             print(content)
         else:
             print("본문을 찾을 수 없습니다.")
+            continue
 
         # 단어 추출
         print(f"\n========단어========")
