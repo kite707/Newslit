@@ -1,4 +1,4 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Volume2,
   Check,
@@ -8,36 +8,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-interface Vocabulary {
-  id: number;
-  word: string;
-  partOfSpeech: string;
-  meaning: string;
-  exampleSentence?: string;
-  exampleTranslation?: string;
-}
-
-interface ArticleData {
-  id?: number;
-  displayDate: string;
-  source: string;
-  title: string;
-  originalText: string;
-  translatedText: string;
-  vocabularies: Vocabulary[];
-}
-
-interface HistoryData {
-  id: number;
-  userId: number;
-  articleId: number;
-  readDate: string;
-  createdAt: string;
-}
-
-interface AvailableDatesResponse {
-  dates: number[];
-}
+import type { ArticleData, AvailableDatesResponse, HistoryData } from "@/types";
 
 const defaultArticleData: ArticleData = {
   id: 0,
