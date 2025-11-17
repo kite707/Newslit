@@ -9,4 +9,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ReadingHistoryRepository extends JpaRepository<ReadingHistory, Long> {
     Optional<List<ReadingHistory>> findAllByUserIdAndReadDateBetween(Long id, LocalDate startDate, LocalDate endDate);
+
+    Optional<ReadingHistory> findByUserIdAndArticleId(Long id, Long articleId);
 }

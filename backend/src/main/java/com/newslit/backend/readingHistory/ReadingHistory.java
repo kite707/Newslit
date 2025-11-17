@@ -1,6 +1,7 @@
 package com.newslit.backend.readingHistory;
 
 import com.newslit.backend.article.Article;
+import com.newslit.backend.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -14,6 +15,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "reading_history")
@@ -24,12 +26,6 @@ public class ReadingHistory {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "user_id", insertable = false, updatable = false)
-    private Long userId;
-
-    @Column(name = "article_id", insertable = false, updatable = false)
-    private Long articleId;
-
     @Column(name = "read_date")
     private LocalDate readDate;
 
@@ -37,9 +33,13 @@ public class ReadingHistory {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "user_id", nullable = false)
-//    private User user;
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "article_id")
