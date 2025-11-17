@@ -7,29 +7,16 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-
-import type { ArticleData, AvailableDatesResponse, HistoryData } from "@/types";
-
-const defaultArticleData: ArticleData = {
-  id: 0,
-  displayDate: new Date().toISOString(),
-  source: "Newslit",
-  title: "No Article Available Today",
-  originalText:
-    "There is no article available for today. Newslit provides a daily paragraph to help you learn English. Please check back tomorrow!",
-  translatedText:
-    "오늘은 제공되는 기사가 없습니다. Newslit은 매일 한 단락의 영어 문장을 제공하여 영어 학습을 돕습니다. 내일 다시 확인해주세요!",
-  vocabularies: [
-    {
-      id: 1,
-      word: "available",
-      partOfSpeech: "형용사",
-      meaning: "이용 가능한, 제공되는",
-      exampleSentence: "There is no article available for today.",
-      exampleTranslation: "오늘 제공되는 기사가 없습니다.",
-    },
-  ],
-};
+import {
+  fetchArticle,
+  fetchAvailableDates,
+  DEFAULT_ARTICLE_DATA,
+} from "./services/articleService";
+import {
+  markArticleAsComplete,
+  fetchReadingHistory,
+} from "./services/historyService";
+import type { ArticleData } from "@/types";
 
 export default function EnglishLearningApp() {
   const [darkMode, setDarkMode] = useState(false);
@@ -38,191 +25,76 @@ export default function EnglishLearningApp() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showMeaning, setShowMeaning] = useState<Record<number, boolean>>({});
   const [articleData, setArticleData] =
-    useState<ArticleData>(defaultArticleData);
+    useState<ArticleData>(DEFAULT_ARTICLE_DATA);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [completedDates, setCompletedDates] = useState<number[]>([]);
   const [availableDates, setAvailableDates] = useState<number[]>([]);
 
+  // 현재 날짜의 기사 불러오기
   useEffect(() => {
-    const fetchArticle = async () => {
-      try {
-        setLoading(true);
-        const year = currentDate.getFullYear();
-        const month = String(currentDate.getMonth() + 1).padStart(2, "0");
-        const day = String(currentDate.getDate()).padStart(2, "0");
-        const dateString = `${year}${month}${day}`;
-
-        const response = await fetch(
-          `http://localhost:8080/api/article?date=${dateString}`
-        );
-
-        if (!response.ok) {
-          setArticleData(defaultArticleData);
-        } else {
-          const data: ArticleData = await response.json();
-          setArticleData(data);
-        }
-      } catch (err) {
-        console.warn("No article available, using default data.");
-        setArticleData(defaultArticleData);
-      } finally {
-        setLoading(false);
-      }
+    const loadArticle = async () => {
+      setLoading(true);
+      const data = await fetchArticle(currentDate);
+      setArticleData(data);
+      setLoading(false);
     };
-
-    fetchArticle();
+    loadArticle();
   }, [currentDate]);
 
+  // 날짜 클릭 핸들러
   const handleDateClick = async (day: number | null) => {
-    if (day === null) return;
+    if (day === null || !availableDates.includes(day)) return;
 
-    // 기사가 없는 날짜는 클릭 불가
-    if (!availableDates.includes(day)) return;
-
-    try {
-      const selectedDate = new Date(
-        currentMonth.getFullYear(),
-        currentMonth.getMonth(),
-        day
-      );
-      const year = selectedDate.getFullYear();
-      const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
-      const date = String(selectedDate.getDate()).padStart(2, "0");
-      const dateString = `${year}${month}${date}`;
-
-      const response = await fetch(
-        `http://localhost:8080/api/article?date=${dateString}`
-      );
-
-      if (!response.ok) {
-        setArticleData(defaultArticleData);
-      } else {
-        const data: ArticleData = await response.json();
-        setArticleData(data);
-      }
-
-      setCurrentDate(selectedDate);
-    } catch (err) {
-      console.warn("Failed to fetch article for selected date");
-      setArticleData(defaultArticleData);
-    }
+    const selectedDate = new Date(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth(),
+      day
+    );
+    setCurrentDate(selectedDate);
   };
 
+  // 월별 완료 기록 & 사용 가능한 날짜 불러오기
   useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const year = currentMonth.getFullYear();
-        const month = String(currentMonth.getMonth() + 1).padStart(2, "0");
-        const dateString = `${year}${month}`;
+    const loadData = async () => {
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth() + 1;
 
-        const response = await fetch(
-          `http://localhost:8080/api/reading-history?userId=1&date=${dateString}`
-        );
+      const [completed, available] = await Promise.all([
+        fetchReadingHistory(1, year, month),
+        fetchAvailableDates(year, month),
+      ]);
 
-        if (response.ok) {
-          const data = await response.json();
-          setCompletedDates(
-            data.histories.map((h: HistoryData) =>
-              new Date(h.readDate).getDate()
-            )
-          );
-        }
-      } catch (err) {
-        console.warn("Failed to fetch reading history");
-      }
+      setCompletedDates(completed);
+      setAvailableDates(available);
     };
 
-    const fetchAvailableDates = async () => {
-      try {
-        const year = currentMonth.getFullYear();
-        const month = String(currentMonth.getMonth() + 1).padStart(2, "0");
-        const dateString = `${year}${month}`;
-
-        const response = await fetch(
-          `http://localhost:8080/api/article/available?date=${dateString}`
-        );
-
-        if (response.ok) {
-          const data: AvailableDatesResponse = await response.json();
-          setAvailableDates(data.dates || []);
-        } else {
-          setAvailableDates([]);
-        }
-      } catch (err) {
-        console.warn("Failed to fetch available dates");
-        setAvailableDates([]);
-      }
-    };
-
-    fetchHistory();
-    fetchAvailableDates();
+    loadData();
   }, [currentMonth]);
 
   const playAudio = (): void => {
     alert("음성 재생 기능은 백엔드 연동 후 사용 가능합니다.");
   };
 
-  const handleComplete = async (): Promise<void> => {
+  // 완료 처리
+  const handleComplete = async () => {
     if (!articleData?.id) {
       alert("기사 정보가 없습니다.");
       return;
     }
 
     try {
-      // userId를 쿠키에 설정
-      document.cookie = "userId=1; path=/";
+      await markArticleAsComplete(articleData.id);
+      setCompleted(!completed);
+      alert("완료 처리되었습니다!");
 
-      const response = await fetch(
-        `http://localhost:8080/api/reading-history?articleId=${articleData.id}`,
-        {
-          method: "POST",
-          credentials: "include", // 쿠키를 포함하여 요청
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.ok) {
-        setCompleted(!completed);
-        alert("완료 처리되었습니다!");
-
-        // 성공 시 완료 날짜 목록 다시 불러오기
-        const year = currentMonth.getFullYear();
-        const month = String(currentMonth.getMonth() + 1).padStart(2, "0");
-        const dateString = `${year}${month}`;
-
-        const historyResponse = await fetch(
-          `http://localhost:8080/api/reading-history?userId=1&date=${dateString}`
-        );
-
-        if (historyResponse.ok) {
-          const data = await historyResponse.json();
-          if (Array.isArray(data)) {
-            setCompletedDates(
-              data.map((h: HistoryData) => new Date(h.readDate).getDate())
-            );
-          }
-        }
-      } else {
-        const errorData = await response
-          .json()
-          .catch(() => ({ message: "알 수 없는 오류" }));
-        console.error("Error response:", errorData);
-        alert(
-          `완료 처리에 실패했습니다.\nStatus: ${response.status}\nMessage: ${
-            errorData.message || response.statusText
-          }`
-        );
-      }
-    } catch (err) {
-      console.error("Failed to mark as complete:", err);
-      alert(
-        `완료 처리 중 오류가 발생했습니다.\n${
-          err instanceof Error ? err.message : String(err)
-        }`
-      );
+      // 히스토리 다시 불러오기
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth() + 1;
+      const updatedCompleted = await fetchReadingHistory(1, year, month);
+      setCompletedDates(updatedCompleted);
+    } catch (error) {
+      alert(`완료 처리에 실패했습니다.\n${error}`);
     }
   };
 
