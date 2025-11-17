@@ -1,5 +1,6 @@
 package com.newslit.backend.article;
 
+import com.newslit.backend.article.dto.ArticleAvailableDatesResponseDto;
 import com.newslit.backend.article.dto.ArticleRequestDto;
 import com.newslit.backend.article.dto.ArticleResponseDto;
 import com.newslit.backend.article.exception.ArticleNotFoundException;
@@ -8,6 +9,7 @@ import com.newslit.backend.vocabulary.VocabularyService;
 import com.newslit.backend.vocabulary.dto.VocabularyResponseDto;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,20 @@ public class ArticleService {
         List<VocabularyResponseDto> vocabularies = vocabularyService.findByArticleId(article.getId());
 
         return convertToDto(article, vocabularies);
+    }
+
+    public ArticleAvailableDatesResponseDto getAvailableDates(LocalDate date) {
+        LocalDate startDate = date;
+        LocalDate endDate = date.plusMonths(1).minusDays(1);
+        List<Article> byDisplayDateBetween = articleRepository.findByDisplayDateBetween(startDate, endDate);
+        List<Integer> dates = byDisplayDateBetween.stream()
+                .filter(article -> article.getDisplayDate() != null)
+                .map(article -> article.getDisplayDate().getDayOfMonth())
+                .collect(Collectors.toList());
+
+        return ArticleAvailableDatesResponseDto.builder()
+                .dates(dates)
+                .build();
     }
 
     @Transactional
