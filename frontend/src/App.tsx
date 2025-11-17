@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import  { useState, useEffect } from "react";
 import {
   Volume2,
   Check,
@@ -18,7 +18,7 @@ interface Vocabulary {
 }
 
 interface ArticleData {
-  articleId?: number;
+  id?: number;
   displayDate: string;
   source: string;
   title: string;
@@ -40,7 +40,7 @@ interface AvailableDatesResponse {
 }
 
 const defaultArticleData: ArticleData = {
-  articleId: 0,
+  id: 0,
   displayDate: new Date().toISOString(),
   source: "Newslit",
   title: "No Article Available Today",
