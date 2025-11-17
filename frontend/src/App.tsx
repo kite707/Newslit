@@ -18,6 +18,7 @@ interface Vocabulary {
 }
 
 interface ArticleData {
+  articleId?: number;
   displayDate: string;
   source: string;
   title: string;
@@ -34,17 +35,43 @@ interface HistoryData {
   createdAt: string;
 }
 
+interface AvailableDatesResponse {
+  dates: number[];
+}
+
+const defaultArticleData: ArticleData = {
+  articleId: 0,
+  displayDate: new Date().toISOString(),
+  source: "Newslit",
+  title: "No Article Available Today",
+  originalText:
+    "There is no article available for today. Newslit provides a daily paragraph to help you learn English. Please check back tomorrow!",
+  translatedText:
+    "오늘은 제공되는 기사가 없습니다. Newslit은 매일 한 단락의 영어 문장을 제공하여 영어 학습을 돕습니다. 내일 다시 확인해주세요!",
+  vocabularies: [
+    {
+      id: 1,
+      word: "available",
+      partOfSpeech: "형용사",
+      meaning: "이용 가능한, 제공되는",
+      exampleSentence: "There is no article available for today.",
+      exampleTranslation: "오늘 제공되는 기사가 없습니다.",
+    },
+  ],
+};
+
 export default function EnglishLearningApp() {
-  const [darkMode, setDarkMode] = useState<boolean>(false);
-  const [showTranslation, setShowTranslation] = useState<boolean>(false);
-  const [completed, setCompleted] = useState<boolean>(false);
-  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [darkMode, setDarkMode] = useState(false);
+  const [showTranslation, setShowTranslation] = useState(false);
+  const [completed, setCompleted] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showMeaning, setShowMeaning] = useState<Record<number, boolean>>({});
-  const [articleData, setArticleData] = useState<ArticleData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [articleData, setArticleData] =
+    useState<ArticleData>(defaultArticleData);
+  const [loading, setLoading] = useState(true);
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [completedDates, setCompletedDates] = useState<number[]>([]);
+  const [availableDates, setAvailableDates] = useState<number[]>([]);
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -54,17 +81,20 @@ export default function EnglishLearningApp() {
         const month = String(currentDate.getMonth() + 1).padStart(2, "0");
         const day = String(currentDate.getDate()).padStart(2, "0");
         const dateString = `${year}${month}${day}`;
+
         const response = await fetch(
           `http://localhost:8080/api/article?date=${dateString}`
         );
+
         if (!response.ok) {
-          throw new Error("해당 날짜에 단락이없습니다");
+          setArticleData(defaultArticleData);
+        } else {
+          const data: ArticleData = await response.json();
+          setArticleData(data);
         }
-        const data: ArticleData = await response.json();
-        setArticleData(data);
-        setError(null);
       } catch (err) {
-        alert((err as Error).message);
+        console.warn("No article available, using default data.");
+        setArticleData(defaultArticleData);
       } finally {
         setLoading(false);
       }
@@ -76,13 +106,15 @@ export default function EnglishLearningApp() {
   const handleDateClick = async (day: number | null) => {
     if (day === null) return;
 
+    // 기사가 없는 날짜는 클릭 불가
+    if (!availableDates.includes(day)) return;
+
     try {
       const selectedDate = new Date(
         currentMonth.getFullYear(),
         currentMonth.getMonth(),
         day
       );
-
       const year = selectedDate.getFullYear();
       const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
       const date = String(selectedDate.getDate()).padStart(2, "0");
@@ -93,50 +125,134 @@ export default function EnglishLearningApp() {
       );
 
       if (!response.ok) {
-        throw new Error("No article available for this date");
+        setArticleData(defaultArticleData);
+      } else {
+        const data: ArticleData = await response.json();
+        setArticleData(data);
       }
 
-      const data: ArticleData = await response.json();
-      setArticleData(data);
       setCurrentDate(selectedDate);
     } catch (err) {
-      alert((err as Error).message);
+      console.warn("Failed to fetch article for selected date");
+      setArticleData(defaultArticleData);
     }
   };
 
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        setLoading(true);
         const year = currentMonth.getFullYear();
         const month = String(currentMonth.getMonth() + 1).padStart(2, "0");
         const dateString = `${year}${month}`;
+
         const response = await fetch(
           `http://localhost:8080/api/reading-history?userId=1&date=${dateString}`
         );
-        if (!response.ok) {
-          throw new Error("Failed to fetch readingDate");
+
+        if (response.ok) {
+          const data = await response.json();
+          setCompletedDates(
+            data.histories.map((h: HistoryData) =>
+              new Date(h.readDate).getDate()
+            )
+          );
         }
-        const data = await response.json();
-        setCompletedDates(
-          data.histories.map((h: HistoryData) => new Date(h.readDate).getDate())
-        );
-        setError(null);
       } catch (err) {
-        setError((err as Error).message);
-      } finally {
-        setLoading(false);
+        console.warn("Failed to fetch reading history");
       }
     };
+
+    const fetchAvailableDates = async () => {
+      try {
+        const year = currentMonth.getFullYear();
+        const month = String(currentMonth.getMonth() + 1).padStart(2, "0");
+        const dateString = `${year}${month}`;
+
+        const response = await fetch(
+          `http://localhost:8080/api/article/available?date=${dateString}`
+        );
+
+        if (response.ok) {
+          const data: AvailableDatesResponse = await response.json();
+          setAvailableDates(data.dates || []);
+        } else {
+          setAvailableDates([]);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch available dates");
+        setAvailableDates([]);
+      }
+    };
+
     fetchHistory();
+    fetchAvailableDates();
   }, [currentMonth]);
 
   const playAudio = (): void => {
     alert("음성 재생 기능은 백엔드 연동 후 사용 가능합니다.");
   };
 
-  const handleComplete = (): void => {
-    setCompleted(!completed);
+  const handleComplete = async (): Promise<void> => {
+    if (!articleData?.id) {
+      alert("기사 정보가 없습니다.");
+      return;
+    }
+
+    try {
+      // userId를 쿠키에 설정
+      document.cookie = "userId=1; path=/";
+
+      const response = await fetch(
+        `http://localhost:8080/api/reading-history?articleId=${articleData.id}`,
+        {
+          method: "POST",
+          credentials: "include", // 쿠키를 포함하여 요청
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        setCompleted(!completed);
+        alert("완료 처리되었습니다!");
+
+        // 성공 시 완료 날짜 목록 다시 불러오기
+        const year = currentMonth.getFullYear();
+        const month = String(currentMonth.getMonth() + 1).padStart(2, "0");
+        const dateString = `${year}${month}`;
+
+        const historyResponse = await fetch(
+          `http://localhost:8080/api/reading-history?userId=1&date=${dateString}`
+        );
+
+        if (historyResponse.ok) {
+          const data = await historyResponse.json();
+          if (Array.isArray(data)) {
+            setCompletedDates(
+              data.map((h: HistoryData) => new Date(h.readDate).getDate())
+            );
+          }
+        }
+      } else {
+        const errorData = await response
+          .json()
+          .catch(() => ({ message: "알 수 없는 오류" }));
+        console.error("Error response:", errorData);
+        alert(
+          `완료 처리에 실패했습니다.\nStatus: ${response.status}\nMessage: ${
+            errorData.message || response.statusText
+          }`
+        );
+      }
+    } catch (err) {
+      console.error("Failed to mark as complete:", err);
+      alert(
+        `완료 처리 중 오류가 발생했습니다.\n${
+          err instanceof Error ? err.message : String(err)
+        }`
+      );
+    }
   };
 
   const getShortPos = (pos: string): string => {
@@ -174,6 +290,7 @@ export default function EnglishLearningApp() {
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
+
     const days: (number | null)[] = [];
     for (let i = 0; i < firstDay; i++) days.push(null);
     for (let i = 1; i <= daysInMonth; i++) days.push(i);
@@ -203,52 +320,25 @@ export default function EnglishLearningApp() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading article...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">Error: {error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!articleData) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">No article data available</p>
+      <div
+        className={`min-h-screen flex items-center justify-center ${
+          darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
+        }`}
+      >
+        <div className="text-xl">Loading article...</div>
       </div>
     );
   }
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-300 ${
+      className={`min-h-screen ${
         darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
       }`}
     >
-      <header
-        className={`sticky top-0 z-10 ${
-          darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
-        } border-b`}
-      >
-        <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">🗞️ Newslit</h1>
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">🗞️ Newslit</h1>
           <button
             onClick={() => setDarkMode(!darkMode)}
             className={`p-2 rounded-lg transition-colors ${
@@ -264,286 +354,247 @@ export default function EnglishLearningApp() {
             )}
           </button>
         </div>
-      </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-        {/* === Article Section === */}
-        <section
-          className={`rounded-xl shadow-lg overflow-hidden ${
+        <div
+          className={`rounded-xl p-6 mb-6 ${
             darkMode ? "bg-gray-800" : "bg-white"
-          }`}
+          } shadow-lg`}
         >
-          <div className="p-6 space-y-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <h2 className="text-xl font-bold mb-1 text-blue-600">
-                  Today's Paragraph
-                </h2>
-                <p
-                  className={`text-sm ${
-                    darkMode ? "text-gray-400" : "text-gray-500"
-                  }`}
-                >
-                  {new Date(articleData.displayDate).toLocaleDateString(
-                    "en-US",
-                    {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    }
-                  )}
-                </p>
-              </div>
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  darkMode
-                    ? "bg-blue-900 text-blue-200"
-                    : "bg-blue-100 text-blue-800"
-                }`}
-              >
-                {articleData.source}
-              </span>
-            </div>
+          <h2 className="text-2xl font-bold mb-4">Today's Paragraph</h2>
+          <div className="text-sm text-gray-500 mb-4">
+            {new Date(articleData.displayDate).toLocaleDateString("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </div>
 
-            <div
-              className={`border-l-4 ${
-                darkMode
-                  ? "border-yellow-500 bg-gray-750"
-                  : "border-yellow-500 bg-yellow-50"
-              } pl-4 py-2`}
-            >
-              <h3 className="text-2xl font-bold">{articleData.title}</h3>
-            </div>
+          <div
+            className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-4 ${
+              darkMode
+                ? "bg-blue-900 text-blue-200"
+                : "bg-blue-100 text-blue-700"
+            }`}
+          >
+            {articleData.source}
+          </div>
 
+          <h3 className="text-xl font-semibold mb-4">{articleData.title}</h3>
+          <p className="text-lg leading-relaxed mb-4">
+            {articleData.originalText}
+          </p>
+
+          <button
+            onClick={() => setShowTranslation(!showTranslation)}
+            className={`text-sm font-medium ${
+              darkMode
+                ? "text-blue-400 hover:text-blue-300"
+                : "text-blue-600 hover:text-blue-700"
+            }`}
+          >
+            {showTranslation ? "번역 숨기기 ▲" : "번역 보기 ▼"}
+          </button>
+
+          {showTranslation && (
             <div
-              className={`p-4 rounded-lg ${
+              className={`mt-4 p-4 rounded-lg ${
                 darkMode ? "bg-gray-700" : "bg-gray-50"
               }`}
             >
-              <p className="text-lg leading-relaxed">
-                {articleData.originalText}
-              </p>
+              {articleData.translatedText}
             </div>
+          )}
+        </div>
 
+        <div
+          className={`rounded-xl p-6 mb-6 ${
+            darkMode ? "bg-gray-800" : "bg-white"
+          } shadow-lg`}
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">Key Words</h2>
             <button
-              onClick={() => setShowTranslation(!showTranslation)}
-              className={`text-sm font-medium ${
+              onClick={() => {
+                const allShown = articleData.vocabularies.every(
+                  (_, idx) => showMeaning[idx]
+                );
+                const newState: Record<number, boolean> = {};
+                articleData.vocabularies.forEach((_, idx) => {
+                  newState[idx] = !allShown;
+                });
+                setShowMeaning(newState);
+              }}
+              className={`text-xs font-medium px-3 py-1 rounded-full transition-colors ${
                 darkMode
-                  ? "text-blue-400 hover:text-blue-300"
-                  : "text-blue-600 hover:text-blue-700"
+                  ? "bg-gray-600 hover:bg-gray-500 text-gray-300"
+                  : "bg-gray-200 hover:bg-gray-300 text-gray-700"
               }`}
             >
-              {showTranslation ? "번역 숨기기 ▲" : "번역 보기 ▼"}
+              {articleData.vocabularies.every((_, idx) => showMeaning[idx])
+                ? "뜻 숨기기"
+                : "뜻 보기"}
             </button>
+          </div>
 
-            {showTranslation && (
+          <div className="space-y-4">
+            {articleData.vocabularies.map((item, idx) => (
               <div
-                className={`p-4 rounded-lg border-l-4 ${
-                  darkMode
-                    ? "bg-gray-700 border-blue-500"
-                    : "bg-blue-50 border-blue-400"
-                }`}
-              >
-                <p className="leading-relaxed">{articleData.translatedText}</p>
-              </div>
-            )}
-
-            {/* === Vocabulary Section === */}
-            <div>
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="font-semibold">Key Words</h3>
-                <button
-                  onClick={() => {
-                    const allShown = articleData.vocabularies.every(
-                      (_, idx) => showMeaning[idx]
-                    );
-                    const newState: Record<number, boolean> = {};
-                    articleData.vocabularies.forEach((_, idx) => {
-                      newState[idx] = !allShown;
-                    });
-                    setShowMeaning(newState);
-                  }}
-                  className={`text-xs font-medium px-3 py-1 rounded-full transition-colors ${
-                    darkMode
-                      ? "bg-gray-600 hover:bg-gray-500 text-gray-300"
-                      : "bg-gray-200 hover:bg-gray-300 text-gray-700"
-                  }`}
-                >
-                  {articleData.vocabularies.every((_, idx) => showMeaning[idx])
-                    ? "뜻 숨기기"
-                    : "뜻 보기"}
-                </button>
-              </div>
-
-              <div className="grid gap-3">
-                {articleData.vocabularies.map((item, idx) => (
-                  <div
-                    key={item.id}
-                    className={`p-4 rounded-lg transition-all ${
-                      darkMode ? "bg-gray-700" : "bg-gray-50"
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-lg">
-                          {item.word}
-                        </span>
-                        <span
-                          className={`px-2 py-0.5 rounded text-xs font-medium ${getPosColor(
-                            item.partOfSpeech
-                          )}`}
-                        >
-                          {getShortPos(item.partOfSpeech)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {showMeaning[idx] && (
-                      <div
-                        className={`text-sm mb-2 ${
-                          darkMode ? "text-gray-300" : "text-gray-600"
-                        }`}
-                      >
-                        {item.meaning}
-                      </div>
-                    )}
-
-                    {item.exampleSentence && showMeaning[idx] && (
-                      <div
-                        className={`mt-3 pt-3 border-t space-y-1 ${
-                          darkMode ? "border-gray-600" : "border-gray-200"
-                        }`}
-                      >
-                        <div
-                          className={`text-sm italic ${
-                            darkMode ? "text-gray-300" : "text-gray-600"
-                          }`}
-                        >
-                          "{item.exampleSentence}"
-                        </div>
-                        {item.exampleTranslation && (
-                          <div
-                            className={`text-sm ${
-                              darkMode ? "text-gray-400" : "text-gray-500"
-                            }`}
-                          >
-                            {item.exampleTranslation}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* === Buttons === */}
-            <div className="flex gap-3">
-              <button
-                onClick={playAudio}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${
+                key={item.id}
+                onClick={() =>
+                  setShowMeaning({ ...showMeaning, [idx]: !showMeaning[idx] })
+                }
+                className={`p-4 rounded-lg cursor-pointer transition-colors ${
                   darkMode
                     ? "bg-gray-700 hover:bg-gray-600"
-                    : "bg-gray-100 hover:bg-gray-200"
+                    : "bg-gray-50 hover:bg-gray-100"
                 }`}
               >
-                <Volume2 className="w-5 h-5" />
-                Play Audio
-              </button>
-              <button
-                onClick={handleComplete}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${
-                  completed
-                    ? darkMode
-                      ? "bg-green-900 text-green-100"
-                      : "bg-green-100 text-green-800"
-                    : "bg-blue-600 hover:bg-blue-700 text-white"
-                }`}
-              >
-                <Check className="w-5 h-5" />
-                {completed ? "Completed!" : "Mark as Complete"}
-              </button>
-            </div>
-          </div>
-        </section>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-bold text-lg">{item.word}</span>
+                  <span
+                    className={`text-xs px-2 py-1 rounded ${getPosColor(
+                      item.partOfSpeech
+                    )}`}
+                  >
+                    {getShortPos(item.partOfSpeech)}
+                  </span>
+                </div>
 
-        {/* === Calendar Section === */}
-        <section
-          className={`rounded-xl shadow-lg p-6 ${
+                {showMeaning[idx] && (
+                  <div className="mt-2">
+                    <p className="text-sm mb-2">{item.meaning}</p>
+                  </div>
+                )}
+
+                {item.exampleSentence && showMeaning[idx] && (
+                  <div
+                    className={`mt-2 p-3 rounded ${
+                      darkMode ? "bg-gray-600" : "bg-white"
+                    }`}
+                  >
+                    <p className="text-sm italic mb-1">
+                      "{item.exampleSentence}"
+                    </p>
+                    {item.exampleTranslation && (
+                      <p className="text-xs text-gray-500">
+                        {item.exampleTranslation}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={playAudio}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${
+              darkMode
+                ? "bg-blue-600 hover:bg-blue-700"
+                : "bg-blue-500 hover:bg-blue-600"
+            } text-white`}
+          >
+            <Volume2 className="w-5 h-5" />
+            Play Audio
+          </button>
+          <button
+            onClick={handleComplete}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${
+              completed
+                ? darkMode
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-green-500 hover:bg-green-600"
+                : darkMode
+                ? "bg-gray-700 hover:bg-gray-600"
+                : "bg-gray-200 hover:bg-gray-300"
+            } ${completed ? "text-white" : ""}`}
+          >
+            <Check className="w-5 h-5" />
+            {completed ? "Completed!" : "Mark as Complete"}
+          </button>
+        </div>
+
+        <div
+          className={`rounded-xl p-6 ${
             darkMode ? "bg-gray-800" : "bg-white"
-          }`}
+          } shadow-lg`}
         >
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">Study Record</h2>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => changeMonth(-1)}
-                className={`p-2 rounded-lg transition-colors ${
-                  darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
-                }`}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <span className="font-medium min-w-[140px] text-center">
-                {monthNames[currentMonth.getMonth()]}{" "}
-                {currentMonth.getFullYear()}
-              </span>
-              <button
-                onClick={() => changeMonth(1)}
-                className={`p-2 rounded-lg transition-colors ${
-                  darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
-                }`}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
+          <h2 className="text-2xl font-bold mb-4">Study Record</h2>
+          <div className="flex justify-between items-center mb-4">
+            <button
+              onClick={() => changeMonth(-1)}
+              className={`p-2 rounded-lg transition-colors ${
+                darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+              }`}
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <span className="font-semibold">
+              {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+            </span>
+            <button
+              onClick={() => changeMonth(1)}
+              className={`p-2 rounded-lg transition-colors ${
+                darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+              }`}
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </div>
 
           <div className="grid grid-cols-7 gap-2">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-              <div
-                key={day}
-                className={`text-center text-sm font-medium py-2 ${
-                  darkMode ? "text-gray-400" : "text-gray-500"
-                }`}
-              >
+              <div key={day} className="text-center text-sm font-semibold p-2">
                 {day}
               </div>
             ))}
+            {getDaysInMonth(currentMonth).map((day, idx) => {
+              const hasArticle = day && availableDates.includes(day);
+              const isCompleted = day && completedDates.includes(day);
 
-            {getDaysInMonth(currentMonth).map((day, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleDateClick(day)}
-                className={`p-2 rounded-lg transition-colors ${
-                  darkMode ? "hover:bg-gray-600" : "hover:bg-gray-100"
-                }`}
-              >
+              return (
                 <div
-                  className={`aspect-square flex items-center justify-center rounded-lg text-sm ${
-                    day === null
-                      ? ""
-                      : completedDates.includes(day)
+                  key={idx}
+                  onClick={() => handleDateClick(day)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    hasArticle
                       ? darkMode
-                        ? "bg-green-900 text-green-100 font-bold"
-                        : "bg-green-100 text-green-800 font-bold"
-                      : darkMode
-                      ? "bg-gray-700 hover:bg-gray-600"
-                      : "bg-gray-50 hover:bg-gray-100"
+                        ? "hover:bg-gray-600 cursor-pointer"
+                        : "hover:bg-gray-100 cursor-pointer"
+                      : "cursor-not-allowed opacity-50"
                   }`}
                 >
-                  {day}
+                  <div
+                    className={`text-center text-sm relative ${
+                      isCompleted
+                        ? darkMode
+                          ? "bg-green-600 text-white"
+                          : "bg-green-500 text-white"
+                        : ""
+                    } rounded p-1`}
+                  >
+                    {day}
+                    {day && !isCompleted && hasArticle && (
+                      <div
+                        className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 rounded-full ${
+                          darkMode ? "bg-blue-400" : "bg-blue-500"
+                        }`}
+                      ></div>
+                    )}
+                  </div>
                 </div>
-              </button>
-            ))}
+              );
+            })}
           </div>
 
-          <div className="flex gap-4 mt-6 text-sm">
+          <div className="flex gap-4 mt-4 text-sm">
             <div className="flex items-center gap-2">
               <div
                 className={`w-4 h-4 rounded ${
-                  darkMode ? "bg-green-900" : "bg-green-100"
+                  darkMode ? "bg-green-600" : "bg-green-500"
                 }`}
               ></div>
               <span>Completed</span>
@@ -551,14 +602,24 @@ export default function EnglishLearningApp() {
             <div className="flex items-center gap-2">
               <div
                 className={`w-4 h-4 rounded ${
-                  darkMode ? "bg-gray-700" : "bg-gray-50"
+                  darkMode ? "bg-blue-400" : "bg-blue-500"
+                } relative flex items-end justify-center`}
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-white mb-0.5"></div>
+              </div>
+              <span>Article Available</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-4 h-4 rounded ${
+                  darkMode ? "bg-gray-700" : "bg-gray-200"
                 }`}
               ></div>
-              <span>Not Yet</span>
+              <span>No Article</span>
             </div>
           </div>
-        </section>
-      </main>
+        </div>
+      </div>
     </div>
   );
 }
