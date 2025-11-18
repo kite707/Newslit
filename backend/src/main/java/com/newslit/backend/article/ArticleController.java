@@ -3,6 +3,7 @@ package com.newslit.backend.article;
 import com.newslit.backend.article.dto.ArticleAvailableDatesResponseDto;
 import com.newslit.backend.article.dto.ArticleRequestDto;
 import com.newslit.backend.article.dto.ArticleResponseDto;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/article")
+@Tag(name = "기사", description = "기사 관련 API")
 public class ArticleController {
     private final ArticleService articleService;
 

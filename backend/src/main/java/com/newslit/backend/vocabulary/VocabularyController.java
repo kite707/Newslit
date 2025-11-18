@@ -1,6 +1,7 @@
 package com.newslit.backend.vocabulary;
 
 import com.newslit.backend.vocabulary.dto.VocabularyRequestDto;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/vocabulary")
+@Tag(name = "단어", description = "단어 관련 API")
 public class VocabularyController {
     private final VocabularyService vocabularyService;
 

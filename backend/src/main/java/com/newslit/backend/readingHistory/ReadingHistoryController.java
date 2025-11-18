@@ -1,6 +1,7 @@
 package com.newslit.backend.readingHistory;
 
 import com.newslit.backend.readingHistory.dto.ReadingHistoryResponseDto;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/reading-history")
+@Tag(name = "학습 기록", description = "학습 기록 관련 API")
 public class ReadingHistoryController {
     private final ReadingHistoryService readingHistoryService;
 
