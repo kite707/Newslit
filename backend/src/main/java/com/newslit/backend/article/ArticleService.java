@@ -1,15 +1,12 @@
 package com.newslit.backend.article;
 
-import com.newslit.backend.article.dto.ArticleAvailableDatesResponseDto;
 import com.newslit.backend.article.dto.ArticleRequestDto;
 import com.newslit.backend.article.dto.ArticleResponseDto;
 import com.newslit.backend.article.exception.ArticleNotFoundException;
 import com.newslit.backend.article.exception.DuplicateArticleException;
 import com.newslit.backend.vocabulary.VocabularyService;
 import com.newslit.backend.vocabulary.dto.VocabularyResponseDto;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,27 +26,27 @@ public class ArticleService {
         return convertToDto(article, vocabularies);
     }
 
-    public ArticleResponseDto getArticleByDate(LocalDate date) {
-        Article article = articleRepository.findArticleByDisplayDate(date)
-                .orElseThrow(() -> new ArticleNotFoundException());
-        List<VocabularyResponseDto> vocabularies = vocabularyService.findByArticleId(article.getId());
+//    public ArticleResponseDto getArticleByDate(LocalDate date) {
+//        Article article = articleRepository.findArticleByDisplayDate(date)
+//                .orElseThrow(() -> new ArticleNotFoundException());
+//        List<VocabularyResponseDto> vocabularies = vocabularyService.findByArticleId(article.getId());
+//
+//        return convertToDto(article, vocabularies);
+//    }
 
-        return convertToDto(article, vocabularies);
-    }
-
-    public ArticleAvailableDatesResponseDto getAvailableDates(LocalDate date) {
-        LocalDate startDate = date;
-        LocalDate endDate = date.plusMonths(1).minusDays(1);
-        List<Article> byDisplayDateBetween = articleRepository.findByDisplayDateBetween(startDate, endDate);
-        List<Integer> dates = byDisplayDateBetween.stream()
-                .filter(article -> article.getDisplayDate() != null)
-                .map(article -> article.getDisplayDate().getDayOfMonth())
-                .collect(Collectors.toList());
-
-        return ArticleAvailableDatesResponseDto.builder()
-                .dates(dates)
-                .build();
-    }
+//    public ArticleAvailableDatesResponseDto getAvailableDates(LocalDate date) {
+//        LocalDate startDate = date;
+//        LocalDate endDate = date.plusMonths(1).minusDays(1);
+//        List<Article> byDisplayDateBetween = articleRepository.findByDisplayDateBetween(startDate, endDate);
+//        List<Integer> dates = byDisplayDateBetween.stream()
+//                .filter(article -> article.getDisplayDate() != null)
+//                .map(article -> article.getDisplayDate().getDayOfMonth())
+//                .collect(Collectors.toList());
+//
+//        return ArticleAvailableDatesResponseDto.builder()
+//                .dates(dates)
+//                .build();
+//    }
 
     @Transactional
     public Article saveArticle(ArticleRequestDto articleRequestDto) {
@@ -70,10 +67,8 @@ public class ArticleService {
                 .id(article.getId())
                 .title(article.getTitle())
                 .originalText(article.getOriginalText())
-                .translatedText(article.getTranslatedText())
                 .sourceUrl(article.getSourceUrl())
                 .publishedDate(article.getPublishedDate())
-                .displayDate(article.getDisplayDate())
                 .createdAt(article.getCreatedAt())
                 .source(article.getSource())
                 .vocabularies(vocabularies)
