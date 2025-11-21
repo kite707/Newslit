@@ -1,6 +1,7 @@
 package com.newslit.backend.rss;
 
 import com.newslit.backend.rss.dto.RssResponseDto;
+import com.newslit.backend.rss.exception.NoRssFoundException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,11 @@ public class RssService {
     public List<RssResponseDto> getAllRss() {
         List<Rss> rsses = rssRepository.findAll();
         return rsses.stream().map(this::toDto).toList();
+    }
+
+    public RssResponseDto getRssById(Long id) {
+        Rss rss = rssRepository.findById(id).orElseThrow(() -> new NoRssFoundException());
+        return toDto(rss);
     }
 
     private RssResponseDto toDto(Rss rss) {
