@@ -30,7 +30,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class VoaCrawlerService {
+public class VoaArticleCrawlerService {
     private final ArticleService articleService;
     private final VocabularyService vocabularyService;
     private final RssService rssService;

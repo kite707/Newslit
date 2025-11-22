@@ -12,11 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class CrawlerController {
 
-    private final VoaCrawlerService crawlerService;
+    private final VoaArticleCrawlerService voaArticleCrawlerService;
 
     @PostMapping("/voa/run")
-    public ResponseEntity<String> runCrawler(@RequestParam Long rssId) {
-        crawlerService.crawlAndSaveArticles(rssId);
-        return ResponseEntity.ok("크롤링 완료");
+    public ResponseEntity<String> runVoaCrawler(@RequestParam Long rssId) {
+        voaArticleCrawlerService.crawlAndSaveArticles(rssId);
+        return ResponseEntity.ok("Voa 크롤링 완료");
     }
 }
