@@ -10,13 +10,19 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Getter
 @Table(name = "rss")
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Rss {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

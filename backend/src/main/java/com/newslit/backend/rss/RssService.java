@@ -1,5 +1,7 @@
 package com.newslit.backend.rss;
 
+import com.newslit.backend.global.common.enums.Status;
+import com.newslit.backend.rss.dto.RssRequestDto;
 import com.newslit.backend.rss.dto.RssResponseDto;
 import com.newslit.backend.rss.exception.NoRssFoundException;
 import java.util.List;
@@ -19,6 +21,16 @@ public class RssService {
     public RssResponseDto getRssById(Long id) {
         Rss rss = rssRepository.findById(id).orElseThrow(() -> new NoRssFoundException());
         return toDto(rss);
+    }
+
+    public void saveRss(RssRequestDto rssRequestDto) {
+        Rss rss = Rss.builder()
+                .category(rssRequestDto.getCategory())
+                .title(rssRequestDto.getTitle())
+                .url(rssRequestDto.getUrl())
+                .status(Status.PENDING)
+                .build();
+        rssRepository.save(rss);
     }
 
     private RssResponseDto toDto(Rss rss) {
