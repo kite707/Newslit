@@ -1,5 +1,6 @@
 package com.newslit.backend.article;
 
+import com.newslit.backend.daily.Daily;
 import com.newslit.backend.sentence.Sentence;
 import com.newslit.backend.vocabulary.Vocabulary;
 import jakarta.persistence.CascadeType;
@@ -56,4 +57,8 @@ public class Article {
 
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
     private List<Vocabulary> vocabularies = new ArrayList<>();
+
+    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
+    private List<Daily> dailies = new ArrayList<>();
+
 }
