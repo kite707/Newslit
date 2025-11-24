@@ -11,5 +11,7 @@ public interface SentenceRepository extends JpaRepository<Sentence, Long> {
 
     List<Sentence> findAllByArticleId(Long id);
 
+    List<Sentence> findAllByArticleIdAndOrderIndexBetween(Long id, int startIndex, int endIndex);
+
 
 }

@@ -6,8 +6,11 @@ import com.newslit.backend.article.exception.ArticleNotFoundException;
 import com.newslit.backend.daily.dto.DailyResponseDto;
 import com.newslit.backend.sentence.Sentence;
 import com.newslit.backend.sentence.SentenceRepository;
+import com.newslit.backend.sentence.dto.SentenceResponseDto;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -84,6 +87,19 @@ public class DailyService {
         return dailyResponseDto;
     }
 
+    public List<SentenceResponseDto> getDailyContent(LocalDate displayDate) {
+        Daily daily = dailyRespository.findByDisplayDate(displayDate);
+
+        Long articleId = daily.getArticle().getId();
+        int startIndex = daily.getStartIndex();
+        int endIndex = daily.getEndIndex();
+
+        List<Sentence> sentences = sentenceRepository.findAllByArticleIdAndOrderIndexBetween(articleId, startIndex,
+                endIndex);
+
+        return sentences.stream().map(sentence -> toSentenceDto(sentence)).collect(Collectors.toList());
+    }
+
     private int calculateChunkCount(int totalWords) {
         if (totalWords <= MAX_WORDS) {
             return 1;
@@ -111,6 +127,16 @@ public class DailyService {
                 .startIndex(daily.getStartIndex())
                 .endIndex(daily.getEndIndex())
                 .wordCount(daily.getWordCount())
+                .build();
+    }
+
+    private SentenceResponseDto toSentenceDto(Sentence sentence) {
+        return SentenceResponseDto.builder()
+                .articleId(sentence.getArticle().getId())
+                .englishText(sentence.getEnglishText())
+                .koreanText(sentence.getKoreanText())
+                .orderIndex(sentence.getOrderIndex())
+                .status(sentence.getTranslationStatus())
                 .build();
     }
 
