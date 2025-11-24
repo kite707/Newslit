@@ -1,7 +1,7 @@
 package com.newslit.backend.sentence;
 
 import com.deepl.api.DeepLException;
-import com.newslit.backend.sentence.dto.SentenceResponse;
+import com.newslit.backend.sentence.dto.SentenceResponseDto;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -19,9 +19,9 @@ public class SentenceController {
     private final SentenceService sentenceService;
 
     @GetMapping
-    ResponseEntity<List<SentenceResponse>> translateOneParagraph(@RequestParam(name = "articleId") Long articleId)
+    ResponseEntity<List<SentenceResponseDto>> translateOneParagraph(@RequestParam(name = "articleId") Long articleId)
             throws DeepLException, InterruptedException {
-        List<SentenceResponse> responses = sentenceService.translateOneParagraph(articleId);
+        List<SentenceResponseDto> responses = sentenceService.translateOneParagraph(articleId);
 
         return ResponseEntity.ok(responses);
     }
