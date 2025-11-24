@@ -45,6 +45,9 @@ public class Daily {
     @Column(name = "end_index")
     private Integer endIndex;
 
+    @Column(name = "word_count")
+    private Integer wordCount;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
