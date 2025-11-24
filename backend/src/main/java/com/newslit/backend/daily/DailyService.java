@@ -69,7 +69,6 @@ public class DailyService {
             }
 
             if (shouldSplit) {
-                chunkStart = i + 1;
                 Daily daily = Daily.builder()
                         .startIndex(chunkStart)
                         .endIndex(i)
@@ -78,6 +77,7 @@ public class DailyService {
                         .build();
                 dailyRespository.save(daily);
                 dailyResponseDto.add(toDto(daily));
+                chunkStart = i + 1;
                 currentWordCount = 0;
             }
         }
