@@ -6,7 +6,7 @@ import com.newslit.backend.article.Article;
 import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.article.exception.ArticleNotFoundException;
 import com.newslit.backend.global.common.enums.Status;
-import com.newslit.backend.sentence.dto.SentenceResponse;
+import com.newslit.backend.sentence.dto.SentenceResponseDto;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -20,16 +20,16 @@ public class SentenceService {
     private final SentenceRepository sentenceRepository;
     private final ArticleRepository articleRepository;
 
-    public List<SentenceResponse> translateOneParagraph(Long articleId) throws DeepLException, InterruptedException {
+    public List<SentenceResponseDto> translateOneParagraph(Long articleId) throws DeepLException, InterruptedException {
         Article article = articleRepository.findById(articleId)
                 .orElseThrow(() -> new ArticleNotFoundException());
 
         String paragraph = article.getOriginalText();
         List<String> sentences = splitIntoSentencesAdvanced(paragraph);
-        List<SentenceResponse> responses = new ArrayList<>();
+        List<SentenceResponseDto> responses = new ArrayList<>();
 
         for (int i = 0; i < sentences.size(); i++) {
-            SentenceResponse response = translateSingleSentence(articleId, article, sentences.get(i), i + 1);
+            SentenceResponseDto response = translateSingleSentence(articleId, article, sentences.get(i), i + 1);
             responses.add(response);
         }
 
@@ -37,7 +37,8 @@ public class SentenceService {
     }
 
     @Transactional
-    public SentenceResponse translateSingleSentence(Long articleId, Article article, String englishText, int orderIndex)
+    public SentenceResponseDto translateSingleSentence(Long articleId, Article article, String englishText,
+                                                       int orderIndex)
             throws DeepLException, InterruptedException {
         Sentence sentence = Sentence.builder()
                 .article(article)
@@ -52,9 +53,9 @@ public class SentenceService {
         sentence.setKoreanText(translatedText);
         sentence.setTranslationStatus(Status.SUCCESS);
 
-        return SentenceResponse.builder()
+        return SentenceResponseDto.builder()
                 .articleId(articleId)
-                .orderIdx(orderIndex)
+                .orderIndex(orderIndex)
                 .englishText(englishText)
                 .koreanText(translatedText)
                 .status(sentence.getTranslationStatus())

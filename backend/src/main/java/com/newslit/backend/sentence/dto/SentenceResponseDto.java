@@ -10,9 +10,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class SentenceResponse {
+public class SentenceResponseDto {
     private Long articleId;
-    private int orderIdx;
+    private int orderIndex;
     private String englishText;
     private String koreanText;
     private Status status;
