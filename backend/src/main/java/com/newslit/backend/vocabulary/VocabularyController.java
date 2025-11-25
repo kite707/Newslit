@@ -2,6 +2,7 @@ package com.newslit.backend.vocabulary;
 
 import com.newslit.backend.vocabulary.dto.VocabularyRequestDto;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,12 @@ public class VocabularyController {
             @RequestBody VocabularyRequestDto vocabularyRequestDto) {
         Vocabulary savedVocabulary = vocabularyService.saveVocabulary(vocabularyRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedVocabulary);
+    }
+
+    @PostMapping("/translate")
+    public ResponseEntity<List<Vocabulary>> translateVocabulary() {
+        List<Vocabulary> vocabularyList = vocabularyService.translateVocabulary();
+        return ResponseEntity.status(HttpStatus.CREATED).body(vocabularyList);
     }
 
 }

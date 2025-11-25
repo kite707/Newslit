@@ -1,6 +1,8 @@
 package com.newslit.backend.vocabulary;
 
 
+import com.deepl.api.DeepLClient;
+import com.deepl.api.DeepLException;
 import com.newslit.backend.article.Article;
 import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.vocabulary.dto.VocabularyRequestDto;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 public class VocabularyService {
     private final VocabularyRepository vocabularyRepository;
     private final ArticleRepository articleRepository;
+    private final DeepLClient deepLClient;
 
     public List<VocabularyResponseDto> findByArticleId(Long id) {
         List<Vocabulary> vocabularyList = vocabularyRepository.findAllByArticleId(id);
@@ -30,6 +33,21 @@ public class VocabularyService {
                 .partOfSpeech(vocabularyRequestDto.getPartOfSpeech())
                 .build();
         return vocabularyRepository.save(vocabulary);
+    }
+
+    public List<Vocabulary> translateVocabulary() {
+        List<Vocabulary> vocabularyList = vocabularyRepository.findAllByMeaningIsNull();
+
+        vocabularyList.forEach(vocabulary -> {
+            try {
+                String translatedText = deepLClient.translateText(vocabulary.getWord(), null, "ko").getText();
+                vocabulary.setMeaning(translatedText);
+                System.out.println(vocabulary.getWord() + " " + translatedText);
+            } catch (DeepLException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        return vocabularyRepository.saveAll(vocabularyList);
     }
 
     private VocabularyResponseDto toDto(Vocabulary vocabulary) {
