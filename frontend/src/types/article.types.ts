@@ -17,6 +17,12 @@ export interface ArticleData {
   vocabularies: Vocabulary[];
 }
 
-export interface AvailableDatesResponse {
-  dates: number[];
+export interface ArticleDateRange {
+  articleId: number;
+  startIndex: number;
+  endIndex: number;
+  wordCount: number;
+  displayDate: string;
 }
+
+export type AvailableDatesResponse = ArticleDateRange[];

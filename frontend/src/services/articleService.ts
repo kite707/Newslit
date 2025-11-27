@@ -65,7 +65,7 @@ export async function fetchAvailableDates(
   month: number
 ): Promise<number[]> {
   try {
-    const monthString = String(month).padStart(2, '0');
+    const monthString = String(month).padStart(2, "0");
     const dateString = `${year}${monthString}`;
     const url = `${API_BASE_URL}${API_ENDPOINTS.ARTICLE_AVAILABLE}?date=${dateString}`;
 
@@ -77,9 +77,12 @@ export async function fetchAvailableDates(
     }
 
     const data: AvailableDatesResponse = await response.json();
-    return data.dates || [];
+    return data.map((item) => {
+      const day = parseInt(item.displayDate.slice(-2), 10);
+      return day;
+    });
   } catch (error) {
-    console.error('Failed to fetch available dates:', error);
+    console.error("Failed to fetch available dates:", error);
     return [];
   }
 }
