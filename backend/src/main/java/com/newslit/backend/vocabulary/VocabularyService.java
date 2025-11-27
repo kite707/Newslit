@@ -7,6 +7,7 @@ import com.newslit.backend.article.Article;
 import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.vocabulary.dto.VocabularyRequestDto;
 import com.newslit.backend.vocabulary.dto.VocabularyResponseDto;
+import com.newslit.backend.vocabulary.exception.DuplicateVocabularyException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,10 @@ public class VocabularyService {
     }
 
     public Vocabulary saveVocabulary(VocabularyRequestDto vocabularyRequestDto) {
+        vocabularyRepository.findByArticleIdAndWord(
+                vocabularyRequestDto.getArticleId(), vocabularyRequestDto.getWord()).ifPresent(vocabulary -> {
+            throw new DuplicateVocabularyException();
+        });
         Article article = articleRepository.findById(vocabularyRequestDto.getArticleId())
                 .orElseThrow(() -> new RuntimeException("Article not found"));
         Vocabulary vocabulary = Vocabulary.builder()

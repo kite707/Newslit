@@ -17,7 +17,10 @@ public enum ErrorCode {
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USR-001", "사용자를 찾을 수 없습니다"),
 
     // RSS
-    RSS_NOT_FOUND(HttpStatus.NOT_FOUND, "RSS-002", "RSS 링크를 찾을 수 없습니다");
+    RSS_NOT_FOUND(HttpStatus.NOT_FOUND, "RSS-002", "RSS 링크를 찾을 수 없습니다"),
+
+    // Vocabulary
+    DUPLICATE_VOCABULARY(HttpStatus.CONFLICT, "VOC-001", "이미 존재하는 단어입니다");
 
     private final HttpStatus status;
     private final String code;
