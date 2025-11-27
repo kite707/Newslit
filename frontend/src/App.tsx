@@ -16,7 +16,8 @@ import {
   markArticleAsComplete,
   fetchReadingHistory,
 } from "./services/historyService";
-import type { ArticleData } from "@/types";
+import { fetchVocabulary } from "./services/vocabularyService";
+import type { ArticleData, VocabularyItem } from "@/types";
 
 export default function EnglishLearningApp() {
   const [darkMode, setDarkMode] = useState(false);
@@ -30,6 +31,8 @@ export default function EnglishLearningApp() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [completedDates, setCompletedDates] = useState<number[]>([]);
   const [availableDates, setAvailableDates] = useState<number[]>([]);
+  const [vocabularies, setVocabularies] = useState<VocabularyItem[]>([]);
+  const [hoveredWord, setHoveredWord] = useState<string | null>(null);
 
   // 현재 날짜의 기사 불러오기
   useEffect(() => {
@@ -38,6 +41,14 @@ export default function EnglishLearningApp() {
       const data = await fetchArticle(currentDate);
       setArticleData(data);
       console.log("Fetched article data:", data);
+
+      // 기사가 있으면 단어 불러오기
+      if (data.length > 0 && data[0]?.articleId) {
+        const vocabData = await fetchVocabulary(data[0].articleId);
+        setVocabularies(vocabData);
+        console.log("Fetched vocabularies:", vocabData);
+      }
+
       setLoading(false);
     };
     loadArticle();
@@ -74,7 +85,7 @@ export default function EnglishLearningApp() {
   }, [currentMonth]);
 
   const playAudio = (): void => {
-    alert("음성 재생 기능은 백엤드 연동 후 사용 가능합니다.");
+    alert("음성 재생 기능은 백엔드 연동 후 사용 가능합니다.");
   };
 
   // 완료 처리
@@ -131,6 +142,60 @@ export default function EnglishLearningApp() {
       colors[shortPos] ||
       (darkMode ? "bg-gray-700 text-gray-200" : "bg-gray-100 text-gray-700")
     );
+  };
+
+  // 텍스트에서 단어 하이라이트
+  const highlightVocabulary = (text: string) => {
+    if (vocabularies.length === 0) return text;
+
+    const words = vocabularies.map((v) => v.word.toLowerCase());
+    const regex = new RegExp(`\\b(${words.join("|")})\\b`, "gi");
+
+    const parts = text.split(regex);
+
+    return parts.map((part, index) => {
+      const vocab = vocabularies.find(
+        (v) => v.word.toLowerCase() === part.toLowerCase()
+      );
+
+      if (vocab) {
+        return (
+          <span
+            key={index}
+            className={`relative inline-block cursor-pointer font-semibold ${
+              darkMode
+                ? "text-yellow-300 hover:text-yellow-200"
+                : "text-blue-600 hover:text-blue-700"
+            } border-b-2 ${darkMode ? "border-yellow-300" : "border-blue-600"}`}
+            onMouseEnter={() => setHoveredWord(vocab.word)}
+            onMouseLeave={() => setHoveredWord(null)}
+          >
+            {part}
+            {hoveredWord === vocab.word && (
+              <span
+                className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 rounded-lg shadow-lg whitespace-nowrap ${
+                  darkMode
+                    ? "bg-gray-700 text-white"
+                    : "bg-white text-gray-900 border border-gray-200"
+                }`}
+              >
+                <span className="block font-bold">{vocab.word}</span>
+                <span
+                  className={`text-xs px-2 py-0.5 rounded ${getPosColor(
+                    vocab.partOfSpeech
+                  )} inline-block my-1`}
+                >
+                  {getShortPos(vocab.partOfSpeech)}
+                </span>
+                <span className="block text-sm">{vocab.meaning}</span>
+              </span>
+            )}
+          </span>
+        );
+      }
+
+      return part;
+    });
   };
 
   const getDaysInMonth = (date: Date): (number | null)[] => {
@@ -225,7 +290,7 @@ export default function EnglishLearningApp() {
             {articleData.map((sentence, index) => (
               <div key={index}>
                 <p className="text-lg leading-relaxed">
-                  {sentence.englishText}
+                  {highlightVocabulary(sentence.englishText)}
                 </p>
                 {showTranslation && (
                   <p
@@ -259,6 +324,77 @@ export default function EnglishLearningApp() {
         >
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">Key Words</h2>
+            <button
+              onClick={() => {
+                const allShown = vocabularies.every(
+                  (_, idx) => showMeaning[idx]
+                );
+                const newState: Record<number, boolean> = {};
+                vocabularies.forEach((_, idx) => {
+                  newState[idx] = !allShown;
+                });
+                setShowMeaning(newState);
+              }}
+              className={`text-xs font-medium px-3 py-1 rounded-full transition-colors ${
+                darkMode
+                  ? "bg-gray-600 hover:bg-gray-500 text-gray-300"
+                  : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+              }`}
+            >
+              {vocabularies.every((_, idx) => showMeaning[idx])
+                ? "뜻 숨기기"
+                : "뜻 보기"}
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {vocabularies.map((item, idx) => (
+              <div
+                key={item.id}
+                onClick={() =>
+                  setShowMeaning({ ...showMeaning, [idx]: !showMeaning[idx] })
+                }
+                className={`p-4 rounded-lg cursor-pointer transition-colors ${
+                  darkMode
+                    ? "bg-gray-700 hover:bg-gray-600"
+                    : "bg-gray-50 hover:bg-gray-100"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-bold text-lg">{item.word}</span>
+                  <span
+                    className={`text-xs px-2 py-1 rounded ${getPosColor(
+                      item.partOfSpeech
+                    )}`}
+                  >
+                    {getShortPos(item.partOfSpeech)}
+                  </span>
+                </div>
+
+                {showMeaning[idx] && (
+                  <div className="mt-2">
+                    <p className="text-sm mb-2">{item.meaning}</p>
+                  </div>
+                )}
+
+                {item.exampleSentence && showMeaning[idx] && (
+                  <div
+                    className={`mt-2 p-3 rounded ${
+                      darkMode ? "bg-gray-600" : "bg-white"
+                    }`}
+                  >
+                    <p className="text-sm italic mb-1">
+                      "{item.exampleSentence}"
+                    </p>
+                    {item.exampleTranslation && (
+                      <p className="text-xs text-gray-500">
+                        {item.exampleTranslation}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
 

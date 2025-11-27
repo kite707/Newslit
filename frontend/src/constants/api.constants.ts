@@ -4,6 +4,7 @@ export const API_ENDPOINTS = {
   ARTICLE: "/daily",
   ARTICLE_AVAILABLE: "/daily/available",
   READING_HISTORY: "/reading-history",
+  VOCABULARY: "/vocabulary"
 } as const;
 
   
