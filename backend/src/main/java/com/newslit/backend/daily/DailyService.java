@@ -3,6 +3,7 @@ package com.newslit.backend.daily;
 import com.newslit.backend.article.Article;
 import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.article.exception.ArticleNotFoundException;
+import com.newslit.backend.daily.dto.DailyContentResponseDto;
 import com.newslit.backend.daily.dto.DailyResponseDto;
 import com.newslit.backend.sentence.Sentence;
 import com.newslit.backend.sentence.SentenceRepository;
@@ -87,17 +88,18 @@ public class DailyService {
         return dailyResponseDto;
     }
 
-    public List<SentenceResponseDto> getDailyContent(LocalDate displayDate) {
+    public DailyContentResponseDto getDailyContent(LocalDate displayDate) {
         Daily daily = dailyRespository.findByDisplayDate(displayDate);
 
         Long articleId = daily.getArticle().getId();
         int startIndex = daily.getStartIndex();
         int endIndex = daily.getEndIndex();
 
-        List<Sentence> sentences = sentenceRepository.findAllByArticleIdAndOrderIndexBetween(articleId, startIndex,
-                endIndex);
+        List<SentenceResponseDto> sentences = sentenceRepository.findAllByArticleIdAndOrderIndexBetween(articleId,
+                startIndex,
+                endIndex).stream().map(sentence -> toSentenceDto(sentence)).collect(Collectors.toList());
 
-        return sentences.stream().map(sentence -> toSentenceDto(sentence)).collect(Collectors.toList());
+        return toDailyContentDto(daily, sentences);
     }
 
     public List<DailyResponseDto> getAvailableDate(LocalDate date) {
@@ -147,6 +149,16 @@ public class DailyService {
                 .koreanText(sentence.getKoreanText())
                 .orderIndex(sentence.getOrderIndex())
                 .status(sentence.getTranslationStatus())
+                .build();
+    }
+
+    private DailyContentResponseDto toDailyContentDto(Daily daily, List<SentenceResponseDto> sentences) {
+        return DailyContentResponseDto.builder()
+                .title(daily.getArticle().getTitle())
+                .publishedDate(daily.getArticle().getPublishedDate())
+                .source(daily.getArticle().getSource())
+                .sourceUrl(daily.getArticle().getSourceUrl())
+                .sentences(sentences)
                 .build();
     }
 

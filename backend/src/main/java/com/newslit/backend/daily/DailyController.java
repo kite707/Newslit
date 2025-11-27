@@ -1,7 +1,7 @@
 package com.newslit.backend.daily;
 
+import com.newslit.backend.daily.dto.DailyContentResponseDto;
 import com.newslit.backend.daily.dto.DailyResponseDto;
-import com.newslit.backend.sentence.dto.SentenceResponseDto;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -28,9 +28,9 @@ public class DailyController {
     }
 
     @GetMapping
-    public ResponseEntity<List<SentenceResponseDto>> getDailyContent(@RequestParam String date) {
+    public ResponseEntity<DailyContentResponseDto> getDailyContent(@RequestParam String date) {
         LocalDate parsedDate = LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyyMMdd"));
-        List<SentenceResponseDto> dailyContent = dailyService.getDailyContent(parsedDate);
+        DailyContentResponseDto dailyContent = dailyService.getDailyContent(parsedDate);
         return ResponseEntity.ok(dailyContent);
     }
 
