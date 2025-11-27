@@ -6,6 +6,7 @@ import {
   Sun,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
 } from "lucide-react";
 import {
   fetchArticle,
@@ -43,8 +44,8 @@ export default function EnglishLearningApp() {
       console.log("Fetched article data:", data);
 
       // 기사가 있으면 단어 불러오기
-      if (data.length > 0 && data[0]?.articleId) {
-        const vocabData = await fetchVocabulary(data[0].articleId);
+      if (data.sentences.length > 0 && data.sentences[0]?.articleId) {
+        const vocabData = await fetchVocabulary(data.sentences[0].articleId);
         setVocabularies(vocabData);
         console.log("Fetched vocabularies:", vocabData);
       }
@@ -92,15 +93,15 @@ export default function EnglishLearningApp() {
   const handleComplete = async () => {
     if (
       !articleData ||
-      articleData.length === 0 ||
-      !articleData[0]?.articleId
+      articleData.sentences.length === 0 ||
+      !articleData.sentences[0]?.articleId
     ) {
       alert("기사 정보가 없습니다.");
       return;
     }
 
     try {
-      await markArticleAsComplete(articleData[0].articleId);
+      await markArticleAsComplete(articleData.sentences[0].articleId);
       setCompleted(!completed);
       alert("완료 처리되었습니다!");
 
@@ -273,21 +274,45 @@ export default function EnglishLearningApp() {
             darkMode ? "bg-gray-800" : "bg-white"
           } shadow-lg`}
         >
-          <h2 className="text-2xl font-bold mb-4">Today's Paragraph</h2>
-
-          <div
-            className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-4 ${
-              darkMode
-                ? "bg-blue-900 text-blue-200"
-                : "bg-blue-100 text-blue-700"
-            }`}
-          >
-            VOA Learning English
+          <div className="mb-4">
+            <h2 className="text-2xl font-bold mb-2">{articleData.title}</h2>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div
+                className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                  darkMode
+                    ? "bg-blue-900 text-blue-200"
+                    : "bg-blue-100 text-blue-700"
+                }`}
+              >
+                {articleData.source}
+              </div>
+              <span
+                className={`text-sm ${
+                  darkMode ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                {articleData.publishedDate}
+              </span>
+              {articleData.sourceUrl && (
+                <a
+                  href={articleData.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`text-sm flex items-center gap-1 ${
+                    darkMode
+                      ? "text-blue-400 hover:text-blue-300"
+                      : "text-blue-600 hover:text-blue-700"
+                  }`}
+                  >
+                  원문 보기 <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </div>
           </div>
 
           {/* 모든 문장 표시 */}
           <div className="space-y-4 mb-4">
-            {articleData.map((sentence, index) => (
+            {articleData.sentences.map((sentence, index) => (
               <div key={index}>
                 <p className="text-lg leading-relaxed">
                   {highlightVocabulary(sentence.englishText)}

@@ -15,8 +15,13 @@ export interface SentenceData {
   status: string;
 }
 
-export type ArticleData = SentenceData[];
-
+export interface ArticleData {
+  title: string;
+  publishedDate: string;
+  source: string;
+  sourceUrl: string;
+  sentences: SentenceData[];
+}
 export interface ArticleDateRange {
   articleId: number;
   startIndex: number;

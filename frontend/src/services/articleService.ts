@@ -8,17 +8,23 @@ function formatDateString(date: Date): string {
   return `${year}${month}${day}`;
 }
 
-export const DEFAULT_ARTICLE_DATA: ArticleData = [
-  {
-    articleId: 0,
-    orderIndex: 1,
-    englishText:
-      "There is no article available for today. Newslit provides a daily paragraph to help you learn English. Please check back tomorrow!",
-    koreanText:
-      "오늘은 제공되는 기사가 없습니다. Newslit은 매일 한 단락의 영어 문장을 제공하여 영어 학습을 돕습니다. 내일 다시 확인해주세요!",
-    status: "SUCCESS",
-  },
-];
+export const DEFAULT_ARTICLE_DATA: ArticleData = {
+  title: "No Article Available",
+  publishedDate: "2024-11-27",
+  source: "Newslit",
+  sourceUrl: "https://newslit.com",
+  sentences: [
+    {
+      articleId: 0,
+      orderIndex: 1,
+      englishText:
+        "There is no article available for today. Newslit provides a daily paragraph to help you learn English. Please check back tomorrow!",
+      koreanText:
+        "오늘은 제공되는 기사가 없습니다. Newslit은 매일 한 단락의 영어 문장을 제공하여 영어 학습을 돕습니다. 내일 다시 확인해주세요!",
+      status: "SUCCESS",
+    },
+  ],
+};
 
 /**
  * 특정 날짜의 기사를 가져옵니다
