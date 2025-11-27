@@ -79,7 +79,7 @@ public class DailyService {
                         .article(article)
                         .build();
                 dailyRespository.save(daily);
-                dailyResponseDto.add(toDto(daily));
+                dailyResponseDto.add(toDailyDto(daily));
                 chunkStart = i + 1;
                 currentWordCount = 0;
             }
@@ -98,6 +98,15 @@ public class DailyService {
                 endIndex);
 
         return sentences.stream().map(sentence -> toSentenceDto(sentence)).collect(Collectors.toList());
+    }
+
+    public List<DailyResponseDto> getAvailableDate(LocalDate date) {
+        LocalDate startDate = date;
+        LocalDate endDate = date.plusMonths(1);
+
+        return dailyRespository.findAllByDisplayDateBetween(startDate, endDate)
+                .stream().map(daily -> toDailyDto(daily)).collect(
+                        Collectors.toList());
     }
 
     private int calculateChunkCount(int totalWords) {
@@ -121,12 +130,13 @@ public class DailyService {
         return text.trim().split("\\s+").length;
     }
 
-    private DailyResponseDto toDto(Daily daily) {
+    private DailyResponseDto toDailyDto(Daily daily) {
         return DailyResponseDto.builder()
                 .articleId(daily.getArticle().getId())
                 .startIndex(daily.getStartIndex())
                 .endIndex(daily.getEndIndex())
                 .wordCount(daily.getWordCount())
+                .displayDate(daily.getDisplayDate())
                 .build();
     }
 

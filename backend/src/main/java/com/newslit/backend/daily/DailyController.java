@@ -33,4 +33,11 @@ public class DailyController {
         List<SentenceResponseDto> dailyContent = dailyService.getDailyContent(parsedDate);
         return ResponseEntity.ok(dailyContent);
     }
+
+    @GetMapping("/available")
+    public ResponseEntity<List<DailyResponseDto>> getAvailableDate(@RequestParam String date) {
+        LocalDate parsedDate = LocalDate.parse(date + "01", DateTimeFormatter.ofPattern("yyyyMMdd"));
+        List<DailyResponseDto> availableDate = dailyService.getAvailableDate(parsedDate);
+        return ResponseEntity.ok(availableDate);
+    }
 }

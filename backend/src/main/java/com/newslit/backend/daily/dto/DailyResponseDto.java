@@ -1,5 +1,6 @@
 package com.newslit.backend.daily.dto;
 
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,4 +15,5 @@ public class DailyResponseDto {
     private int startIndex;
     private int endIndex;
     private int wordCount;
+    private LocalDate displayDate;
 }
