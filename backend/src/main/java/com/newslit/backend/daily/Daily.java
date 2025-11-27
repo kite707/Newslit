@@ -20,7 +20,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
-@Table(name = "article_daily")
+@Table(name = "daily_article")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
