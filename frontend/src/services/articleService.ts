@@ -8,26 +8,17 @@ function formatDateString(date: Date): string {
   return `${year}${month}${day}`;
 }
 
-export const DEFAULT_ARTICLE_DATA: ArticleData = {
-  id: 0,
-  displayDate: new Date().toISOString(),
-  source: "Newslit",
-  title: "No Article Available Today",
-  originalText:
-    "There is no article available for today. Newslit provides a daily paragraph to help you learn English. Please check back tomorrow!",
-  translatedText:
-    "오늘은 제공되는 기사가 없습니다. Newslit은 매일 한 단락의 영어 문장을 제공하여 영어 학습을 돕습니다. 내일 다시 확인해주세요!",
-  vocabularies: [
-    {
-      id: 1,
-      word: "available",
-      partOfSpeech: "형용사",
-      meaning: "이용 가능한, 제공되는",
-      exampleSentence: "There is no article available for today.",
-      exampleTranslation: "오늘 제공되는 기사가 없습니다.",
-    },
-  ],
-};
+export const DEFAULT_ARTICLE_DATA: ArticleData = [
+  {
+    articleId: 0,
+    orderIndex: 1,
+    englishText:
+      "There is no article available for today. Newslit provides a daily paragraph to help you learn English. Please check back tomorrow!",
+    koreanText:
+      "오늘은 제공되는 기사가 없습니다. Newslit은 매일 한 단락의 영어 문장을 제공하여 영어 학습을 돕습니다. 내일 다시 확인해주세요!",
+    status: "SUCCESS",
+  },
+];
 
 /**
  * 특정 날짜의 기사를 가져옵니다
@@ -40,13 +31,13 @@ export async function fetchArticle(date: Date): Promise<ArticleData> {
     const url = `${API_BASE_URL}${API_ENDPOINTS.ARTICLE}?date=${dateString}`;
 
     const response = await fetch(url);
-
     if (!response.ok) {
       console.warn(`No article found for date: ${dateString}`);
       return DEFAULT_ARTICLE_DATA;
     }
 
     const data: ArticleData = await response.json();
+    console.log("Fetched article data:", data);
     return data;
   } catch (error) {
     console.error("Failed to fetch article:", error);

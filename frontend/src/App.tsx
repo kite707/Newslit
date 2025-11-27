@@ -37,6 +37,7 @@ export default function EnglishLearningApp() {
       setLoading(true);
       const data = await fetchArticle(currentDate);
       setArticleData(data);
+      console.log("Fetched article data:", data);
       setLoading(false);
     };
     loadArticle();
@@ -73,18 +74,22 @@ export default function EnglishLearningApp() {
   }, [currentMonth]);
 
   const playAudio = (): void => {
-    alert("음성 재생 기능은 백엔드 연동 후 사용 가능합니다.");
+    alert("음성 재생 기능은 백엤드 연동 후 사용 가능합니다.");
   };
 
   // 완료 처리
   const handleComplete = async () => {
-    if (!articleData?.id) {
+    if (
+      !articleData ||
+      articleData.length === 0 ||
+      !articleData[0]?.articleId
+    ) {
       alert("기사 정보가 없습니다.");
       return;
     }
 
     try {
-      await markArticleAsComplete(articleData.id);
+      await markArticleAsComplete(articleData[0].articleId);
       setCompleted(!completed);
       alert("완료 처리되었습니다!");
 
@@ -204,14 +209,6 @@ export default function EnglishLearningApp() {
           } shadow-lg`}
         >
           <h2 className="text-2xl font-bold mb-4">Today's Paragraph</h2>
-          <div className="text-sm text-gray-500 mb-4">
-            {new Date(articleData.displayDate).toLocaleDateString("en-US", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </div>
 
           <div
             className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-4 ${
@@ -220,13 +217,28 @@ export default function EnglishLearningApp() {
                 : "bg-blue-100 text-blue-700"
             }`}
           >
-            {articleData.source}
+            VOA Learning English
           </div>
 
-          <h3 className="text-xl font-semibold mb-4">{articleData.title}</h3>
-          <p className="text-lg leading-relaxed mb-4">
-            {articleData.originalText}
-          </p>
+          {/* 모든 문장 표시 */}
+          <div className="space-y-4 mb-4">
+            {articleData.map((sentence, index) => (
+              <div key={index}>
+                <p className="text-lg leading-relaxed">
+                  {sentence.englishText}
+                </p>
+                {showTranslation && (
+                  <p
+                    className={`mt-2 text-base ${
+                      darkMode ? "text-gray-300" : "text-gray-600"
+                    }`}
+                  >
+                    {sentence.koreanText}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
 
           <button
             onClick={() => setShowTranslation(!showTranslation)}
@@ -238,16 +250,6 @@ export default function EnglishLearningApp() {
           >
             {showTranslation ? "번역 숨기기 ▲" : "번역 보기 ▼"}
           </button>
-
-          {showTranslation && (
-            <div
-              className={`mt-4 p-4 rounded-lg ${
-                darkMode ? "bg-gray-700" : "bg-gray-50"
-              }`}
-            >
-              {articleData.translatedText}
-            </div>
-          )}
         </div>
 
         <div
@@ -257,77 +259,6 @@ export default function EnglishLearningApp() {
         >
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">Key Words</h2>
-            <button
-              onClick={() => {
-                const allShown = articleData.vocabularies.every(
-                  (_, idx) => showMeaning[idx]
-                );
-                const newState: Record<number, boolean> = {};
-                articleData.vocabularies.forEach((_, idx) => {
-                  newState[idx] = !allShown;
-                });
-                setShowMeaning(newState);
-              }}
-              className={`text-xs font-medium px-3 py-1 rounded-full transition-colors ${
-                darkMode
-                  ? "bg-gray-600 hover:bg-gray-500 text-gray-300"
-                  : "bg-gray-200 hover:bg-gray-300 text-gray-700"
-              }`}
-            >
-              {articleData.vocabularies.every((_, idx) => showMeaning[idx])
-                ? "뜻 숨기기"
-                : "뜻 보기"}
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            {articleData.vocabularies.map((item, idx) => (
-              <div
-                key={item.id}
-                onClick={() =>
-                  setShowMeaning({ ...showMeaning, [idx]: !showMeaning[idx] })
-                }
-                className={`p-4 rounded-lg cursor-pointer transition-colors ${
-                  darkMode
-                    ? "bg-gray-700 hover:bg-gray-600"
-                    : "bg-gray-50 hover:bg-gray-100"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-bold text-lg">{item.word}</span>
-                  <span
-                    className={`text-xs px-2 py-1 rounded ${getPosColor(
-                      item.partOfSpeech
-                    )}`}
-                  >
-                    {getShortPos(item.partOfSpeech)}
-                  </span>
-                </div>
-
-                {showMeaning[idx] && (
-                  <div className="mt-2">
-                    <p className="text-sm mb-2">{item.meaning}</p>
-                  </div>
-                )}
-
-                {item.exampleSentence && showMeaning[idx] && (
-                  <div
-                    className={`mt-2 p-3 rounded ${
-                      darkMode ? "bg-gray-600" : "bg-white"
-                    }`}
-                  >
-                    <p className="text-sm italic mb-1">
-                      "{item.exampleSentence}"
-                    </p>
-                    {item.exampleTranslation && (
-                      <p className="text-xs text-gray-500">
-                        {item.exampleTranslation}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
           </div>
         </div>
 

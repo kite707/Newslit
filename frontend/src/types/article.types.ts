@@ -7,15 +7,15 @@ export interface Vocabulary {
   exampleTranslation?: string;
 }
 
-export interface ArticleData {
-  id?: number;
-  displayDate: string;
-  source: string;
-  title: string;
-  originalText: string;
-  translatedText: string;
-  vocabularies: Vocabulary[];
+export interface SentenceData {
+  articleId: number;
+  orderIndex: number;
+  englishText: string;
+  koreanText: string;
+  status: string;
 }
+
+export type ArticleData = SentenceData[];
 
 export interface ArticleDateRange {
   articleId: number;
