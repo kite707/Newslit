@@ -18,4 +18,7 @@ public class DailyContentResponseDto {
     private String source;
     private String sourceUrl;
     private List<SentenceResponseDto> sentences;
+
+    private Integer totalPages;
+    private Integer currentPages;
 }

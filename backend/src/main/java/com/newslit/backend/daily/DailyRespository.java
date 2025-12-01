@@ -8,4 +8,6 @@ public interface DailyRespository extends JpaRepository<Daily, Long> {
     Daily findByDisplayDate(LocalDate date);
 
     List<Daily> findAllByDisplayDateBetween(LocalDate start, LocalDate end);
+
+    List<Daily> findByArticleIdOrderByIdAsc(Long articleId);
 }

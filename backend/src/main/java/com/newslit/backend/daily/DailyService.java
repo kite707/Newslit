@@ -99,7 +99,12 @@ public class DailyService {
                 startIndex,
                 endIndex).stream().map(sentence -> toSentenceDto(sentence)).collect(Collectors.toList());
 
-        return toDailyContentDto(daily, sentences);
+        List<Daily> dailyList = dailyRespository.findByArticleIdOrderByIdAsc(articleId);
+        int totalPages = dailyList.size();
+        int currentPage = (int) (daily.getId() - dailyList.get(0).getId() + 1);
+        DailyContentResponseDto dailyContentResponseDto = toDailyContentDto(daily, sentences, totalPages, currentPage);
+
+        return dailyContentResponseDto;
     }
 
     public List<DailyResponseDto> getAvailableDate(LocalDate date) {
@@ -152,13 +157,16 @@ public class DailyService {
                 .build();
     }
 
-    private DailyContentResponseDto toDailyContentDto(Daily daily, List<SentenceResponseDto> sentences) {
+    private DailyContentResponseDto toDailyContentDto(Daily daily, List<SentenceResponseDto> sentences, int totalPages,
+                                                      int currentPages) {
         return DailyContentResponseDto.builder()
                 .title(daily.getArticle().getTitle())
                 .publishedDate(daily.getArticle().getPublishedDate())
                 .source(daily.getArticle().getSource())
                 .sourceUrl(daily.getArticle().getSourceUrl())
                 .sentences(sentences)
+                .totalPages(totalPages)
+                .currentPages(currentPages)
                 .build();
     }
 
