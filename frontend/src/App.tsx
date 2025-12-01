@@ -275,7 +275,18 @@ export default function EnglishLearningApp() {
           } shadow-lg`}
         >
           <div className="mb-4">
-            <h2 className="text-2xl font-bold mb-2">{articleData.title}</h2>
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
+              <h2 className="text-2xl font-bold">{articleData.title}</h2>
+              <span
+                className={`text-sm font-medium px-3 py-1 rounded-full ${
+                  darkMode
+                    ? "bg-gray-700 text-gray-300"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
+                {articleData.currentPages} / {articleData.totalPages}
+              </span>
+            </div>
             <div className="flex items-center gap-3 flex-wrap">
               <div
                 className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
@@ -303,7 +314,7 @@ export default function EnglishLearningApp() {
                       ? "text-blue-400 hover:text-blue-300"
                       : "text-blue-600 hover:text-blue-700"
                   }`}
-                  >
+                >
                   원문 보기 <ExternalLink className="w-3 h-3" />
                 </a>
               )}

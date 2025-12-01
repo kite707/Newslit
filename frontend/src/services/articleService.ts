@@ -13,6 +13,8 @@ export const DEFAULT_ARTICLE_DATA: ArticleData = {
   publishedDate: "2024-11-27",
   source: "Newslit",
   sourceUrl: "https://newslit.com",
+  totalPages: 3,
+  currentPages: 2,
   sentences: [
     {
       articleId: 0,

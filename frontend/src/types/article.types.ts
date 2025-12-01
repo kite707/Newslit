@@ -20,6 +20,8 @@ export interface ArticleData {
   publishedDate: string;
   source: string;
   sourceUrl: string;
+  totalPages: number;
+  currentPages:number;
   sentences: SentenceData[];
 }
 export interface ArticleDateRange {
