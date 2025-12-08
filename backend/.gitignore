@@ -37,5 +37,6 @@ out/
 .vscode/
 
 ### Config ###
-application-secret.properties
 .env
+/src/main/resources/application-local-secret.properties
+/src/main/resources/application-prod-secret.properties
