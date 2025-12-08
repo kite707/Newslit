@@ -12,6 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
@@ -48,10 +49,12 @@ public class Vocabulary {
     @Column(name = "part_of_speech", length = 50)
     private PartOfSpeech partOfSpeech;
 
-    @Column(name = "example_sentence", columnDefinition = "TEXT")
+    @Lob
+    @Column(name = "example_sentence")
     private String exampleSentence;
 
-    @Column(name = "example_translation", columnDefinition = "TEXT")
+    @Lob
+    @Column(name = "example_translation")
     private String exampleTranslation;
 
     @CreationTimestamp

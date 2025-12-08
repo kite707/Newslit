@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
@@ -46,10 +47,12 @@ public class Sentence {
     @Column(name = "order_index", nullable = false)
     private Integer orderIndex;
 
-    @Column(name = "english_text", nullable = false, columnDefinition = "TEXT")
+    @Lob
+    @Column(name = "english_text", nullable = false)
     private String englishText;
 
-    @Column(name = "korean_text", nullable = false, columnDefinition = "TEXT")
+    @Lob
+    @Column(name = "korean_text", nullable = false)
     private String koreanText;
 
     @Enumerated(EnumType.STRING)
