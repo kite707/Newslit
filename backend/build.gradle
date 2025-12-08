@@ -36,6 +36,12 @@ dependencies {
     implementation 'com.rometools:rome:2.1.0'
     implementation 'org.jsoup:jsoup:1.16.1'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation platform('com.oracle.database.jdbc:ojdbc-bom:23.3.0.23.09')
+    implementation 'com.oracle.database.jdbc:ojdbc8'
+    implementation 'com.oracle.database.jdbc:ucp'
+    implementation 'com.oracle.database.security:oraclepki'
+    implementation 'com.oracle.database.security:osdt_core'
+    implementation 'com.oracle.database.security:osdt_cert'
 }
 
 tasks.named('test') {
