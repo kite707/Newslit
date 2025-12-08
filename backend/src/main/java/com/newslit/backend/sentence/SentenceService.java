@@ -45,7 +45,7 @@ public class SentenceService {
                 .translationStatus(Status.PROCESSING)
                 .orderIndex(orderIndex)
                 .englishText(englishText)
-                .koreanText("")
+                .koreanText(" ")
                 .build();
         sentenceRepository.save(sentence);
 
