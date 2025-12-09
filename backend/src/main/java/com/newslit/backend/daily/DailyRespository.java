@@ -2,6 +2,7 @@ package com.newslit.backend.daily;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface DailyRespository extends JpaRepository<Daily, Long> {
@@ -10,4 +11,6 @@ public interface DailyRespository extends JpaRepository<Daily, Long> {
     List<Daily> findAllByDisplayDateBetween(LocalDate start, LocalDate end);
 
     List<Daily> findByArticleIdOrderByIdAsc(Long articleId);
+
+    Optional<Daily> findTopByOrderByDisplayDateDesc();
 }

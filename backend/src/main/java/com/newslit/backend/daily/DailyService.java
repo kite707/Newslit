@@ -73,12 +73,18 @@ public class DailyService {
             }
 
             if (shouldSplit) {
+                LocalDate dateToSave = dailyRespository.findTopByOrderByDisplayDateDesc()
+                        .map(latestDaily -> latestDaily.getDisplayDate().plusDays(1))
+                        .orElse(LocalDate.now());
+
                 Daily daily = Daily.builder()
                         .startIndex(chunkStart)
                         .endIndex(i)
                         .wordCount(currentWordCount)
                         .article(article)
+                        .displayDate(dateToSave)
                         .build();
+
                 dailyRespository.save(daily);
                 dailyResponseDto.add(toDailyDto(daily));
                 chunkStart = i + 1;
