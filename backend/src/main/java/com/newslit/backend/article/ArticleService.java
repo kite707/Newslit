@@ -26,28 +26,6 @@ public class ArticleService {
         return convertToDto(article, vocabularies);
     }
 
-//    public ArticleResponseDto getArticleByDate(LocalDate date) {
-//        Article article = articleRepository.findArticleByDisplayDate(date)
-//                .orElseThrow(() -> new ArticleNotFoundException());
-//        List<VocabularyResponseDto> vocabularies = vocabularyService.findByArticleId(article.getId());
-//
-//        return convertToDto(article, vocabularies);
-//    }
-
-//    public ArticleAvailableDatesResponseDto getAvailableDates(LocalDate date) {
-//        LocalDate startDate = date;
-//        LocalDate endDate = date.plusMonths(1).minusDays(1);
-//        List<Article> byDisplayDateBetween = articleRepository.findByDisplayDateBetween(startDate, endDate);
-//        List<Integer> dates = byDisplayDateBetween.stream()
-//                .filter(article -> article.getDisplayDate() != null)
-//                .map(article -> article.getDisplayDate().getDayOfMonth())
-//                .collect(Collectors.toList());
-//
-//        return ArticleAvailableDatesResponseDto.builder()
-//                .dates(dates)
-//                .build();
-//    }
-
     @Transactional
     public Article saveArticle(ArticleRequestDto articleRequestDto) {
         articleRepository.findByTitleAndSource(articleRequestDto.getTitle(),
