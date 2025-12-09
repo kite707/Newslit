@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RssRepository extends JpaRepository<Rss, Long> {
     Optional<Rss> findById(Long id);
+
+    boolean existsByUrl(String url);
 }

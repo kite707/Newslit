@@ -1,5 +1,6 @@
 package com.newslit.backend.crawl;
 
+import com.newslit.backend.rss.RssRepository;
 import com.newslit.backend.rss.RssService;
 import com.newslit.backend.rss.dto.RssRequestDto;
 import java.io.IOException;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class VoaRssCrawlerService {
     private final RssService rssService;
+    private final RssRepository rssRepository;
     private static final String RSS_PAGE_URL = "https://learningenglish.voanews.com/rssfeeds";
     private static final String USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
@@ -35,6 +37,10 @@ public class VoaRssCrawlerService {
         for (Element link : links) {
             String href = link.attr("href");
 
+            if (rssRepository.existsByUrl(href)) {
+                continue;
+            }
+
             String title = findTitle(link);
             String category = findCategory(link);
 
@@ -45,7 +51,6 @@ public class VoaRssCrawlerService {
                     .build();
 
             rssService.saveRss(feedInfo);
-            System.out.println(feedInfo);
         }
     }
 
