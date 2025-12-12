@@ -13,4 +13,6 @@ public interface DailyRespository extends JpaRepository<Daily, Long> {
     List<Daily> findByArticleIdOrderByIdAsc(Long articleId);
 
     Optional<Daily> findTopByOrderByDisplayDateDesc();
+
+    Optional<Daily> findByArticleIdAndStartIndexAndEndIndex(Long articleId, int startIndex, int endIndex);
 }

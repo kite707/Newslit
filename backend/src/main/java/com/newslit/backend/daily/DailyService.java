@@ -5,6 +5,7 @@ import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.article.exception.ArticleNotFoundException;
 import com.newslit.backend.daily.dto.DailyContentResponseDto;
 import com.newslit.backend.daily.dto.DailyResponseDto;
+import com.newslit.backend.daily.exception.DuplicateDailyException;
 import com.newslit.backend.sentence.Sentence;
 import com.newslit.backend.sentence.SentenceRepository;
 import com.newslit.backend.sentence.dto.SentenceResponseDto;
@@ -85,6 +86,10 @@ public class DailyService {
                         .displayDate(dateToSave)
                         .build();
 
+                dailyRespository.findByArticleIdAndStartIndexAndEndIndex(article.getId(), chunkStart, i)
+                        .ifPresent(k -> {
+                            throw new DuplicateDailyException();
+                        });
                 dailyRespository.save(daily);
                 dailyResponseDto.add(toDailyDto(daily));
                 chunkStart = i + 1;
