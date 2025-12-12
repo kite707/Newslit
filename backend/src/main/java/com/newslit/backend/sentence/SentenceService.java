@@ -6,10 +6,14 @@ import com.newslit.backend.article.Article;
 import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.article.exception.ArticleNotFoundException;
 import com.newslit.backend.global.common.enums.Status;
+import com.newslit.backend.global.setup.DataSetupRunner;
 import com.newslit.backend.sentence.dto.SentenceResponseDto;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +23,7 @@ public class SentenceService {
     private final DeepLClient deepLClient;
     private final SentenceRepository sentenceRepository;
     private final ArticleRepository articleRepository;
+    private static final Logger log = LoggerFactory.getLogger(DataSetupRunner.class);
 
     public List<SentenceResponseDto> translateOneParagraph(Long articleId) throws DeepLException, InterruptedException {
         Article article = articleRepository.findById(articleId)
@@ -40,25 +45,43 @@ public class SentenceService {
     public SentenceResponseDto translateSingleSentence(Long articleId, Article article, String englishText,
                                                        int orderIndex)
             throws DeepLException, InterruptedException {
-        Sentence sentence = Sentence.builder()
-                .article(article)
-                .translationStatus(Status.PROCESSING)
-                .orderIndex(orderIndex)
-                .englishText(englishText)
-                .koreanText(" ")
-                .build();
-        sentenceRepository.save(sentence);
+
+        Optional<Sentence> existing = sentenceRepository
+                .findByArticleIdAndEnglishText(articleId, englishText);
+
+        Sentence sentence;
+
+        if (existing.isPresent()) {
+            sentence = existing.get();
+            if (sentence.getTranslationStatus() == Status.SUCCESS) {
+                return toSentenceDto(sentence);
+            }
+            sentence.setTranslationStatus(Status.PROCESSING);
+            sentenceRepository.save(sentence);
+
+        } else {
+            sentence = Sentence.builder()
+                    .article(article)
+                    .translationStatus(Status.PROCESSING)
+                    .orderIndex(orderIndex)
+                    .englishText(englishText)
+                    .koreanText("")
+                    .build();
+            sentence = sentenceRepository.save(sentence);
+        }
 
         String translatedText = deepLClient.translateText(englishText, null, "ko").getText();
+
         sentence.setKoreanText(translatedText);
         sentence.setTranslationStatus(Status.SUCCESS);
+        Sentence saved = sentenceRepository.save(sentence);
 
         return SentenceResponseDto.builder()
                 .articleId(articleId)
                 .orderIndex(orderIndex)
                 .englishText(englishText)
                 .koreanText(translatedText)
-                .status(sentence.getTranslationStatus())
+                .status(saved.getTranslationStatus())
                 .build();
     }
 
@@ -84,6 +107,17 @@ public class SentenceService {
         }
 
         return sentences;
+    }
+
+    private SentenceResponseDto toSentenceDto(Sentence sentence) {
+        return SentenceResponseDto.builder()
+                .articleId(sentence.getArticle().getId())
+                .orderIndex(sentence.getOrderIndex())
+                .englishText(sentence.getEnglishText())
+                .koreanText(sentence.getKoreanText())
+                .status(sentence.getTranslationStatus())
+                .status(sentence.getTranslationStatus())
+                .build();
     }
 
 }

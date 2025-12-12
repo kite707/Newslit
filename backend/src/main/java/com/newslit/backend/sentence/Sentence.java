@@ -52,7 +52,7 @@ public class Sentence {
     private String englishText;
 
     @Lob
-    @Column(name = "korean_text", nullable = false)
+    @Column(name = "korean_text")
     private String koreanText;
 
     @Enumerated(EnumType.STRING)
