@@ -526,36 +526,46 @@ export default function EnglishLearningApp() {
             {getDaysInMonth(currentMonth).map((day, idx) => {
               const hasArticle = day && availableDates.includes(day);
               const isCompleted = day && completedDates.includes(day);
+              const isCurrentSelected =
+                day &&
+                currentDate.getDate() === day &&
+                currentDate.getMonth() === currentMonth.getMonth() &&
+                currentDate.getFullYear() === currentMonth.getFullYear();
 
               return (
                 <div
                   key={idx}
                   onClick={() => handleDateClick(day)}
-                  className={`p-2 rounded-lg transition-colors ${
+                  className={`p-1 rounded-lg transition-all ${
                     hasArticle
-                      ? darkMode
-                        ? "hover:bg-gray-600 cursor-pointer"
-                        : "hover:bg-gray-100 cursor-pointer"
-                      : "cursor-not-allowed opacity-50"
+                      ? "cursor-pointer hover:bg-opacity-10"
+                      : "cursor-not-allowed opacity-40"
                   }`}
                 >
                   <div
-                    className={`text-center text-sm relative ${
+                    className={`text-center text-sm relative rounded-lg p-2 transition-all ${
                       isCompleted
                         ? darkMode
-                          ? "bg-green-600 text-white"
-                          : "bg-green-500 text-white"
+                          ? "bg-green-600 text-white shadow-md"
+                          : "bg-green-500 text-white shadow-md"
+                        : isCurrentSelected
+                        ? darkMode
+                          ? "bg-blue-600 text-white shadow-lg scale-105"
+                          : "bg-blue-500 text-white shadow-lg scale-105"
                         : ""
-                    } rounded p-1`}
+                    }`}
                   >
                     {day}
-                    {day && !isCompleted && hasArticle && (
-                      <div
-                        className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 rounded-full ${
-                          darkMode ? "bg-blue-400" : "bg-blue-500"
-                        }`}
-                      ></div>
-                    )}
+                    {day &&
+                      !isCompleted &&
+                      !isCurrentSelected &&
+                      hasArticle && (
+                        <div
+                          className={`absolute -bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full ${
+                            darkMode ? "bg-blue-400" : "bg-blue-500"
+                          }`}
+                        ></div>
+                      )}
                   </div>
                 </div>
               );
@@ -574,20 +584,20 @@ export default function EnglishLearningApp() {
             <div className="flex items-center gap-2">
               <div
                 className={`w-4 h-4 rounded ${
-                  darkMode ? "bg-blue-400" : "bg-blue-500"
-                } relative flex items-end justify-center`}
-              >
-                <div className="w-1.5 h-1.5 rounded-full bg-white mb-0.5"></div>
-              </div>
-              <span>Article Available</span>
+                  darkMode ? "bg-blue-600" : "bg-blue-500"
+                }`}
+              ></div>
+              <span>Selected</span>
             </div>
             <div className="flex items-center gap-2">
               <div
                 className={`w-4 h-4 rounded ${
-                  darkMode ? "bg-gray-700" : "bg-gray-200"
-                }`}
-              ></div>
-              <span>No Article</span>
+                  darkMode ? "bg-gray-700" : "bg-gray-100"
+                } relative flex items-end justify-center`}
+              >
+                <div className="w-1 h-1 rounded-full bg-blue-500 mb-0.5"></div>
+              </div>
+              <span>Article Available</span>
             </div>
           </div>
         </div>
