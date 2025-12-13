@@ -33,7 +33,7 @@ export default function EnglishLearningApp() {
   const [completedDates, setCompletedDates] = useState<number[]>([]);
   const [availableDates, setAvailableDates] = useState<number[]>([]);
   const [vocabularies, setVocabularies] = useState<VocabularyItem[]>([]);
-  const [hoveredWord, setHoveredWord] = useState<string | null>(null);
+  const [hoveredWordId, setHoveredWordId] = useState<string | null>(null);
 
   // 현재 날짜의 기사 불러오기
   useEffect(() => {
@@ -146,13 +146,14 @@ export default function EnglishLearningApp() {
   };
 
   // 텍스트에서 단어 하이라이트
-  const highlightVocabulary = (text: string) => {
+  const highlightVocabulary = (text: string, sentenceIndex: number) => {
     if (vocabularies.length === 0) return text;
 
     const words = vocabularies.map((v) => v.word.toLowerCase());
     const regex = new RegExp(`\\b(${words.join("|")})\\b`, "gi");
 
     const parts = text.split(regex);
+    let wordCounter = 0;
 
     return parts.map((part, index) => {
       const vocab = vocabularies.find(
@@ -160,6 +161,9 @@ export default function EnglishLearningApp() {
       );
 
       if (vocab) {
+        const uniqueId = `${sentenceIndex}-${wordCounter}`;
+        wordCounter++;
+
         return (
           <span
             key={index}
@@ -168,11 +172,11 @@ export default function EnglishLearningApp() {
                 ? "text-yellow-300 hover:text-yellow-200"
                 : "text-blue-600 hover:text-blue-700"
             } border-b-2 ${darkMode ? "border-yellow-300" : "border-blue-600"}`}
-            onMouseEnter={() => setHoveredWord(vocab.word)}
-            onMouseLeave={() => setHoveredWord(null)}
+            onMouseEnter={() => setHoveredWordId(uniqueId)}
+            onMouseLeave={() => setHoveredWordId(null)}
           >
             {part}
-            {hoveredWord === vocab.word && (
+            {hoveredWordId === uniqueId && (
               <span
                 className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 rounded-lg shadow-lg whitespace-nowrap ${
                   darkMode
@@ -197,6 +201,18 @@ export default function EnglishLearningApp() {
 
       return part;
     });
+  };
+
+  // 현재 기사에 등장하는 단어만 필터링
+  const getFilteredVocabularies = () => {
+    const allText = articleData.sentences
+      .map((s) => s.englishText)
+      .join(" ")
+      .toLowerCase();
+
+    return vocabularies.filter((vocab) =>
+      allText.includes(vocab.word.toLowerCase())
+    );
   };
 
   const getDaysInMonth = (date: Date): (number | null)[] => {
@@ -243,6 +259,8 @@ export default function EnglishLearningApp() {
       </div>
     );
   }
+
+  const filteredVocabularies = getFilteredVocabularies();
 
   return (
     <div
@@ -326,7 +344,7 @@ export default function EnglishLearningApp() {
             {articleData.sentences.map((sentence, index) => (
               <div key={index}>
                 <p className="text-lg leading-relaxed">
-                  {highlightVocabulary(sentence.englishText)}
+                  {highlightVocabulary(sentence.englishText, index)}
                 </p>
                 {showTranslation && (
                   <p
@@ -362,11 +380,13 @@ export default function EnglishLearningApp() {
             <h2 className="text-2xl font-bold">Key Words</h2>
             <button
               onClick={() => {
-                const allShown = vocabularies.every(
-                  (_, idx) => showMeaning[idx]
-                );
+                const allShown = filteredVocabularies.every((vocab) => {
+                  const idx = vocabularies.indexOf(vocab);
+                  return showMeaning[idx];
+                });
                 const newState: Record<number, boolean> = {};
-                vocabularies.forEach((_, idx) => {
+                filteredVocabularies.forEach((vocab) => {
+                  const idx = vocabularies.indexOf(vocab);
                   newState[idx] = !allShown;
                 });
                 setShowMeaning(newState);
@@ -377,60 +397,66 @@ export default function EnglishLearningApp() {
                   : "bg-gray-200 hover:bg-gray-300 text-gray-700"
               }`}
             >
-              {vocabularies.every((_, idx) => showMeaning[idx])
+              {filteredVocabularies.every((vocab) => {
+                const idx = vocabularies.indexOf(vocab);
+                return showMeaning[idx];
+              })
                 ? "뜻 숨기기"
                 : "뜻 보기"}
             </button>
           </div>
 
           <div className="space-y-4">
-            {vocabularies.map((item, idx) => (
-              <div
-                key={item.id}
-                onClick={() =>
-                  setShowMeaning({ ...showMeaning, [idx]: !showMeaning[idx] })
-                }
-                className={`p-4 rounded-lg cursor-pointer transition-colors ${
-                  darkMode
-                    ? "bg-gray-700 hover:bg-gray-600"
-                    : "bg-gray-50 hover:bg-gray-100"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-bold text-lg">{item.word}</span>
-                  <span
-                    className={`text-xs px-2 py-1 rounded ${getPosColor(
-                      item.partOfSpeech
-                    )}`}
-                  >
-                    {getShortPos(item.partOfSpeech)}
-                  </span>
-                </div>
-
-                {showMeaning[idx] && (
-                  <div className="mt-2">
-                    <p className="text-sm mb-2">{item.meaning}</p>
+            {filteredVocabularies.map((item) => {
+              const idx = vocabularies.indexOf(item);
+              return (
+                <div
+                  key={item.id}
+                  onClick={() =>
+                    setShowMeaning({ ...showMeaning, [idx]: !showMeaning[idx] })
+                  }
+                  className={`p-4 rounded-lg cursor-pointer transition-colors ${
+                    darkMode
+                      ? "bg-gray-700 hover:bg-gray-600"
+                      : "bg-gray-50 hover:bg-gray-100"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-bold text-lg">{item.word}</span>
+                    <span
+                      className={`text-xs px-2 py-1 rounded ${getPosColor(
+                        item.partOfSpeech
+                      )}`}
+                    >
+                      {getShortPos(item.partOfSpeech)}
+                    </span>
                   </div>
-                )}
 
-                {item.exampleSentence && showMeaning[idx] && (
-                  <div
-                    className={`mt-2 p-3 rounded ${
-                      darkMode ? "bg-gray-600" : "bg-white"
-                    }`}
-                  >
-                    <p className="text-sm italic mb-1">
-                      "{item.exampleSentence}"
-                    </p>
-                    {item.exampleTranslation && (
-                      <p className="text-xs text-gray-500">
-                        {item.exampleTranslation}
+                  {showMeaning[idx] && (
+                    <div className="mt-2">
+                      <p className="text-sm mb-2">{item.meaning}</p>
+                    </div>
+                  )}
+
+                  {item.exampleSentence && showMeaning[idx] && (
+                    <div
+                      className={`mt-2 p-3 rounded ${
+                        darkMode ? "bg-gray-600" : "bg-white"
+                      }`}
+                    >
+                      <p className="text-sm italic mb-1">
+                        "{item.exampleSentence}"
                       </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+                      {item.exampleTranslation && (
+                        <p className="text-xs text-gray-500">
+                          {item.exampleTranslation}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
