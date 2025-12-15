@@ -8,6 +8,7 @@ import com.newslit.backend.crawl.VoaRssCrawlerService;
 import com.newslit.backend.daily.DailyService;
 import com.newslit.backend.daily.exception.DuplicateDailyException;
 import com.newslit.backend.sentence.SentenceService;
+import com.newslit.backend.vocabulary.VocabularyService;
 import java.util.List;
 import java.util.stream.LongStream;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class DataSetupRunner implements CommandLineRunner {
     private final DailyService dailyService;
     private final ArticleRepository articleRepository;
     private final SentenceService sentenceService;
+    private final VocabularyService vocabularyService;
 
     @Override
     public void run(String... args) throws Exception {
@@ -44,6 +46,9 @@ public class DataSetupRunner implements CommandLineRunner {
                 throw new RuntimeException(e);
             }
         });
+
+        vocabularyService.translateVocabulary();
+        log.info("Vocabulary 번역 완료");
 
         List<Long> articleIds = articleRepository.findAll().stream().map(Article::getId).toList();
         articleIds.forEach(id -> {
