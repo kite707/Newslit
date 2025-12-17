@@ -3,12 +3,6 @@
 import type { HistoryData } from "@/types";
 import { API_BASE_URL, API_ENDPOINTS } from "@/constants/api.constants";
 
-/**
- * 읽기 기록 API 응답 타입
- */
-interface HistoryResponse {
-  histories: HistoryData[];
-}
 
 /**
  * 특정 사용자의 특정 월 읽기 기록을 가져옵니다
@@ -34,11 +28,11 @@ export async function fetchReadingHistory(
       return [];
     }
 
-    const data: HistoryResponse = await response.json();
+    const data: HistoryData[] = await response.json();
 
     // readDate에서 일자만 추출
-    const completedDates = data.histories.map((history) =>
-      new Date(history.readDate).getDate()
+    const completedDates = data.map((history) =>
+      new Date(history.displayDate).getDate()
     );
 
     return completedDates;

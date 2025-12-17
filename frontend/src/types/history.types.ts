@@ -2,6 +2,7 @@ export interface HistoryData {
   id: number;
   userId: number;
   articleId: number;
-  readDate: string;
+  dailyId: number;
+  displayDate: string;
   createdAt: string;
 }
