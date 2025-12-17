@@ -36,7 +36,7 @@ export const DEFAULT_ARTICLE_DATA: ArticleData = {
 export async function fetchArticle(date: Date): Promise<ArticleData> {
   try {
     const dateString = formatDateString(date);
-    const url = `${API_BASE_URL}${API_ENDPOINTS.ARTICLE}?date=${dateString}`;
+    const url = `${API_BASE_URL}${API_ENDPOINTS.DAILY}?date=${dateString}`;
 
     const response = await fetch(url);
     if (!response.ok) {
@@ -66,7 +66,7 @@ export async function fetchAvailableDates(
   try {
     const monthString = String(month).padStart(2, "0");
     const dateString = `${year}${monthString}`;
-    const url = `${API_BASE_URL}${API_ENDPOINTS.ARTICLE_AVAILABLE}?date=${dateString}`;
+    const url = `${API_BASE_URL}${API_ENDPOINTS.DAILY_AVAILABLE}?date=${dateString}`;
 
     const response = await fetch(url);
 
