@@ -15,7 +15,8 @@ public class ReadingHistoryResponseDto {
     private Long id;
     private Long userId;
     private Long articleId;
-    private LocalDate readDate;
+    private Long dailyId;
+    private LocalDate displayDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

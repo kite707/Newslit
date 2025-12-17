@@ -1,8 +1,8 @@
 package com.newslit.backend.readingHistory;
 
-import com.newslit.backend.article.Article;
-import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.article.exception.ArticleNotFoundException;
+import com.newslit.backend.daily.Daily;
+import com.newslit.backend.daily.DailyRespository;
 import com.newslit.backend.readingHistory.dto.ReadingHistoryResponseDto;
 import com.newslit.backend.user.User;
 import com.newslit.backend.user.UserRepository;
@@ -21,11 +21,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReadingHistoryService {
     private final ReadingHistoryRepository readingHistoryRepository;
     private final UserRepository userRepository;
-    private final ArticleRepository articleRepository;
+    private final DailyRespository dailyRespository;
 
     public List<ReadingHistoryResponseDto> getReadingHistoryByUserId(Long id, LocalDate date) {
 
-        Optional<List<ReadingHistory>> histories = readingHistoryRepository.findAllByUserIdAndReadDateBetween(id, date,
+        Optional<List<ReadingHistory>> histories = readingHistoryRepository.findAllByUserIdAndDisplayDateBetween(id,
+                date,
                 date.plusMonths(1).minusDays(1));
 
         List<ReadingHistoryResponseDto> historyDtos = histories
@@ -38,24 +39,24 @@ public class ReadingHistoryService {
     }
 
     @Transactional
-    public ReadingHistoryResponseDto addReadingHistory(Long id, Long articleId) {
-        ReadingHistory readingHistory = readingHistoryRepository.findByUserIdAndArticleId(id, articleId)
-                .orElse(new ReadingHistory());
+    public ReadingHistoryResponseDto addReadingHistory(Long id, Long dailyId) {
+        Daily daily = dailyRespository.findById(dailyId).orElseThrow(() -> new ArticleNotFoundException());
+        ReadingHistory readingHistory = new ReadingHistory();
         User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException());
-        Article article = articleRepository.findById(articleId).orElseThrow(() -> new ArticleNotFoundException());
-        readingHistory.setUser(user);
 
-        readingHistory.setArticle(article);
-        readingHistory.setReadDate(LocalDate.now());
+        readingHistory.setDaily(daily);
+        readingHistory.setDisplayDate(daily.getDisplayDate());
         readingHistory.setUpdatedAt(LocalDateTime.now());
+        readingHistory.setUser(user);
         ReadingHistory save = readingHistoryRepository.save(readingHistory);
         return convertToDto(save);
     }
 
     private ReadingHistoryResponseDto convertToDto(ReadingHistory history) {
         return ReadingHistoryResponseDto.builder()
-                .readDate(history.getReadDate())
-                .articleId(history.getArticle().getId())
+                .displayDate(history.getDisplayDate())
+                .dailyId(history.getDaily().getId())
+                .articleId(history.getDaily().getArticle().getId())
                 .userId(history.getUser().getId())
                 .createdAt(history.getCreatedAt())
                 .updatedAt(history.getUpdatedAt())

@@ -1,6 +1,6 @@
 package com.newslit.backend.readingHistory;
 
-import com.newslit.backend.article.Article;
+import com.newslit.backend.daily.Daily;
 import com.newslit.backend.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,8 +26,8 @@ public class ReadingHistory {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "read_date")
-    private LocalDate readDate;
+    @Column(name = "display_date")
+    private LocalDate displayDate;
 
     @CreationTimestamp
     @Column(name = "created_at")
@@ -42,6 +42,6 @@ public class ReadingHistory {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "article_id")
-    private Article article;
+    @JoinColumn(name = "daily_id")
+    private Daily daily;
 }
