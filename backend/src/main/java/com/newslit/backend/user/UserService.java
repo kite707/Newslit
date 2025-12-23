@@ -2,6 +2,7 @@ package com.newslit.backend.user;
 
 import com.newslit.backend.user.dto.AuthResponseDto;
 import com.newslit.backend.user.exception.DuplicatedEmailException;
+import com.newslit.backend.user.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,19 @@ public class UserService {
         userRepository.save(user);
 
         return toAuthResposeDto("회원가입 성공", email);
+    }
+
+    public AuthResponseDto login(String email, String password) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new UserNotFoundException());
+        String encodedPassword = user.getPassword();
+
+        boolean isPasswordMatch = passwordEncoder.matches(password, encodedPassword);
+
+        if (!isPasswordMatch) {
+            throw new UserNotFoundException();
+        }
+
+        return toAuthResposeDto("로그인 성공", user.getEmail());
 
     }
 
