@@ -15,6 +15,7 @@ public enum ErrorCode {
 
     // User
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USR-001", "사용자를 찾을 수 없습니다"),
+    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "USR-002", "이미 존재하는 이메일입니다."),
 
     // RSS
     RSS_NOT_FOUND(HttpStatus.NOT_FOUND, "RSS-002", "RSS 링크를 찾을 수 없습니다"),
