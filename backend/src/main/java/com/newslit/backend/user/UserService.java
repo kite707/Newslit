@@ -1,5 +1,6 @@
 package com.newslit.backend.user;
 
+import com.newslit.backend.global.common.JwtUtil;
 import com.newslit.backend.user.dto.AuthResponseDto;
 import com.newslit.backend.user.exception.DuplicatedEmailException;
 import com.newslit.backend.user.exception.UserNotFoundException;
@@ -13,6 +14,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     public AuthResponseDto signup(String email, String password, String name) {
         userRepository.findByEmail(email).ifPresent(user -> {
@@ -28,8 +30,9 @@ public class UserService {
                 .build();
 
         userRepository.save(user);
+        String token = jwtUtil.generateToken(email);
 
-        return toAuthResposeDto("회원가입 성공", email);
+        return toAuthResposeDto("회원가입 성공", email, token);
     }
 
     public AuthResponseDto login(String email, String password) {
@@ -41,15 +44,17 @@ public class UserService {
         if (!isPasswordMatch) {
             throw new UserNotFoundException();
         }
+        String token = jwtUtil.generateToken(email);
 
-        return toAuthResposeDto("로그인 성공", user.getEmail());
+        return toAuthResposeDto("로그인 성공", user.getEmail(), token);
 
     }
 
-    private AuthResponseDto toAuthResposeDto(String message, String email) {
+    private AuthResponseDto toAuthResposeDto(String message, String email, String token) {
         return AuthResponseDto.builder()
                 .message(message)
                 .email(email)
+                .token(token)
                 .build();
     }
 }
