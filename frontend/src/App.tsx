@@ -59,7 +59,7 @@ function AuthPage({
     setLoading(true);
 
     try {
-      let data:AuthResponse;
+      let data: AuthResponse;
 
       if (isLogin) {
         data = await AuthService.login(email, password);
@@ -319,6 +319,9 @@ export default function EnglishLearningApp() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showMeaning, setShowMeaning] = useState<Record<number, boolean>>({});
   const [hoveredWordId, setHoveredWordId] = useState<string | null>(null);
+  const [expandedSentences, setExpandedSentences] = useState<
+    Record<number, boolean>
+  >({});
 
   // 데이터 상태
   const [articleData, setArticleData] =
@@ -553,7 +556,6 @@ export default function EnglishLearningApp() {
       return part;
     });
   };
-  
 
   const getFilteredVocabularies = () => {
     const allText = articleData.sentences
@@ -732,35 +734,68 @@ export default function EnglishLearningApp() {
             </div>
           </div>
 
-          <div className="space-y-4 mb-4">
+          <div className="space-y-6 mb-4">
             {articleData.sentences.map((sentence, index) => (
-              <div key={index}>
+              <div
+                key={index}
+                onClick={() =>
+                  setExpandedSentences((prev) => ({
+                    ...prev,
+                    [index]: !prev[index],
+                  }))
+                }
+                className={`cursor-pointer transition-all duration-200 ${
+                  darkMode ? "hover:bg-gray-700/30" : "hover:bg-gray-50"
+                } rounded-lg p-4 -mx-4`}
+              >
                 <p className="text-lg leading-relaxed">
                   {highlightVocabulary(sentence.englishText, index)}
                 </p>
-                {showTranslation && (
+                <div
+                  className={`overflow-hidden transition-all duration-300 ${
+                    expandedSentences[index]
+                      ? "max-h-40 opacity-100 mt-3"
+                      : "max-h-0 opacity-0"
+                  }`}
+                >
                   <p
-                    className={`mt-2 text-base ${
-                      darkMode ? "text-gray-300" : "text-gray-600"
+                    className={`text-base border-l-2 pl-3 ${
+                      darkMode
+                        ? "text-gray-300 border-blue-500"
+                        : "text-gray-600 border-blue-400"
                     }`}
                   >
                     {sentence.koreanText}
                   </p>
-                )}
+                </div>
               </div>
             ))}
           </div>
 
-          <button
-            onClick={() => setShowTranslation(!showTranslation)}
-            className={`text-sm font-medium ${
-              darkMode
-                ? "text-blue-400 hover:text-blue-300"
-                : "text-blue-600 hover:text-blue-700"
-            }`}
-          >
-            {showTranslation ? "번역 숨기기 ▲" : "번역 보기 ▼"}
-          </button>
+          <div className="flex items-center justify-center pt-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const allExpanded = articleData.sentences.every(
+                  (_, i) => expandedSentences[i]
+                );
+                const newState: Record<number, boolean> = {};
+                articleData.sentences.forEach((_, i) => {
+                  newState[i] = !allExpanded;
+                });
+                setExpandedSentences(newState);
+              }}
+              className={`text-sm font-medium transition-colors ${
+                darkMode
+                  ? "text-blue-400 hover:text-blue-300"
+                  : "text-blue-600 hover:text-blue-700"
+              }`}
+            >
+              {articleData.sentences.every((_, i) => expandedSentences[i])
+                ? "모든 번역 숨기기 ▲"
+                : "모든 번역 보기 ▼"}
+            </button>
+          </div>
         </div>
 
         <div
@@ -996,5 +1031,4 @@ export default function EnglishLearningApp() {
       </div>
     </div>
   );
-
-  }
+}
