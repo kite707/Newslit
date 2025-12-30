@@ -120,7 +120,7 @@ public class DailyService {
 
     public List<DailyResponseDto> getAvailableDate(LocalDate date) {
         LocalDate startDate = date;
-        LocalDate endDate = date.plusMonths(1);
+        LocalDate endDate = date.plusMonths(1).minusDays(1);
 
         return dailyRespository.findAllByDisplayDateBetween(startDate, endDate)
                 .stream().map(daily -> toDailyDto(daily)).collect(
