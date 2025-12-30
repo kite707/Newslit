@@ -309,19 +309,18 @@ export default function EnglishLearningApp() {
   // 인증 상태
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
-  const [userEmail, setUserEmail] = useState("");
+  const [_userEmail, setUserEmail] = useState("");
   const [userNickname, setUserNickname] = useState("");
 
   // UI 상태
   const [darkMode, setDarkMode] = useState(false);
-  const [showTranslation, setShowTranslation] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showMeaning, setShowMeaning] = useState<Record<number, boolean>>({});
   const [hoveredWordId, setHoveredWordId] = useState<string | null>(null);
   const [expandedSentences, setExpandedSentences] = useState<
     Record<number, boolean>
-  >({});
+>({});
 
   // 데이터 상태
   const [articleData, setArticleData] =
