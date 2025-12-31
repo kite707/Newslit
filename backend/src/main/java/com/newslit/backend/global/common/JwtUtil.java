@@ -23,9 +23,10 @@ public class JwtUtil {
         this.signingKey = Keys.hmacShaKeyFor(secretString.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String email) {
+    public String generateToken(String email, Long id) {
         return Jwts.builder()
-                .subject(email)
+                .claim("email", email)
+                .claim("id", id)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(signingKey)
@@ -39,9 +40,23 @@ public class JwtUtil {
                     .build()
                     .parseSignedClaims(token)
                     .getPayload()
-                    .getSubject();
+                    .get("email", String.class);
         } catch (Exception e) {
             log.error("EXTRACT EMAIL ERROR", e);
+            return null;
+        }
+    }
+
+    public Long extractId(String token) {
+        try {
+            return Jwts.parser()
+                    .verifyWith(signingKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .get("id", Long.class);
+        } catch (Exception e) {
+            log.error("EXTRACT ID ERROR", e);
             return null;
         }
     }

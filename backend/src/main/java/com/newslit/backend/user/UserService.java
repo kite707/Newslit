@@ -29,10 +29,10 @@ public class UserService {
                 .password(encodedPassword)
                 .build();
 
-        userRepository.save(user);
-        String token = jwtUtil.generateToken(email);
+        User saveUser = userRepository.save(user);
+        String token = jwtUtil.generateToken(email, saveUser.getId());
 
-        return toAuthResposeDto("회원가입 성공", email, token);
+        return toAuthResposeDto("회원가입 성공", email, token, user.getId());
     }
 
     public AuthResponseDto login(String email, String password) {
@@ -44,16 +44,17 @@ public class UserService {
         if (!isPasswordMatch) {
             throw new UserNotFoundException();
         }
-        String token = jwtUtil.generateToken(email);
+        String token = jwtUtil.generateToken(email, user.getId());
 
-        return toAuthResposeDto("로그인 성공", user.getEmail(), token);
+        return toAuthResposeDto("로그인 성공", user.getEmail(), token, user.getId());
 
     }
 
-    private AuthResponseDto toAuthResposeDto(String message, String email, String token) {
+    private AuthResponseDto toAuthResposeDto(String message, String email, String token, Long id) {
         return AuthResponseDto.builder()
                 .message(message)
                 .email(email)
+                .id(id)
                 .token(token)
                 .build();
     }

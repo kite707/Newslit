@@ -41,9 +41,8 @@ public class UserController {
             @RequestHeader(value = "Authorization", required = false) String authHeader
     ) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            System.out.println("authHeader: " + authHeader);
             return ResponseEntity.status(401)
-                    .body(new AuthResponseDto("로그인이 필요합니다", null, null));
+                    .body(new AuthResponseDto("로그인이 필요합니다", null, null, null));
         }
 
         // "Bearer " 제거
@@ -52,13 +51,14 @@ public class UserController {
         // 토큰 검증
         if (!jwtUtil.validateToken(token)) {
             return ResponseEntity.status(401)
-                    .body(new AuthResponseDto("유효하지 않은 토큰입니다", null, null));
+                    .body(new AuthResponseDto("유효하지 않은 토큰입니다", null, null, null));
         }
 
         // 토큰에서 이메일 추출
         String email = jwtUtil.extractEmail(token);
+        Long id = jwtUtil.extractId(token);
 
-        return ResponseEntity.ok(new AuthResponseDto("인증됨", email, token));
+        return ResponseEntity.ok(new AuthResponseDto("인증됨", id, email, token));
     }
 
 
