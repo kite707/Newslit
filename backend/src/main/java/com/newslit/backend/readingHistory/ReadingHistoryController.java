@@ -7,7 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,9 +22,10 @@ public class ReadingHistoryController {
     private final ReadingHistoryService readingHistoryService;
 
     @GetMapping
-    public ResponseEntity<List<ReadingHistoryResponseDto>> getReadingHistory(@RequestParam Long userId,
+    public ResponseEntity<List<ReadingHistoryResponseDto>> getReadingHistory(Authentication authentication,
                                                                              @RequestParam
                                                                              String date) {
+        Long userId = (Long) authentication.getPrincipal();
         LocalDate parsedDate = LocalDate.parse(date + "01",
                 DateTimeFormatter.ofPattern("yyyyMMdd"));
         List<ReadingHistoryResponseDto> historyListResponseDto = readingHistoryService.getReadingHistoryByUserId(userId,
@@ -35,7 +36,8 @@ public class ReadingHistoryController {
 
     @PostMapping
     public ResponseEntity<ReadingHistoryResponseDto> addReadingHistory(
-            @CookieValue(name = "userId") Long userId, @RequestParam Long articleId) {
+            Authentication authentication, @RequestParam Long articleId) {
+        Long userId = (Long) authentication.getPrincipal();
         ReadingHistoryResponseDto responseDto = readingHistoryService.addReadingHistory(userId, articleId);
         return ResponseEntity.ok(responseDto);
     }
