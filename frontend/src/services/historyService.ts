@@ -12,19 +12,24 @@ import { API_BASE_URL, API_ENDPOINTS } from "@/constants/api.constants";
  * @returns 완료한 날짜 배열 (일자만)
  */
 export async function fetchReadingHistory(
-  userId: number,
   year: number,
   month: number
 ): Promise<number[]> {
   try {
     const monthString = String(month).padStart(2, "0");
     const dateString = `${year}${monthString}`;
-    const url = `${API_BASE_URL}${API_ENDPOINTS.READING_HISTORY}?userId=${userId}&date=${dateString}`;
+    const url = `${API_BASE_URL}${API_ENDPOINTS.READING_HISTORY}?&date=${dateString}`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
     if (!response.ok) {
-      console.warn(`Failed to fetch reading history for user ${userId}`);
+      console.warn(`Failed to fetch reading history for user`);
       return [];
     }
 
@@ -51,10 +56,7 @@ export async function markArticleAsComplete(
   articleId: number
 ): Promise<boolean> {
   try {
-    // userId를 쿠키에 설정 (백엔드에서 읽음)
-    document.cookie = "userId=1; path=/";
-
-    const url = `${API_BASE_URL}${API_ENDPOINTS.READING_HISTORY}?articleId=${articleId}`;
+    const url = `${API_BASE_URL}${API_ENDPOINTS.READING_HISTORY}?dailyId=${articleId}`;
 
     const response = await fetch(url, {
       method: "POST",

@@ -70,7 +70,6 @@ function AuthPage({
       const displayName = data.nickname || nickname || email;
       onLogin(email, displayName);
 
-      alert(isLogin ? "로그인 성공!" : "회원가입 성공!");
     } catch (error) {
       alert(
         error instanceof Error ? error.message : "서버 연결에 실패했습니다."
@@ -306,6 +305,9 @@ function AuthPage({
 }
 
 export default function EnglishLearningApp() {
+  // 초기 로딩 상태 추가
+  const [isInitializing, setIsInitializing] = useState(true);
+
   // 인증 상태
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
@@ -320,7 +322,7 @@ export default function EnglishLearningApp() {
   const [hoveredWordId, setHoveredWordId] = useState<string | null>(null);
   const [expandedSentences, setExpandedSentences] = useState<
     Record<number, boolean>
->({});
+  >({});
 
   // 데이터 상태
   const [articleData, setArticleData] =
@@ -351,7 +353,8 @@ export default function EnglishLearningApp() {
   };
 
   // 로그아웃 핸들러
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await AuthService.logout();
     setIsAuthenticated(false);
     setIsGuest(false);
     setUserEmail("");
@@ -368,7 +371,7 @@ export default function EnglishLearningApp() {
     localStorage.removeItem("isGuest");
   };
 
-  // 페이지 로드 시 인증 상태 확인
+  // 페이지 로드 시 인증 상태 확인 - 초기화 단계에서 처리
   useEffect(() => {
     const savedAuth = localStorage.getItem("isAuthenticated");
     const savedGuest = localStorage.getItem("isGuest");
@@ -382,10 +385,15 @@ export default function EnglishLearningApp() {
     } else if (savedGuest === "true") {
       setIsGuest(true);
     }
+
+    // 초기화 완료
+    setIsInitializing(false);
   }, []);
 
   // 현재 날짜의 기사 불러오기
   useEffect(() => {
+    if (!isAuthenticated && !isGuest) return;
+
     const loadArticle = async () => {
       setLoading(true);
       const data = await fetchArticle(currentDate);
@@ -399,7 +407,7 @@ export default function EnglishLearningApp() {
       setLoading(false);
     };
     loadArticle();
-  }, [currentDate]);
+  }, [currentDate, isAuthenticated, isGuest]);
 
   // 날짜 클릭 핸들러
   const handleDateClick = async (day: number | null) => {
@@ -415,13 +423,15 @@ export default function EnglishLearningApp() {
 
   // 월별 완료 기록 & 사용 가능한 날짜 불러오기
   useEffect(() => {
+    if (!isAuthenticated && !isGuest) return;
+
     const loadData = async () => {
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth() + 1;
 
       const [completed, available] = await Promise.all([
         isAuthenticated
-          ? fetchReadingHistory(1, year, month)
+          ? fetchReadingHistory(year, month)
           : Promise.resolve([]),
         fetchAvailableDates(year, month),
       ]);
@@ -430,9 +440,7 @@ export default function EnglishLearningApp() {
       setAvailableDates(available);
     };
 
-    if (isAuthenticated || isGuest) {
-      loadData();
-    }
+    loadData();
   }, [currentMonth, isAuthenticated, isGuest]);
 
   const playAudio = (): void => {
@@ -467,7 +475,7 @@ export default function EnglishLearningApp() {
 
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth() + 1;
-      const updatedCompleted = await fetchReadingHistory(1, year, month);
+      const updatedCompleted = await fetchReadingHistory(year, month);
       setCompletedDates(updatedCompleted);
     } catch (error) {
       alert(`완료 처리에 실패했습니다.\n${error}`);
@@ -604,6 +612,15 @@ export default function EnglishLearningApp() {
       new Date(currentMonth.getFullYear(), currentMonth.getMonth() + delta, 1)
     );
   };
+
+  // 초기화 중일 때 로딩 화면
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   // 로그인/비회원 체크
   if (!isAuthenticated && !isGuest) {

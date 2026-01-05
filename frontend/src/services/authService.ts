@@ -9,6 +9,7 @@ export class AuthService {
   static async login(email: string, password: string): Promise<AuthResponse> {
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.LOGIN}`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -20,6 +21,7 @@ export class AuthService {
       throw new Error(error.message || "로그인에 실패했습니다.");
     }
 
+    console.log('All cookies:', document.cookie);
     const data: AuthResponse = await response.json();
 
     // 토큰 저장
@@ -45,6 +47,7 @@ export class AuthService {
   ): Promise<AuthResponse> {
     const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.SIGNUP}`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -57,6 +60,7 @@ export class AuthService {
     }
 
     const data: AuthResponse = await response.json();
+    
 
     // 토큰 저장
     if (data.token) {
@@ -69,6 +73,28 @@ export class AuthService {
 
     return data;
   }
+
+  static async logout(): Promise<void> {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}${API_ENDPOINTS.LOGOUT}`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.warn('Logout request failed, but clearing local state');
+    }
+  } catch (error) {
+    console.error('Failed to call logout API:', error);
+    // API 호출 실패해도 로컬 상태는 정리
+  }
+}
 
   static saveToken(token: string): void {
     localStorage.setItem(this.TOKEN_KEY, token);
@@ -84,12 +110,6 @@ export class AuthService {
 
   static getEmail(): string | null {
     return localStorage.getItem(this.EMAIL_KEY);
-  }
-
-  static logout(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.NICKNAME_KEY);
-    localStorage.removeItem(this.EMAIL_KEY);
   }
 
   static isLoggedIn(): boolean {
