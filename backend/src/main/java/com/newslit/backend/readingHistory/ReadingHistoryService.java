@@ -1,8 +1,8 @@
 package com.newslit.backend.readingHistory;
 
-import com.newslit.backend.article.exception.ArticleNotFoundException;
 import com.newslit.backend.daily.Daily;
 import com.newslit.backend.daily.DailyRespository;
+import com.newslit.backend.daily.exception.DailyNotFountException;
 import com.newslit.backend.readingHistory.dto.ReadingHistoryResponseDto;
 import com.newslit.backend.user.User;
 import com.newslit.backend.user.UserRepository;
@@ -39,11 +39,18 @@ public class ReadingHistoryService {
     }
 
     @Transactional
-    public ReadingHistoryResponseDto addReadingHistory(Long id, Long dailyId) {
-        Daily daily = dailyRespository.findById(dailyId).orElseThrow(() -> new ArticleNotFoundException());
-        ReadingHistory readingHistory = new ReadingHistory();
-        User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException());
+    public ReadingHistoryResponseDto addReadingHistory(Long userId, Long dailyId) {
+        Daily daily = dailyRespository.findById(dailyId).orElseThrow(() -> new DailyNotFountException());
+        User user = userRepository.findById(userId).orElseThrow(() -> new UserNotFoundException());
 
+        Optional<ReadingHistory> existing = readingHistoryRepository.findByUserIdAndDailyId(userId, dailyId);
+        if (existing.isPresent()) {
+            ReadingHistory readingHistory = existing.get();
+            readingHistoryRepository.deleteByUserIdAndDailyId(userId, dailyId);
+            return convertToDto(readingHistory);
+        }
+
+        ReadingHistory readingHistory = new ReadingHistory();
         readingHistory.setDaily(daily);
         readingHistory.setDisplayDate(daily.getDisplayDate());
         readingHistory.setUpdatedAt(LocalDateTime.now());

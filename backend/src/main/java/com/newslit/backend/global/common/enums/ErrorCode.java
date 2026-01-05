@@ -24,7 +24,8 @@ public enum ErrorCode {
     DUPLICATE_VOCABULARY(HttpStatus.CONFLICT, "VOC-001", "이미 존재하는 단어입니다"),
 
     //Daily
-    DUPLICATE_DAILY(HttpStatus.CONFLICT, "DLY-001", "이미 존재하는 일일 컨텐츠입니다");
+    DUPLICATE_DAILY(HttpStatus.CONFLICT, "DLY-001", "이미 존재하는 일일 컨텐츠입니다"),
+    DAILY_NOT_FOUND(HttpStatus.CONFLICT, "DLY-002", "존재하지 않는 일일 컨텐츠입니다");
 
     private final HttpStatus status;
     private final String code;

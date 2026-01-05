@@ -36,9 +36,9 @@ public class ReadingHistoryController {
 
     @PostMapping
     public ResponseEntity<ReadingHistoryResponseDto> addReadingHistory(
-            Authentication authentication, @RequestParam Long articleId) {
+            Authentication authentication, @RequestParam Long dailyId) {
         Long userId = (Long) authentication.getPrincipal();
-        ReadingHistoryResponseDto responseDto = readingHistoryService.addReadingHistory(userId, articleId);
+        ReadingHistoryResponseDto responseDto = readingHistoryService.addReadingHistory(userId, dailyId);
         return ResponseEntity.ok(responseDto);
     }
 
