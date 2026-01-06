@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DailyContentResponseDto {
+    private Long dailyId;
     private String title;
     private LocalDate publishedDate;
     private String source;

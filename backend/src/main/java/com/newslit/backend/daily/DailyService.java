@@ -172,6 +172,7 @@ public class DailyService {
     private DailyContentResponseDto toDailyContentDto(Daily daily, List<SentenceResponseDto> sentences, int totalPages,
                                                       int currentPages) {
         return DailyContentResponseDto.builder()
+                .dailyId(daily.getId())
                 .title(daily.getArticle().getTitle())
                 .publishedDate(daily.getArticle().getPublishedDate())
                 .source(daily.getArticle().getSource())
