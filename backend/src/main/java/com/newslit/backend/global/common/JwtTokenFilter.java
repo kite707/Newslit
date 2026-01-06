@@ -36,7 +36,6 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String token = extractTokenFromCookie(request);
-        System.out.println("token is " + token);
 
         if (token != null && jwtUtil.validateToken(token)) {
             Long userId = jwtUtil.extractId(token);
