@@ -19,7 +19,7 @@ import {
   fetchReadingHistory,
 } from "./services/historyService";
 import { fetchVocabulary } from "./services/vocabularyService";
-import type { ArticleData, AuthResponse, VocabularyItem } from "@/types";
+import type { DailyData, AuthResponse, VocabularyItem } from "@/types";
 import { AuthService } from "./services/authService";
 
 function AuthPage({
@@ -69,7 +69,6 @@ function AuthPage({
 
       const displayName = data.nickname || nickname || email;
       onLogin(email, displayName);
-
     } catch (error) {
       alert(
         error instanceof Error ? error.message : "서버 연결에 실패했습니다."
@@ -326,7 +325,7 @@ export default function EnglishLearningApp() {
 
   // 데이터 상태
   const [articleData, setArticleData] =
-    useState<ArticleData>(DEFAULT_ARTICLE_DATA);
+    useState<DailyData>(DEFAULT_ARTICLE_DATA);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [completedDates, setCompletedDates] = useState<number[]>([]);
@@ -468,7 +467,7 @@ export default function EnglishLearningApp() {
       return;
     }
 
-    try {  
+    try {
       await markArticleAsComplete(articleData.dailyId);
       setCompleted(!completed);
       alert("완료 처리되었습니다!");

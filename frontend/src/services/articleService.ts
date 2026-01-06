@@ -1,4 +1,4 @@
-import type { ArticleData, AvailableDatesResponse } from "@/types";
+import type { DailyData, AvailableDatesResponse } from "@/types";
 import { API_BASE_URL, API_ENDPOINTS } from "@/constants/api.constants";
 
 function formatDateString(date: Date): string {
@@ -8,7 +8,7 @@ function formatDateString(date: Date): string {
   return `${year}${month}${day}`;
 }
 
-export const DEFAULT_ARTICLE_DATA: ArticleData = {
+export const DEFAULT_ARTICLE_DATA: DailyData = {
   dailyId: 1,
   title: "No Article Available",
   publishedDate: "2024-11-27",
@@ -34,7 +34,7 @@ export const DEFAULT_ARTICLE_DATA: ArticleData = {
  * @param date 조회할 날짜
  * @returns 기사 데이터 (없으면 기본 데이터 반환)
  */
-export async function fetchArticle(date: Date): Promise<ArticleData> {
+export async function fetchArticle(date: Date): Promise<DailyData> {
   try {
     const dateString = formatDateString(date);
     const url = `${API_BASE_URL}${API_ENDPOINTS.DAILY}?date=${dateString}`;
@@ -45,7 +45,7 @@ export async function fetchArticle(date: Date): Promise<ArticleData> {
       return DEFAULT_ARTICLE_DATA;
     }
 
-    const data: ArticleData = await response.json();
+    const data: DailyData = await response.json();
     console.log("Fetched article data:", data);
     return data;
   } catch (error) {

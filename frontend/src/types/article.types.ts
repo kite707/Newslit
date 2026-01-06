@@ -15,7 +15,7 @@ export interface SentenceData {
   status: string;
 }
 
-export interface ArticleData {
+export interface DailyData {
   dailyId: number;
   title: string;
   publishedDate: string;
