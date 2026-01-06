@@ -112,7 +112,8 @@ public class DailyService {
 
         List<Daily> dailyList = dailyRespository.findByArticleIdOrderByIdAsc(articleId);
         int totalPages = dailyList.size();
-        int currentPage = (int) (daily.getId() - dailyList.get(0).getId() + 1);
+
+        int currentPage = dailyList.indexOf(daily) + 1;
         DailyContentResponseDto dailyContentResponseDto = toDailyContentDto(daily, sentences, totalPages, currentPage);
 
         return dailyContentResponseDto;
