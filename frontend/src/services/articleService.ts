@@ -9,6 +9,7 @@ function formatDateString(date: Date): string {
 }
 
 export const DEFAULT_ARTICLE_DATA: ArticleData = {
+  dailyId: 1,
   title: "No Article Available",
   publishedDate: "2024-11-27",
   source: "Newslit",

@@ -16,6 +16,7 @@ export interface SentenceData {
 }
 
 export interface ArticleData {
+  dailyId: number;
   title: string;
   publishedDate: string;
   source: string;
