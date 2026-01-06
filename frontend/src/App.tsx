@@ -468,8 +468,8 @@ export default function EnglishLearningApp() {
       return;
     }
 
-    try {
-      await markArticleAsComplete(articleData.sentences[0].articleId);
+    try {  
+      await markArticleAsComplete(articleData.dailyId);
       setCompleted(!completed);
       alert("완료 처리되었습니다!");
 
@@ -478,6 +478,11 @@ export default function EnglishLearningApp() {
       const updatedCompleted = await fetchReadingHistory(year, month);
       setCompletedDates(updatedCompleted);
     } catch (error) {
+      if (error instanceof Error && error.message === "UNAUTHORIZED") {
+        alert(`로그인 정보가 만료되었습니다. 로그인 페이지로 이동합니다.`);
+        await handleLogout();
+        return;
+      }
       alert(`완료 처리에 실패했습니다.\n${error}`);
     }
   };

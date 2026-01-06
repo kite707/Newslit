@@ -53,10 +53,10 @@ export async function fetchReadingHistory(
  * @returns 성공 여부
  */
 export async function markArticleAsComplete(
-  articleId: number
+  dailyId: number
 ): Promise<boolean> {
   try {
-    const url = `${API_BASE_URL}${API_ENDPOINTS.READING_HISTORY}?dailyId=${articleId}`;
+    const url = `${API_BASE_URL}${API_ENDPOINTS.READING_HISTORY}?dailyId=${dailyId}`;
 
     const response = await fetch(url, {
       method: "POST",
@@ -67,6 +67,10 @@ export async function markArticleAsComplete(
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("UNAUTHORIZED");
+      }
+
       const errorData = await response
         .json()
         .catch(() => ({ message: "알 수 없는 오류" }));
