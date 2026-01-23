@@ -1,8 +1,7 @@
 package com.newslit.backend.global.exception;
 
-import com.newslit.backend.article.exception.DuplicateArticleException;
+import com.newslit.backend.global.common.dto.BusinessException;
 import com.newslit.backend.global.common.dto.ErrorResponse;
-import com.newslit.backend.user.exception.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 
@@ -16,12 +15,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(DuplicateArticleException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateArticle(
-            DuplicateArticleException e,
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessException(
+            BusinessException e,
             HttpServletRequest request) {
 
-        log.warn("중복 기사 - Code: {}, Message: {}, Path: {}, Method: {}, IP: {}",
+        log.warn("비즈니스 예외 - Code: {}, Message: {}, Path: {}, Method: {}, IP: {}",
                 e.getErrorCode().getCode(),
                 e.getMessage(),
                 request.getRequestURI(),
@@ -36,30 +35,7 @@ public class GlobalExceptionHandler {
                 .message(e.getMessage())
                 .build();
 
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
-    }
-
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUserNotFound(
-            UserNotFoundException e,
-            HttpServletRequest request) {
-
-        log.warn("사용자 없음 - Code: {}, Message: {}, Path: {}, Method: {}, IP: {}",
-                e.getErrorCode().getCode(),
-                e.getMessage(),
-                request.getRequestURI(),
-                request.getMethod(),
-                request.getRemoteAddr());
-
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(e.getErrorCode().getStatus().value())
-                .error(e.getErrorCode().getStatus().name())
-                .errorCode(e.getErrorCode().getCode())
-                .message(e.getMessage())
-                .build();
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        return ResponseEntity.status(e.getErrorCode().getStatus()).body(errorResponse);
     }
 
     @ExceptionHandler(Exception.class)
