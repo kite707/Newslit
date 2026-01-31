@@ -10,7 +10,6 @@ import com.newslit.backend.daily.exception.DuplicateDailyException;
 import com.newslit.backend.sentence.SentenceService;
 import com.newslit.backend.vocabulary.VocabularyService;
 import java.util.List;
-import java.util.stream.LongStream;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +35,9 @@ public class DataSetupRunner implements CommandLineRunner {
         log.debug("RSS 크롤링 완료");
         voaArticleCrawlerService.crawlAndSaveArticles(1L);
 
-        LongStream.range(1, 4).forEach(i -> {
+        List<Long> articleIds = articleRepository.findAll().stream().map(Article::getId).toList();
+
+        articleIds.stream().limit(5).forEach(i -> {
             try {
                 sentenceService.translateOneParagraph(i);
                 log.info("Article {} 번역 완료", i);
@@ -50,7 +51,6 @@ public class DataSetupRunner implements CommandLineRunner {
         vocabularyService.translateVocabulary();
         log.info("Vocabulary 번역 완료");
 
-        List<Long> articleIds = articleRepository.findAll().stream().map(Article::getId).toList();
         articleIds.forEach(id -> {
             try {
                 dailyService.createChunks(id);
