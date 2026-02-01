@@ -469,8 +469,13 @@ export default function EnglishLearningApp() {
 
     try {
       await markArticleAsComplete(articleData.dailyId);
+      if(completed){
+        alert("미완료 처리 되었습니다");
+      }else{
+        alert("완료 처리 되었습니다.")
+      }
       setCompleted(!completed);
-      alert("완료 처리되었습니다!");
+      
 
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth() + 1;
