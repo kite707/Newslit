@@ -27,7 +27,7 @@ public class UserController {
     @PostMapping("/signup")
     public ResponseEntity<AuthResponseDto> signup(@RequestBody SignupRequestDto request, HttpServletResponse response) {
         AuthResponseDto authResponseDto = userService.signup(request.getEmail(), request.getPassword(),
-                request.getName());
+                request.getNickname());
         String token = jwtUtil.generateToken(request.getEmail(), authResponseDto.getId());
 
         ResponseCookie cookie = ResponseCookie.from("jwt", token)
