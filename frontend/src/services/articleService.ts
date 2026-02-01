@@ -46,7 +46,6 @@ export async function fetchArticle(date: Date): Promise<DailyData> {
     }
 
     const data: DailyData = await response.json();
-    console.log("Fetched article data:", data);
     return data;
   } catch (error) {
     console.error("Failed to fetch article:", error);

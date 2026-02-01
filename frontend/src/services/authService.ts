@@ -21,7 +21,6 @@ export class AuthService {
       throw new Error(error.message || "로그인에 실패했습니다.");
     }
 
-    console.log('All cookies:', document.cookie);
     const data: AuthResponse = await response.json();
 
     // 토큰 저장

@@ -15,7 +15,6 @@ export async function fetchVocabulary(
     }
 
     const data: VocabularyItem[] = await response.json();
-    console.log("data is "+data);
     return data;
   } catch (error) {
     console.error("Failed to fetch vocabulary:", error);
