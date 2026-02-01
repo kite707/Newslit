@@ -29,7 +29,7 @@ public class UserService {
 
         User saveUser = userRepository.save(user);
 
-        return toAuthResposeDto("회원가입 성공", email, user.getId());
+        return toAuthResposeDto("회원가입 성공", saveUser);
     }
 
     public AuthResponseDto login(String email, String password) {
@@ -42,15 +42,16 @@ public class UserService {
             throw new UserNotFoundException();
         }
 
-        return toAuthResposeDto("로그인 성공", user.getEmail(), user.getId());
+        return toAuthResposeDto("로그인 성공", user);
 
     }
 
-    private AuthResponseDto toAuthResposeDto(String message, String email, Long id) {
+    private AuthResponseDto toAuthResposeDto(String message, User user) {
         return AuthResponseDto.builder()
                 .message(message)
-                .email(email)
-                .id(id)
+                .email(user.getEmail())
+                .nickname(user.getName())
+                .id(user.getId())
                 .build();
     }
 }
