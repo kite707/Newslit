@@ -1,7 +1,6 @@
 package com.newslit.backend.global.common;
 
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Encoders;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -16,11 +15,9 @@ public class JwtUtil {
     private final long EXPIRATION_TIME;
     private final SecretKey signingKey;
 
-    public JwtUtil(@Value("${jwt.expiration}") long expirationTime) {
-        SecretKey key = Jwts.SIG.HS256.key().build();
-        String secretString = Encoders.BASE64.encode(key.getEncoded());
+    public JwtUtil(@Value("${jwt.expiration}") long expirationTime, @Value("${jwt.secret}") String secret) {
         this.EXPIRATION_TIME = expirationTime;
-        this.signingKey = Keys.hmacShaKeyFor(secretString.getBytes(StandardCharsets.UTF_8));
+        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateToken(String email, Long id) {
