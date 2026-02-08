@@ -108,15 +108,14 @@ public class DailyService {
 
         List<SentenceResponseDto> sentences = sentenceRepository.findAllByArticleIdAndOrderIndexBetween(articleId,
                 startIndex,
-                endIndex).stream().map(sentence -> toSentenceDto(sentence)).collect(Collectors.toList());
+                endIndex).stream().map(this::toSentenceDto).collect(Collectors.toList());
 
         List<Daily> dailyList = dailyRespository.findByArticleIdOrderByIdAsc(articleId);
         int totalPages = dailyList.size();
 
         int currentPage = dailyList.indexOf(daily) + 1;
-        DailyContentResponseDto dailyContentResponseDto = toDailyContentDto(daily, sentences, totalPages, currentPage);
 
-        return dailyContentResponseDto;
+        return toDailyContentDto(daily, sentences, totalPages, currentPage);
     }
 
     public List<DailyResponseDto> getAvailableDate(LocalDate date) {
@@ -124,7 +123,7 @@ public class DailyService {
         LocalDate endDate = date.plusMonths(1).minusDays(1);
 
         return dailyRespository.findAllByDisplayDateBetween(startDate, endDate)
-                .stream().map(daily -> toDailyDto(daily)).collect(
+                .stream().map(this::toDailyDto).collect(
                         Collectors.toList());
     }
 
@@ -152,6 +151,7 @@ public class DailyService {
     private DailyResponseDto toDailyDto(Daily daily) {
         return DailyResponseDto.builder()
                 .articleId(daily.getArticle().getId())
+                .audioUrl(daily.getArticle().getAudioLink())
                 .startIndex(daily.getStartIndex())
                 .endIndex(daily.getEndIndex())
                 .wordCount(daily.getWordCount())
@@ -163,6 +163,8 @@ public class DailyService {
         return SentenceResponseDto.builder()
                 .articleId(sentence.getArticle().getId())
                 .englishText(sentence.getEnglishText())
+                .startTime(sentence.getStartTime())
+                .endTime(sentence.getEndTime())
                 .koreanText(sentence.getKoreanText())
                 .orderIndex(sentence.getOrderIndex())
                 .status(sentence.getTranslationStatus())
