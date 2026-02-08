@@ -13,6 +13,8 @@ export interface SentenceData {
   englishText: string;
   koreanText: string;
   status: string;
+  startTime: number;
+  endTime: number;
 }
 
 export interface DailyData {
@@ -22,11 +24,12 @@ export interface DailyData {
   source: string;
   sourceUrl: string;
   totalPages: number;
-  currentPages:number;
+  currentPages: number;
   sentences: SentenceData[];
 }
 export interface ArticleDateRange {
   articleId: number;
+  audioUrl: string;
   startIndex: number;
   endIndex: number;
   wordCount: number;
