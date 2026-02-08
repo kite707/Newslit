@@ -44,6 +44,9 @@ public class Article {
     @Column(length = 1000)
     private String sourceUrl;
 
+    @Column(length = 500)
+    private String mp3Link;
+
     @Column(nullable = false)
     private LocalDate publishedDate;
 

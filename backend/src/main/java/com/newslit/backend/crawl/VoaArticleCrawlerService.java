@@ -60,6 +60,7 @@ public class VoaArticleCrawlerService {
                     ArticleRequestDto articleDto = ArticleRequestDto.builder()
                             .title(crawledArticle.getTitle())
                             .originalText(crawledArticle.getContent())
+                            .mp3Link(crawledArticle.getMp3Link())
                             .sourceUrl(link)
                             .publishedDate(crawledArticle.getPublishedDate())
                             .source("VOA Learning English")
@@ -93,6 +94,7 @@ public class VoaArticleCrawlerService {
             if (titleElement != null) {
                 title = titleElement.text();
             }
+            String mp3Link = extractMp3Link(doc);
 
             LocalDate publishedDate = extractPublishedDate(doc);
 
@@ -106,6 +108,7 @@ public class VoaArticleCrawlerService {
             return CrawledArticle.builder()
                     .title(title)
                     .content(content)
+                    .mp3Link(mp3Link)
                     .publishedDate(publishedDate)
                     .words(words)
                     .build();
@@ -113,6 +116,25 @@ public class VoaArticleCrawlerService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private String extractMp3Link(Document doc) {
+        String html = doc.html();
+
+        // 방법 1: 정규식으로 mp3 찾기
+        Pattern fallbackPattern = Pattern.compile("(https://[^\"]*\\.mp3)\\?download=1");
+        Matcher fallbackMatcher = fallbackPattern.matcher(html);
+        if (fallbackMatcher.find()) {
+            return fallbackMatcher.group(1) + "?download=1";
+        }
+
+        // 방법 2: 셀렉터로 mp3 찾기
+        Element link = doc.selectFirst("a[href*=_hq.mp3?download=1]");
+        if (link != null) {
+            return link.attr("href");
+        }
+
+        return null;
     }
 
     private LocalDate extractPublishedDate(Document doc) {
@@ -249,6 +271,7 @@ public class VoaArticleCrawlerService {
     private static class CrawledArticle {
         private String title;
         private String content;
+        private String mp3Link;
         private LocalDate publishedDate;
         private List<String> words;
     }
