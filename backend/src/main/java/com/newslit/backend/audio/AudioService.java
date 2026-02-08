@@ -1,8 +1,14 @@
 package com.newslit.backend.audio;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.newslit.backend.article.Article;
+import com.newslit.backend.article.ArticleRepository;
+import com.newslit.backend.article.exception.ArticleNotFoundException;
 import com.newslit.backend.audio.dto.SegmentDto;
 import com.newslit.backend.audio.dto.WhisperResponseDto;
+import com.oracle.bmc.objectstorage.ObjectStorage;
+import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
+import com.oracle.bmc.objectstorage.responses.PutObjectResponse;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,6 +20,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -30,10 +37,35 @@ public class AudioService {
     private String apiKey;
     @Value("${openai.url}")
     private String openAIUrl;
+    @Value("${oracle.cloud.namespace}")
+    private String namespace;
+
+    @Value("${oracle.cloud.bucket}")
+    private String bucket;
+    @Value("${oracle.cloud.region}")
+    private String region;
 
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
+    private final ObjectStorage objectStorage;
+    private final ArticleRepository articleRepository;
 
+    public void saveTimeStamp(Long articleId) throws IOException {
+        Article article = articleRepository.findById(articleId).orElseThrow(ArticleNotFoundException::new);
+        String url = article.getAudioDownloadLink();
+
+        String objectName = article.getTitle().replaceAll("[^a-zA-Z0-9가-힣.-]", "_") + ".mp3";
+        uploadMp3ToStorage(url, objectName);
+        String audioUrl = String.format(
+                "https://objectstorage.%s.oraclecloud.com/n/%s/b/%s/o/%s",
+                region,
+                namespace,
+                bucket,
+                objectName
+        );
+        article.setAudioLink(audioUrl);
+        articleRepository.save(article);
+    }
 
     public List<SegmentDto> transcribe(File audioFile) throws IOException {
         RequestBody requestBody = new MultipartBody.Builder()
@@ -94,5 +126,30 @@ public class AudioService {
             mergedSegments.add(current);
         }
         return mergedSegments;
+    }
+
+    public PutObjectResponse uploadMp3ToStorage(String mp3Url, String objectName) throws IOException {
+        Request request = new Request.Builder()
+                .url(mp3Url)
+                .get()
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Failed to download: " + response.code());
+            }
+
+            ResponseBody body = response.body();
+            PutObjectRequest putRequest = PutObjectRequest.builder()
+                    .namespaceName(namespace)
+                    .bucketName(bucket)
+                    .objectName(objectName)
+                    .contentLength(body.contentLength())
+                    .contentType("audio/mpeg")
+                    .putObjectBody(body.byteStream())
+                    .build();
+
+            return objectStorage.putObject(putRequest);
+        }
     }
 }
