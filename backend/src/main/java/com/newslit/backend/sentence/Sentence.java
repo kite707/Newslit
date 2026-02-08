@@ -55,6 +55,12 @@ public class Sentence {
     @Column(name = "korean_text")
     private String koreanText;
 
+    @Column(name = "start_time")
+    private Double startTime;  // 초 단위
+
+    @Column(name = "end_time")
+    private Double endTime;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "translation_status", nullable = false)
     @ColumnDefault("'PENDING'")

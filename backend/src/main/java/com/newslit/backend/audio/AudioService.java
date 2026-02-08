@@ -6,14 +6,18 @@ import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.article.exception.ArticleNotFoundException;
 import com.newslit.backend.audio.dto.SegmentDto;
 import com.newslit.backend.audio.dto.WhisperResponseDto;
+import com.newslit.backend.sentence.Sentence;
 import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
-import com.oracle.bmc.objectstorage.responses.PutObjectResponse;
+import jakarta.transaction.Transactional;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -26,6 +30,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AudioService {
 
     private static final String WHISPER_MODEL = "whisper-1";
@@ -50,21 +55,85 @@ public class AudioService {
     private final ObjectStorage objectStorage;
     private final ArticleRepository articleRepository;
 
+    @Transactional
     public void saveTimeStamp(Long articleId) throws IOException {
-        Article article = articleRepository.findById(articleId).orElseThrow(ArticleNotFoundException::new);
-        String url = article.getAudioDownloadLink();
+        uploadMp3ToStorage(articleId);
 
-        String objectName = article.getTitle().replaceAll("[^a-zA-Z0-9가-힣.-]", "_") + ".mp3";
-        uploadMp3ToStorage(url, objectName);
-        String audioUrl = String.format(
-                "https://objectstorage.%s.oraclecloud.com/n/%s/b/%s/o/%s",
-                region,
-                namespace,
-                bucket,
-                objectName
-        );
-        article.setAudioLink(audioUrl);
-        articleRepository.save(article);
+        Article article = articleRepository.findById(articleId)
+                .orElseThrow(ArticleNotFoundException::new);
+
+        File audioFile = downloadAudioFile(article.getAudioDownloadLink());
+
+        try {
+            List<SegmentDto> segments = transcribe(audioFile);
+            List<Sentence> sentences = article.getSentences().stream()
+                    .sorted(Comparator.comparing(Sentence::getOrderIndex))
+                    .collect(Collectors.toList());
+
+            matchAndSaveTimestamps(segments, sentences);
+        } finally {
+            if (audioFile != null && audioFile.exists()) {
+                audioFile.delete();
+            }
+        }
+
+    }
+
+    private File downloadAudioFile(String url) throws IOException {
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Failed to download audio: " + response.code());
+            }
+
+            // 임시 파일 생성
+            File tempFile = File.createTempFile("audio_", ".mp3");
+            try (var inputStream = response.body().byteStream();
+                 var outputStream = new java.io.FileOutputStream(tempFile)) {
+                inputStream.transferTo(outputStream);
+            }
+            return tempFile;
+        }
+    }
+
+    private void matchAndSaveTimestamps(List<SegmentDto> segments, List<Sentence> sentences) {
+        for (Sentence sentence : sentences) {
+            String englishText = sentence.getEnglishText().trim().toLowerCase();
+
+            // 매칭되는 segment 찾기
+            for (SegmentDto segment : segments) {
+                String segmentText = segment.getText().trim().toLowerCase();
+
+                // 앞부분 일치 확인 (최소 10자 이상 일치하거나, 짧은 문장은 80% 이상 일치)
+                if (isPartialMatch(englishText, segmentText)) {
+                    sentence.setStartTime(segment.getStart());
+                    sentence.setEndTime(segment.getEnd());
+                    break;
+                }
+            }
+        }
+    }
+
+    private boolean isPartialMatch(String sentenceText, String segmentText) {
+        int minMatchLength = 10;
+
+        // 둘 중 짧은 문장 기준
+        int minLength = Math.min(sentenceText.length(), segmentText.length());
+
+        if (minLength < minMatchLength) {
+            // 짧은 문장: 80% 이상 일치
+            int matchLength = (int) (minLength * 0.8);
+            return sentenceText.startsWith(segmentText.substring(0, Math.min(matchLength, segmentText.length())))
+                    || segmentText.startsWith(sentenceText.substring(0, Math.min(matchLength, sentenceText.length())));
+        } else {
+            // 긴 문장: 앞부분 10자 이상 일치
+            return sentenceText.startsWith(segmentText.substring(0, minMatchLength))
+                    || segmentText.startsWith(sentenceText.substring(0, minMatchLength));
+        }
     }
 
     public List<SegmentDto> transcribe(File audioFile) throws IOException {
@@ -128,13 +197,18 @@ public class AudioService {
         return mergedSegments;
     }
 
-    public PutObjectResponse uploadMp3ToStorage(String mp3Url, String objectName) throws IOException {
+    public void uploadMp3ToStorage(Long articleId) throws IOException {
+        Article article = articleRepository.findById(articleId).orElseThrow(ArticleNotFoundException::new);
+        String url = article.getAudioDownloadLink();
+
         Request request = new Request.Builder()
-                .url(mp3Url)
+                .url(url)
                 .get()
                 .build();
 
         try (Response response = httpClient.newCall(request).execute()) {
+
+            String objectName = article.getTitle().replaceAll("[^a-zA-Z0-9가-힣.-]", "_") + ".mp3";
             if (!response.isSuccessful()) {
                 throw new IOException("Failed to download: " + response.code());
             }
@@ -149,7 +223,17 @@ public class AudioService {
                     .putObjectBody(body.byteStream())
                     .build();
 
-            return objectStorage.putObject(putRequest);
+            objectStorage.putObject(putRequest);
+
+            String audioUrl = String.format(
+                    "https://objectstorage.%s.oraclecloud.com/n/%s/b/%s/o/%s",
+                    region,
+                    namespace,
+                    bucket,
+                    objectName
+            );
+            article.setAudioLink(audioUrl);
+            articleRepository.save(article);
         }
     }
 }
