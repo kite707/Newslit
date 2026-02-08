@@ -2,8 +2,8 @@
 name: Feature request
 about: 백엔드/프론트엔드 통합 작업용 템플릿입니다.
 title: ''
-labels: ''
-assignees: ''
+labels: enhancement
+assignees: kite707
 
 ---
 
