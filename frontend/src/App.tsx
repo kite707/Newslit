@@ -1,13 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Volume2,
   Check,
   Moon,
   Sun,
-  ChevronLeft,
-  ChevronRight,
   ExternalLink,
   LogIn,
+  Play,
+  Pause,
 } from "lucide-react";
 import {
   fetchArticle,
@@ -22,6 +22,7 @@ import { fetchVocabulary } from "./services/vocabularyService";
 import type { DailyData, VocabularyItem } from "@/types";
 import { AuthService } from "./services/authService";
 import AuthPage from "./AuthPage";
+import CalendarSection from "./CalendarSection";
 
 export default function EnglishLearningApp() {
   // 초기 로딩 상태 추가
@@ -33,7 +34,15 @@ export default function EnglishLearningApp() {
   const [_userEmail, setUserEmail] = useState("");
   const [userNickname, setUserNickname] = useState("");
 
-
+  // UI 상태
+  const [darkMode, setDarkMode] = useState(false);
+  const [completed, setCompleted] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [showMeaning, setShowMeaning] = useState<Record<number, boolean>>({});
+  const [hoveredWordId, setHoveredWordId] = useState<string | null>(null);
+  const [expandedSentences, setExpandedSentences] = useState<
+    Record<number, boolean>
+  >({});
 
   // 데이터 상태
   const [articleData, setArticleData] =
@@ -43,6 +52,14 @@ export default function EnglishLearningApp() {
   const [completedDates, setCompletedDates] = useState<number[]>([]);
   const [availableDates, setAvailableDates] = useState<number[]>([]);
   const [vocabularies, setVocabularies] = useState<VocabularyItem[]>([]);
+
+  // 오디오 관련 상태 추가
+  const [currentAudioUrl, setCurrentAudioUrl] = useState<string>("");
+  const [playingSentenceIndex, setPlayingSentenceIndex] = useState<
+    number | null
+  >(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlayingFullAudio, setIsPlayingFullAudio] = useState(false);
 
   // 로그인 핸들러
   const handleLogin = (email: string, nickname: string) => {
@@ -101,7 +118,7 @@ export default function EnglishLearningApp() {
     setIsInitializing(false);
   }, []);
 
-  // 현재 날짜의 기사 불러오기
+  // 현재 날짜의 기사 불러오기 - 오디오 URL도 함께 저장
   useEffect(() => {
     if (!isAuthenticated && !isGuest) return;
 
@@ -113,6 +130,22 @@ export default function EnglishLearningApp() {
       if (data.sentences.length > 0 && data.sentences[0]?.articleId) {
         const vocabData = await fetchVocabulary(data.sentences[0].articleId);
         setVocabularies(vocabData);
+
+        // 해당 날짜의 오디오 URL 찾기
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth() + 1;
+        const availableData = await fetchAvailableDates(year, month);
+
+        const dayString = currentDate.toISOString().slice(0, 10);
+        const audioData = availableData.find(
+          (item) =>
+            item.displayDate === dayString &&
+            item.articleId === data.sentences[0].articleId,
+        );
+
+        if (audioData) {
+          setCurrentAudioUrl(audioData.audioUrl);
+        }
       }
 
       setLoading(false);
@@ -127,7 +160,7 @@ export default function EnglishLearningApp() {
     const selectedDate = new Date(
       currentMonth.getFullYear(),
       currentMonth.getMonth(),
-      day
+      day,
     );
     setCurrentDate(selectedDate);
   };
@@ -148,21 +181,150 @@ export default function EnglishLearningApp() {
       ]);
 
       setCompletedDates(completed);
-      setAvailableDates(available);
+
+      // availableData에서 날짜(day)만 추출하여 중복 제거
+      const days = [
+        ...new Set(
+          available.map((item) => parseInt(item.displayDate.slice(-2), 10)),
+        ),
+      ].sort((a, b) => a - b);
+
+      setAvailableDates(days);
     };
 
     loadData();
   }, [currentMonth, isAuthenticated, isGuest]);
 
+  // 오디오 재생 함수
+  const playSentenceAudio = (index: number) => {
+    const sentence = articleData.sentences[index];
+
+    if (!currentAudioUrl || !sentence) {
+      alert("오디오를 불러올 수 없습니다.");
+      return;
+    }
+
+    // 이미 재생 중인 같은 문장이면 일시정지
+    if (
+      playingSentenceIndex === index &&
+      audioRef.current &&
+      !audioRef.current.paused
+    ) {
+      audioRef.current.pause();
+      setPlayingSentenceIndex(null);
+      return;
+    }
+
+    // 새로운 오디오 객체 생성 또는 기존 것 사용
+    if (!audioRef.current) {
+      audioRef.current = new Audio(currentAudioUrl);
+    } else if (audioRef.current.src !== currentAudioUrl) {
+      audioRef.current.src = currentAudioUrl;
+    }
+
+    const audio = audioRef.current;
+
+    // 시작 시간 설정
+    audio.currentTime = sentence.startTime;
+    setPlayingSentenceIndex(index);
+
+    // 재생
+    audio.play().catch((err) => {
+      console.error("Audio play failed:", err);
+      alert("오디오 재생에 실패했습니다.");
+      setPlayingSentenceIndex(null);
+    });
+
+    // 종료 시간 0.3초 전에 자동 정지
+    const checkTime = () => {
+      if (audio.currentTime >= sentence.endTime - 0.3) {
+        audio.pause();
+        setPlayingSentenceIndex(null);
+        audio.removeEventListener("timeupdate", checkTime);
+      }
+    };
+
+    audio.addEventListener("timeupdate", checkTime);
+
+    // 오디오가 끝나거나 에러 발생 시
+    audio.onended = () => {
+      setPlayingSentenceIndex(null);
+    };
+
+    audio.onerror = () => {
+      alert("오디오 재생 중 오류가 발생했습니다.");
+      setPlayingSentenceIndex(null);
+    };
+  };
+
+  // 컴포넌트 언마운트 시 오디오 정리
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
   const playAudio = (): void => {
-    alert("음성 재생 기능은 백엔드 연동 후 사용 가능합니다.");
+    if (!currentAudioUrl || articleData.sentences.length === 0) {
+      alert("오디오를 불러올 수 없습니다.");
+      return;
+    }
+
+    // 오디오 객체 생성 또는 재사용
+    if (!audioRef.current) {
+      audioRef.current = new Audio(currentAudioUrl);
+    } else if (audioRef.current.src !== currentAudioUrl) {
+      audioRef.current.src = currentAudioUrl;
+    }
+
+    const audio = audioRef.current;
+
+    // 이미 재생 중이면 일시정지
+    if (isPlayingFullAudio) {
+      audio.pause();
+      setIsPlayingFullAudio(false);
+      return;
+    }
+
+    // 첫 번째 문장의 시작 시간부터 재생
+    const firstSentence = articleData.sentences[0];
+    const lastSentence =
+      articleData.sentences[articleData.sentences.length - 1];
+
+    audio.currentTime = firstSentence.startTime;
+    setIsPlayingFullAudio(true);
+
+    audio.play().catch((err) => {
+      console.error("Audio play failed:", err);
+      alert("오디오 재생에 실패했습니다.");
+      setIsPlayingFullAudio(false);
+    });
+
+    // 마지막 문장 종료 시간에 도달하면 자동 정지
+    const checkTime = () => {
+      if (audio.currentTime >= lastSentence.endTime - 0.3) {
+        audio.pause();
+        setIsPlayingFullAudio(false);
+        audio.removeEventListener("timeupdate", checkTime);
+      }
+    };
+
+    audio.addEventListener("timeupdate", checkTime);
+
+    // 오디오 종료 시
+    audio.onended = () => {
+      setIsPlayingFullAudio(false);
+    };
   };
 
   // 완료 처리
   const handleComplete = async () => {
     if (!isAuthenticated) {
       const confirmLogin = window.confirm(
-        "로그인이 필요한 기능입니다.\n로그인 페이지로 이동하시겠습니까?"
+        "로그인이 필요한 기능입니다.\n로그인 페이지로 이동하시겠습니까?",
       );
       if (confirmLogin) {
         goToLogin();
@@ -181,13 +343,12 @@ export default function EnglishLearningApp() {
 
     try {
       await markArticleAsComplete(articleData.dailyId);
-      if(completed){
+      if (completed) {
         alert("미완료 처리 되었습니다");
-      }else{
-        alert("완료 처리 되었습니다.")
+      } else {
+        alert("완료 처리 되었습니다.");
       }
       setCompleted(!completed);
-      
 
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth() + 1;
@@ -244,7 +405,7 @@ export default function EnglishLearningApp() {
 
     return parts.map((part, index) => {
       const vocab = vocabularies.find(
-        (v) => v.word.toLowerCase() === part.toLowerCase()
+        (v) => v.word.toLowerCase() === part.toLowerCase(),
       );
 
       if (vocab) {
@@ -274,7 +435,7 @@ export default function EnglishLearningApp() {
                 <span className="block font-bold">{vocab.word}</span>
                 <span
                   className={`text-xs px-2 py-0.5 rounded ${getPosColor(
-                    vocab.partOfSpeech
+                    vocab.partOfSpeech,
                   )} inline-block my-1`}
                 >
                   {getShortPos(vocab.partOfSpeech)}
@@ -297,40 +458,13 @@ export default function EnglishLearningApp() {
       .toLowerCase();
 
     return vocabularies.filter((vocab) =>
-      allText.includes(vocab.word.toLowerCase())
+      allText.includes(vocab.word.toLowerCase()),
     );
   };
 
-  const getDaysInMonth = (date: Date): (number | null)[] => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    const days: (number | null)[] = [];
-    for (let i = 0; i < firstDay; i++) days.push(null);
-    for (let i = 1; i <= daysInMonth; i++) days.push(i);
-    return days;
-  };
-
-  const monthNames: string[] = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-
   const changeMonth = (delta: number): void => {
     setCurrentMonth(
-      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + delta, 1)
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + delta, 1),
     );
   };
 
@@ -480,35 +614,66 @@ export default function EnglishLearningApp() {
             {articleData.sentences.map((sentence, index) => (
               <div
                 key={index}
-                onClick={() =>
-                  setExpandedSentences((prev) => ({
-                    ...prev,
-                    [index]: !prev[index],
-                  }))
-                }
-                className={`cursor-pointer transition-all duration-200 ${
+                className={`transition-all duration-200 ${
                   darkMode ? "hover:bg-gray-700/30" : "hover:bg-gray-50"
                 } rounded-lg p-4 -mx-4`}
               >
-                <p className="text-lg leading-relaxed">
-                  {highlightVocabulary(sentence.englishText, index)}
-                </p>
-                <div
-                  className={`overflow-hidden transition-all duration-300 ${
-                    expandedSentences[index]
-                      ? "max-h-40 opacity-100 mt-3"
-                      : "max-h-0 opacity-0"
-                  }`}
-                >
-                  <p
-                    className={`text-base border-l-2 pl-3 ${
-                      darkMode
-                        ? "text-gray-300 border-blue-500"
-                        : "text-gray-600 border-blue-400"
+                <div className="flex items-start gap-3">
+                  {/* 오디오 재생 버튼 */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      playSentenceAudio(index);
+                    }}
+                    className={`flex-shrink-0 p-2 rounded-full transition-all ${
+                      playingSentenceIndex === index
+                        ? darkMode
+                          ? "bg-blue-600 text-white"
+                          : "bg-blue-500 text-white"
+                        : darkMode
+                          ? "bg-gray-700 hover:bg-gray-600 text-gray-300"
+                          : "bg-gray-100 hover:bg-gray-200 text-gray-600"
                     }`}
+                    disabled={!currentAudioUrl}
                   >
-                    {sentence.koreanText}
-                  </p>
+                    {playingSentenceIndex === index ? (
+                      <Pause className="w-4 h-4" />
+                    ) : (
+                      <Play className="w-4 h-4" />
+                    )}
+                  </button>
+
+                  {/* 문장 텍스트 */}
+                  <div
+                    className="flex-1 cursor-pointer"
+                    onClick={() =>
+                      setExpandedSentences((prev) => ({
+                        ...prev,
+                        [index]: !prev[index],
+                      }))
+                    }
+                  >
+                    <p className="text-lg leading-relaxed">
+                      {highlightVocabulary(sentence.englishText, index)}
+                    </p>
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ${
+                        expandedSentences[index]
+                          ? "max-h-40 opacity-100 mt-3"
+                          : "max-h-0 opacity-0"
+                      }`}
+                    >
+                      <p
+                        className={`text-base border-l-2 pl-3 ${
+                          darkMode
+                            ? "text-gray-300 border-blue-500"
+                            : "text-gray-600 border-blue-400"
+                        }`}
+                      >
+                        {sentence.koreanText}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -519,7 +684,7 @@ export default function EnglishLearningApp() {
               onClick={(e) => {
                 e.stopPropagation();
                 const allExpanded = articleData.sentences.every(
-                  (_, i) => expandedSentences[i]
+                  (_, i) => expandedSentences[i],
                 );
                 const newState: Record<number, boolean> = {};
                 articleData.sentences.forEach((_, i) => {
@@ -594,7 +759,7 @@ export default function EnglishLearningApp() {
                     <span className="font-bold text-lg">{item.word}</span>
                     <span
                       className={`text-xs px-2 py-1 rounded ${getPosColor(
-                        item.partOfSpeech
+                        item.partOfSpeech,
                       )}`}
                     >
                       {getShortPos(item.partOfSpeech)}
@@ -633,13 +798,21 @@ export default function EnglishLearningApp() {
           <button
             onClick={playAudio}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${
-              darkMode
-                ? "bg-blue-600 hover:bg-blue-700"
-                : "bg-blue-500 hover:bg-blue-600"
+              isPlayingFullAudio
+                ? darkMode
+                  ? "bg-orange-600 hover:bg-orange-700"
+                  : "bg-orange-500 hover:bg-orange-600"
+                : darkMode
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-blue-500 hover:bg-blue-600"
             } text-white`}
           >
-            <Volume2 className="w-5 h-5" />
-            Play Audio
+            {isPlayingFullAudio ? (
+              <Pause className="w-5 h-5" />
+            ) : (
+              <Volume2 className="w-5 h-5" />
+            )}
+            {isPlayingFullAudio ? "Pause Audio" : "Play Audio"}
           </button>
           <button
             onClick={handleComplete}
@@ -649,8 +822,8 @@ export default function EnglishLearningApp() {
                   ? "bg-green-600 hover:bg-green-700"
                   : "bg-green-500 hover:bg-green-600"
                 : darkMode
-                ? "bg-gray-700 hover:bg-gray-600"
-                : "bg-gray-200 hover:bg-gray-300"
+                  ? "bg-gray-700 hover:bg-gray-600"
+                  : "bg-gray-200 hover:bg-gray-300"
             } ${completed ? "text-white" : ""}`}
           >
             <Check className="w-5 h-5" />
@@ -658,118 +831,15 @@ export default function EnglishLearningApp() {
           </button>
         </div>
 
-        <div
-          className={`rounded-xl p-6 ${
-            darkMode ? "bg-gray-800" : "bg-white"
-          } shadow-lg`}
-        >
-          <h2 className="text-2xl font-bold mb-4">Study Record</h2>
-          <div className="flex justify-between items-center mb-4">
-            <button
-              onClick={() => changeMonth(-1)}
-              className={`p-2 rounded-lg transition-colors ${
-                darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
-              }`}
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <span className="font-semibold">
-              {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-            </span>
-            <button
-              onClick={() => changeMonth(1)}
-              className={`p-2 rounded-lg transition-colors ${
-                darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
-              }`}
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-7 gap-2">
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-              <div key={day} className="text-center text-sm font-semibold p-2">
-                {day}
-              </div>
-            ))}
-            {getDaysInMonth(currentMonth).map((day, idx) => {
-              const hasArticle = day && availableDates.includes(day);
-              const isCompleted = day && completedDates.includes(day);
-              const isCurrentSelected =
-                day &&
-                currentDate.getDate() === day &&
-                currentDate.getMonth() === currentMonth.getMonth() &&
-                currentDate.getFullYear() === currentMonth.getFullYear();
-
-              return (
-                <div
-                  key={idx}
-                  onClick={() => handleDateClick(day)}
-                  className={`p-1 rounded-lg transition-all ${
-                    hasArticle
-                      ? "cursor-pointer hover:bg-opacity-10"
-                      : "cursor-not-allowed opacity-40"
-                  }`}
-                >
-                  <div
-                    className={`text-center text-sm relative rounded-lg p-2 transition-all ${
-                      isCompleted
-                        ? darkMode
-                          ? "bg-green-600 text-white shadow-md"
-                          : "bg-green-500 text-white shadow-md"
-                        : isCurrentSelected
-                        ? darkMode
-                          ? "bg-blue-600 text-white shadow-lg scale-105"
-                          : "bg-blue-500 text-white shadow-lg scale-105"
-                        : ""
-                    }`}
-                  >
-                    {day}
-                    {day &&
-                      !isCompleted &&
-                      !isCurrentSelected &&
-                      hasArticle && (
-                        <div
-                          className={`absolute -bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full ${
-                            darkMode ? "bg-blue-400" : "bg-blue-500"
-                          }`}
-                        ></div>
-                      )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="flex gap-4 mt-4 text-sm">
-            <div className="flex items-center gap-2">
-              <div
-                className={`w-4 h-4 rounded ${
-                  darkMode ? "bg-green-600" : "bg-green-500"
-                }`}
-              ></div>
-              <span>Completed</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div
-                className={`w-4 h-4 rounded ${
-                  darkMode ? "bg-blue-600" : "bg-blue-500"
-                }`}
-              ></div>
-              <span>Selected</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div
-                className={`w-4 h-4 rounded ${
-                  darkMode ? "bg-gray-700" : "bg-gray-100"
-                } relative flex items-end justify-center`}
-              >
-                <div className="w-1 h-1 rounded-full bg-blue-500 mb-0.5"></div>
-              </div>
-              <span>Article Available</span>
-            </div>
-          </div>
-        </div>
+        <CalendarSection
+          darkMode={darkMode}
+          currentMonth={currentMonth}
+          currentDate={currentDate}
+          availableDates={availableDates}
+          completedDates={completedDates}
+          changeMonth={changeMonth}
+          handleDateClick={handleDateClick}
+        />
       </div>
     </div>
   );
