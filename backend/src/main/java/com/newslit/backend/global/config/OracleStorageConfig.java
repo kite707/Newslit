@@ -34,11 +34,6 @@ public class OracleStorageConfig {
 
     @Bean
     public ObjectStorage objectStorageClient() throws IOException {
-        System.out.println("=== Oracle Cloud Config ===");
-        System.out.println("Key file path: " + keyFile);
-        System.out.println("User ID: " + userId);
-        System.out.println("Region: " + region);
-        System.out.println("===========================");
         Supplier<InputStream> privateKeySupplier = () -> {
             try {
                 return new FileInputStream(keyFile);
