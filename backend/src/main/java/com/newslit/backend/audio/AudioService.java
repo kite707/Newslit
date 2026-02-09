@@ -24,9 +24,12 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Service
 @RequiredArgsConstructor
@@ -57,12 +60,13 @@ public class AudioService {
 
     @Transactional
     public void saveTimeStamp(Long articleId) throws IOException {
-        uploadMp3ToStorage(articleId);
 
         Article article = articleRepository.findById(articleId)
                 .orElseThrow(ArticleNotFoundException::new);
 
         File audioFile = downloadAudioFile(article.getAudioDownloadLink());
+
+        uploadMp3ToStorage(articleId, audioFile);
 
         try {
             List<SegmentDto> segments = transcribe(audioFile);
@@ -72,9 +76,7 @@ public class AudioService {
 
             matchAndSaveTimestamps(segments, sentences);
         } finally {
-            if (audioFile != null && audioFile.exists()) {
-                audioFile.delete();
-            }
+            audioFile.delete();
         }
 
     }
@@ -197,30 +199,29 @@ public class AudioService {
         return mergedSegments;
     }
 
-    public void uploadMp3ToStorage(Long articleId) throws IOException {
-        Article article = articleRepository.findById(articleId).orElseThrow(ArticleNotFoundException::new);
-        String url = article.getAudioDownloadLink();
+    public void uploadMp3ToStorage(Long articleId, File audioFile) throws IOException {
+        Article article = articleRepository.findById(articleId)
+                .orElseThrow(ArticleNotFoundException::new);
 
-        Request request = new Request.Builder()
-                .url(url)
-                .get()
-                .build();
+        if (!audioFile.exists()) {
+            throw new IOException("Audio file does not exist: " + audioFile.getPath());
+        }
 
-        try (Response response = httpClient.newCall(request).execute()) {
+        String objectName = article.getTitle()
+                .replaceAll("[^a-zA-Z0-9가-힣.-]", "_") + ".mp3";
 
-            String objectName = article.getTitle().replaceAll("[^a-zA-Z0-9가-힣.-]", "_") + ".mp3";
-            if (!response.isSuccessful()) {
-                throw new IOException("Failed to download: " + response.code());
-            }
+        // URL 인코딩 처리
+        String encodedObjectName = URLEncoder.encode(objectName, StandardCharsets.UTF_8)
+                .replace("+", "%20");
 
-            ResponseBody body = response.body();
+        try (InputStream inputStream = new FileInputStream(audioFile)) {
             PutObjectRequest putRequest = PutObjectRequest.builder()
                     .namespaceName(namespace)
                     .bucketName(bucket)
                     .objectName(objectName)
-                    .contentLength(body.contentLength())
+                    .contentLength(audioFile.length())
                     .contentType("audio/mpeg")
-                    .putObjectBody(body.byteStream())
+                    .putObjectBody(inputStream)
                     .build();
 
             objectStorage.putObject(putRequest);
@@ -230,8 +231,9 @@ public class AudioService {
                     region,
                     namespace,
                     bucket,
-                    objectName
+                    encodedObjectName
             );
+
             article.setAudioLink(audioUrl);
             articleRepository.save(article);
         }
