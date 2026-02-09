@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Volume2,
   Check,
@@ -8,8 +8,6 @@ import {
   ChevronRight,
   ExternalLink,
   LogIn,
-  Play,
-  Pause,
 } from "lucide-react";
 import {
   fetchArticle,
@@ -21,289 +19,9 @@ import {
   fetchReadingHistory,
 } from "./services/historyService";
 import { fetchVocabulary } from "./services/vocabularyService";
-import type { DailyData, AuthResponse, VocabularyItem } from "@/types";
+import type { DailyData, VocabularyItem } from "@/types";
 import { AuthService } from "./services/authService";
-
-function AuthPage({
-  onLogin,
-  onGuestMode,
-}: {
-  onLogin: (email: string, nickname: string) => void;
-  onGuestMode: () => void;
-}) {
-  const [darkMode, setDarkMode] = useState(false);
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
-  const [nickname, setNickname] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!email || !password) {
-      alert("이메일과 비밀번호를 입력해주세요.");
-      return;
-    }
-
-    if (!isLogin) {
-      if (!nickname) {
-        alert("닉네임을 입력해주세요.");
-        return;
-      }
-      if (password !== confirmPassword) {
-        alert("비밀번호가 일치하지 않습니다.");
-        return;
-      }
-    }
-
-    setLoading(true);
-
-    try {
-      let data: AuthResponse;
-
-      if (isLogin) {
-        data = await AuthService.login(email, password);
-      } else {
-        data = await AuthService.signup(email, nickname, password);
-      }
-
-      const displayName = data.nickname || nickname || email;
-      onLogin(email, displayName);
-    } catch (error) {
-      alert(
-        error instanceof Error ? error.message : "서버 연결에 실패했습니다.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div
-      className={`min-h-screen flex items-center justify-center ${
-        darkMode
-          ? "bg-gray-900"
-          : "bg-gradient-to-br from-blue-50 to-indigo-100"
-      }`}
-    >
-      <button
-        onClick={() => setDarkMode(!darkMode)}
-        className={`absolute top-6 right-6 p-3 rounded-full transition-all shadow-lg ${
-          darkMode
-            ? "bg-gray-800 hover:bg-gray-700 text-yellow-400"
-            : "bg-white hover:bg-gray-50 text-gray-700"
-        }`}
-      >
-        {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-      </button>
-
-      <div
-        className={`w-full max-w-md p-8 rounded-2xl shadow-2xl ${
-          darkMode ? "bg-gray-800" : "bg-white"
-        }`}
-      >
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2">🗞️ Newslit</h1>
-          <p
-            className={`text-sm ${
-              darkMode ? "text-gray-400" : "text-gray-600"
-            }`}
-          >
-            매일 영어 기사로 배우는 영어 학습
-          </p>
-        </div>
-
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setIsLogin(true)}
-            className={`flex-1 py-2.5 rounded-lg font-medium transition-all ${
-              isLogin
-                ? darkMode
-                  ? "bg-blue-600 text-white shadow-lg"
-                  : "bg-blue-500 text-white shadow-lg"
-                : darkMode
-                  ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            로그인
-          </button>
-          <button
-            onClick={() => setIsLogin(false)}
-            className={`flex-1 py-2.5 rounded-lg font-medium transition-all ${
-              !isLogin
-                ? darkMode
-                  ? "bg-blue-600 text-white shadow-lg"
-                  : "bg-blue-500 text-white shadow-lg"
-                : darkMode
-                  ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            회원가입
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              className={`block text-sm font-medium mb-2 ${
-                darkMode ? "text-gray-300" : "text-gray-700"
-              }`}
-            >
-              이메일
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="이메일을 입력하세요"
-              disabled={loading}
-              className={`w-full px-4 py-3 rounded-lg border transition-all ${
-                darkMode
-                  ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
-                  : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500"
-              } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50`}
-            />
-          </div>
-
-          {!isLogin && (
-            <div>
-              <label
-                className={`block text-sm font-medium mb-2 ${
-                  darkMode ? "text-gray-300" : "text-gray-700"
-                }`}
-              >
-                닉네임
-              </label>
-              <input
-                type="text"
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                placeholder="닉네임을 입력하세요"
-                disabled={loading}
-                className={`w-full px-4 py-3 rounded-lg border transition-all ${
-                  darkMode
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
-                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50`}
-              />
-            </div>
-          )}
-
-          <div>
-            <label
-              className={`block text-sm font-medium mb-2 ${
-                darkMode ? "text-gray-300" : "text-gray-700"
-              }`}
-            >
-              비밀번호
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="비밀번호를 입력하세요"
-              disabled={loading}
-              className={`w-full px-4 py-3 rounded-lg border transition-all ${
-                darkMode
-                  ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
-                  : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500"
-              } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50`}
-            />
-          </div>
-
-          {!isLogin && (
-            <div>
-              <label
-                className={`block text-sm font-medium mb-2 ${
-                  darkMode ? "text-gray-300" : "text-gray-700"
-                }`}
-              >
-                비밀번호 확인
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="비밀번호를 다시 입력하세요"
-                disabled={loading}
-                className={`w-full px-4 py-3 rounded-lg border transition-all ${
-                  darkMode
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
-                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50`}
-              />
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 ${
-              darkMode
-                ? "bg-blue-600 hover:bg-blue-700 text-white"
-                : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
-            } disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none`}
-          >
-            {loading ? "처리 중..." : isLogin ? "로그인" : "회원가입"}
-          </button>
-        </form>
-
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div
-                className={`w-full border-t ${
-                  darkMode ? "border-gray-700" : "border-gray-300"
-                }`}
-              ></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span
-                className={`px-2 ${
-                  darkMode
-                    ? "bg-gray-800 text-gray-400"
-                    : "bg-white text-gray-500"
-                }`}
-              >
-                또는
-              </span>
-            </div>
-          </div>
-
-          <button
-            onClick={onGuestMode}
-            className={`w-full mt-4 py-3 rounded-lg font-medium transition-all border-2 ${
-              darkMode
-                ? "border-gray-600 text-gray-300 hover:bg-gray-700"
-                : "border-gray-300 text-gray-700 hover:bg-gray-50"
-            }`}
-          >
-            비회원으로 시작하기
-          </button>
-        </div>
-
-        {isLogin && (
-          <div className="mt-6 text-center">
-            <a
-              href="#"
-              className={`text-sm ${
-                darkMode
-                  ? "text-blue-400 hover:text-blue-300"
-                  : "text-blue-600 hover:text-blue-700"
-              }`}
-            >
-              비밀번호를 잊으셨나요?
-            </a>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
+import AuthPage from "./AuthPage";
 
 export default function EnglishLearningApp() {
   // 초기 로딩 상태 추가
@@ -315,15 +33,7 @@ export default function EnglishLearningApp() {
   const [_userEmail, setUserEmail] = useState("");
   const [userNickname, setUserNickname] = useState("");
 
-  // UI 상태
-  const [darkMode, setDarkMode] = useState(false);
-  const [completed, setCompleted] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [showMeaning, setShowMeaning] = useState<Record<number, boolean>>({});
-  const [hoveredWordId, setHoveredWordId] = useState<string | null>(null);
-  const [expandedSentences, setExpandedSentences] = useState<
-    Record<number, boolean>
-  >({});
+
 
   // 데이터 상태
   const [articleData, setArticleData] =
@@ -333,14 +43,6 @@ export default function EnglishLearningApp() {
   const [completedDates, setCompletedDates] = useState<number[]>([]);
   const [availableDates, setAvailableDates] = useState<number[]>([]);
   const [vocabularies, setVocabularies] = useState<VocabularyItem[]>([]);
-
-  // 오디오 관련 상태 추가
-  const [currentAudioUrl, setCurrentAudioUrl] = useState<string>("");
-  const [playingSentenceIndex, setPlayingSentenceIndex] = useState<
-    number | null
-  >(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isPlayingFullAudio, setIsPlayingFullAudio] = useState(false);
 
   // 로그인 핸들러
   const handleLogin = (email: string, nickname: string) => {
@@ -399,7 +101,7 @@ export default function EnglishLearningApp() {
     setIsInitializing(false);
   }, []);
 
-  // 현재 날짜의 기사 불러오기 - 오디오 URL도 함께 저장
+  // 현재 날짜의 기사 불러오기
   useEffect(() => {
     if (!isAuthenticated && !isGuest) return;
 
@@ -411,22 +113,6 @@ export default function EnglishLearningApp() {
       if (data.sentences.length > 0 && data.sentences[0]?.articleId) {
         const vocabData = await fetchVocabulary(data.sentences[0].articleId);
         setVocabularies(vocabData);
-
-        // 해당 날짜의 오디오 URL 찾기
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth() + 1;
-        const availableData = await fetchAvailableDates(year, month);
-
-        const dayString = currentDate.toISOString().slice(0, 10);
-        const audioData = availableData.find(
-          (item) =>
-            item.displayDate === dayString &&
-            item.articleId === data.sentences[0].articleId,
-        );
-
-        if (audioData) {
-          setCurrentAudioUrl(audioData.audioUrl);
-        }
       }
 
       setLoading(false);
@@ -441,7 +127,7 @@ export default function EnglishLearningApp() {
     const selectedDate = new Date(
       currentMonth.getFullYear(),
       currentMonth.getMonth(),
-      day,
+      day
     );
     setCurrentDate(selectedDate);
   };
@@ -454,7 +140,7 @@ export default function EnglishLearningApp() {
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth() + 1;
 
-      const [completed, availableData] = await Promise.all([
+      const [completed, available] = await Promise.all([
         isAuthenticated
           ? fetchReadingHistory(year, month)
           : Promise.resolve([]),
@@ -462,150 +148,21 @@ export default function EnglishLearningApp() {
       ]);
 
       setCompletedDates(completed);
-
-      // availableData에서 날짜(day)만 추출하여 중복 제거
-      const days = [
-        ...new Set(
-          availableData.map((item) => parseInt(item.displayDate.slice(-2), 10)),
-        ),
-      ].sort((a, b) => a - b);
-
-      setAvailableDates(days);
+      setAvailableDates(available);
     };
 
     loadData();
   }, [currentMonth, isAuthenticated, isGuest]);
 
-  // 오디오 재생 함수
-  const playSentenceAudio = (index: number) => {
-    const sentence = articleData.sentences[index];
-
-    if (!currentAudioUrl || !sentence) {
-      alert("오디오를 불러올 수 없습니다.");
-      return;
-    }
-
-    // 이미 재생 중인 같은 문장이면 일시정지
-    if (
-      playingSentenceIndex === index &&
-      audioRef.current &&
-      !audioRef.current.paused
-    ) {
-      audioRef.current.pause();
-      setPlayingSentenceIndex(null);
-      return;
-    }
-
-    // 새로운 오디오 객체 생성 또는 기존 것 사용
-    if (!audioRef.current) {
-      audioRef.current = new Audio(currentAudioUrl);
-    } else if (audioRef.current.src !== currentAudioUrl) {
-      audioRef.current.src = currentAudioUrl;
-    }
-
-    const audio = audioRef.current;
-
-    // 시작 시간 설정
-    audio.currentTime = sentence.startTime;
-    setPlayingSentenceIndex(index);
-
-    // 재생
-    audio.play().catch((err) => {
-      console.error("Audio play failed:", err);
-      alert("오디오 재생에 실패했습니다.");
-      setPlayingSentenceIndex(null);
-    });
-
-    // 종료 시간 0.3초 전에 자동 정지
-    const checkTime = () => {
-      if (audio.currentTime >= sentence.endTime - 0.3) {
-        audio.pause();
-        setPlayingSentenceIndex(null);
-        audio.removeEventListener("timeupdate", checkTime);
-      }
-    };
-
-    audio.addEventListener("timeupdate", checkTime);
-
-    // 오디오가 끝나거나 에러 발생 시
-    audio.onended = () => {
-      setPlayingSentenceIndex(null);
-    };
-
-    audio.onerror = () => {
-      alert("오디오 재생 중 오류가 발생했습니다.");
-      setPlayingSentenceIndex(null);
-    };
-  };
-
-  // 컴포넌트 언마운트 시 오디오 정리
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
-  }, []);
-
   const playAudio = (): void => {
-    if (!currentAudioUrl || articleData.sentences.length === 0) {
-      alert("오디오를 불러올 수 없습니다.");
-      return;
-    }
-
-    // 오디오 객체 생성 또는 재사용
-    if (!audioRef.current) {
-      audioRef.current = new Audio(currentAudioUrl);
-    } else if (audioRef.current.src !== currentAudioUrl) {
-      audioRef.current.src = currentAudioUrl;
-    }
-
-    const audio = audioRef.current;
-
-    // 이미 재생 중이면 일시정지
-    if (isPlayingFullAudio) {
-      audio.pause();
-      setIsPlayingFullAudio(false);
-      return;
-    }
-
-    // 첫 번째 문장의 시작 시간부터 재생
-    const firstSentence = articleData.sentences[0];
-    const lastSentence =
-      articleData.sentences[articleData.sentences.length - 1];
-
-    audio.currentTime = firstSentence.startTime;
-    setIsPlayingFullAudio(true);
-
-    audio.play().catch((err) => {
-      console.error("Audio play failed:", err);
-      alert("오디오 재생에 실패했습니다.");
-      setIsPlayingFullAudio(false);
-    });
-
-    // 마지막 문장 종료 시간에 도달하면 자동 정지
-    const checkTime = () => {
-      if (audio.currentTime >= lastSentence.endTime - 0.3) {
-        audio.pause();
-        setIsPlayingFullAudio(false);
-        audio.removeEventListener("timeupdate", checkTime);
-      }
-    };
-
-    audio.addEventListener("timeupdate", checkTime);
-
-    // 오디오 종료 시
-    audio.onended = () => {
-      setIsPlayingFullAudio(false);
-    };
+    alert("음성 재생 기능은 백엔드 연동 후 사용 가능합니다.");
   };
 
   // 완료 처리
   const handleComplete = async () => {
     if (!isAuthenticated) {
       const confirmLogin = window.confirm(
-        "로그인이 필요한 기능입니다.\n로그인 페이지로 이동하시겠습니까?",
+        "로그인이 필요한 기능입니다.\n로그인 페이지로 이동하시겠습니까?"
       );
       if (confirmLogin) {
         goToLogin();
@@ -624,12 +181,13 @@ export default function EnglishLearningApp() {
 
     try {
       await markArticleAsComplete(articleData.dailyId);
-      if (completed) {
+      if(completed){
         alert("미완료 처리 되었습니다");
-      } else {
-        alert("완료 처리 되었습니다.");
+      }else{
+        alert("완료 처리 되었습니다.")
       }
       setCompleted(!completed);
+      
 
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth() + 1;
@@ -686,7 +244,7 @@ export default function EnglishLearningApp() {
 
     return parts.map((part, index) => {
       const vocab = vocabularies.find(
-        (v) => v.word.toLowerCase() === part.toLowerCase(),
+        (v) => v.word.toLowerCase() === part.toLowerCase()
       );
 
       if (vocab) {
@@ -716,7 +274,7 @@ export default function EnglishLearningApp() {
                 <span className="block font-bold">{vocab.word}</span>
                 <span
                   className={`text-xs px-2 py-0.5 rounded ${getPosColor(
-                    vocab.partOfSpeech,
+                    vocab.partOfSpeech
                   )} inline-block my-1`}
                 >
                   {getShortPos(vocab.partOfSpeech)}
@@ -739,7 +297,7 @@ export default function EnglishLearningApp() {
       .toLowerCase();
 
     return vocabularies.filter((vocab) =>
-      allText.includes(vocab.word.toLowerCase()),
+      allText.includes(vocab.word.toLowerCase())
     );
   };
 
@@ -772,7 +330,7 @@ export default function EnglishLearningApp() {
 
   const changeMonth = (delta: number): void => {
     setCurrentMonth(
-      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + delta, 1),
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + delta, 1)
     );
   };
 
@@ -922,66 +480,35 @@ export default function EnglishLearningApp() {
             {articleData.sentences.map((sentence, index) => (
               <div
                 key={index}
-                className={`transition-all duration-200 ${
+                onClick={() =>
+                  setExpandedSentences((prev) => ({
+                    ...prev,
+                    [index]: !prev[index],
+                  }))
+                }
+                className={`cursor-pointer transition-all duration-200 ${
                   darkMode ? "hover:bg-gray-700/30" : "hover:bg-gray-50"
                 } rounded-lg p-4 -mx-4`}
               >
-                <div className="flex items-start gap-3">
-                  {/* 오디오 재생 버튼 */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      playSentenceAudio(index);
-                    }}
-                    className={`flex-shrink-0 p-2 rounded-full transition-all ${
-                      playingSentenceIndex === index
-                        ? darkMode
-                          ? "bg-blue-600 text-white"
-                          : "bg-blue-500 text-white"
-                        : darkMode
-                          ? "bg-gray-700 hover:bg-gray-600 text-gray-300"
-                          : "bg-gray-100 hover:bg-gray-200 text-gray-600"
+                <p className="text-lg leading-relaxed">
+                  {highlightVocabulary(sentence.englishText, index)}
+                </p>
+                <div
+                  className={`overflow-hidden transition-all duration-300 ${
+                    expandedSentences[index]
+                      ? "max-h-40 opacity-100 mt-3"
+                      : "max-h-0 opacity-0"
+                  }`}
+                >
+                  <p
+                    className={`text-base border-l-2 pl-3 ${
+                      darkMode
+                        ? "text-gray-300 border-blue-500"
+                        : "text-gray-600 border-blue-400"
                     }`}
-                    disabled={!currentAudioUrl}
                   >
-                    {playingSentenceIndex === index ? (
-                      <Pause className="w-4 h-4" />
-                    ) : (
-                      <Play className="w-4 h-4" />
-                    )}
-                  </button>
-
-                  {/* 문장 텍스트 */}
-                  <div
-                    className="flex-1 cursor-pointer"
-                    onClick={() =>
-                      setExpandedSentences((prev) => ({
-                        ...prev,
-                        [index]: !prev[index],
-                      }))
-                    }
-                  >
-                    <p className="text-lg leading-relaxed">
-                      {highlightVocabulary(sentence.englishText, index)}
-                    </p>
-                    <div
-                      className={`overflow-hidden transition-all duration-300 ${
-                        expandedSentences[index]
-                          ? "max-h-40 opacity-100 mt-3"
-                          : "max-h-0 opacity-0"
-                      }`}
-                    >
-                      <p
-                        className={`text-base border-l-2 pl-3 ${
-                          darkMode
-                            ? "text-gray-300 border-blue-500"
-                            : "text-gray-600 border-blue-400"
-                        }`}
-                      >
-                        {sentence.koreanText}
-                      </p>
-                    </div>
-                  </div>
+                    {sentence.koreanText}
+                  </p>
                 </div>
               </div>
             ))}
@@ -992,7 +519,7 @@ export default function EnglishLearningApp() {
               onClick={(e) => {
                 e.stopPropagation();
                 const allExpanded = articleData.sentences.every(
-                  (_, i) => expandedSentences[i],
+                  (_, i) => expandedSentences[i]
                 );
                 const newState: Record<number, boolean> = {};
                 articleData.sentences.forEach((_, i) => {
@@ -1067,7 +594,7 @@ export default function EnglishLearningApp() {
                     <span className="font-bold text-lg">{item.word}</span>
                     <span
                       className={`text-xs px-2 py-1 rounded ${getPosColor(
-                        item.partOfSpeech,
+                        item.partOfSpeech
                       )}`}
                     >
                       {getShortPos(item.partOfSpeech)}
@@ -1106,21 +633,13 @@ export default function EnglishLearningApp() {
           <button
             onClick={playAudio}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${
-              isPlayingFullAudio
-                ? darkMode
-                  ? "bg-orange-600 hover:bg-orange-700"
-                  : "bg-orange-500 hover:bg-orange-600"
-                : darkMode
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "bg-blue-500 hover:bg-blue-600"
+              darkMode
+                ? "bg-blue-600 hover:bg-blue-700"
+                : "bg-blue-500 hover:bg-blue-600"
             } text-white`}
           >
-            {isPlayingFullAudio ? (
-              <Pause className="w-5 h-5" />
-            ) : (
-              <Volume2 className="w-5 h-5" />
-            )}
-            {isPlayingFullAudio ? "Pause Audio" : "Play Audio"}
+            <Volume2 className="w-5 h-5" />
+            Play Audio
           </button>
           <button
             onClick={handleComplete}
@@ -1130,8 +649,8 @@ export default function EnglishLearningApp() {
                   ? "bg-green-600 hover:bg-green-700"
                   : "bg-green-500 hover:bg-green-600"
                 : darkMode
-                  ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-gray-200 hover:bg-gray-300"
+                ? "bg-gray-700 hover:bg-gray-600"
+                : "bg-gray-200 hover:bg-gray-300"
             } ${completed ? "text-white" : ""}`}
           >
             <Check className="w-5 h-5" />
@@ -1199,10 +718,10 @@ export default function EnglishLearningApp() {
                           ? "bg-green-600 text-white shadow-md"
                           : "bg-green-500 text-white shadow-md"
                         : isCurrentSelected
-                          ? darkMode
-                            ? "bg-blue-600 text-white shadow-lg scale-105"
-                            : "bg-blue-500 text-white shadow-lg scale-105"
-                          : ""
+                        ? darkMode
+                          ? "bg-blue-600 text-white shadow-lg scale-105"
+                          : "bg-blue-500 text-white shadow-lg scale-105"
+                        : ""
                     }`}
                   >
                     {day}
