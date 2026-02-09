@@ -12,11 +12,11 @@ import {
 import { fetchVocabulary } from "./services/vocabularyService";
 import type { DailyData, VocabularyItem } from "@/types";
 import { AuthService } from "./services/authService";
-import AuthPage from "./AuthPage";
-import CalendarSection from "./CalendarSection";
-import VocabularySection from "./VocabularySection";
-import Header from "./Header";
-import ArticleSection from "./ArticleSection";
+import AuthPage from "./components/AuthPage";
+import CalendarSection from "./components/CalendarSection";
+import VocabularySection from "./components/VocabularySection";
+import Header from "./components/Header";
+import ArticleSection from "./components/ArticleSection";
 
 export default function EnglishLearningApp() {
   // 초기 로딩 상태 추가

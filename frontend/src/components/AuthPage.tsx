@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AuthService } from "./services/authService";
+import { AuthService } from "../services/authService";
 import type { AuthResponse } from "@/types";
 import { Moon, Sun } from "lucide-react";
 
