@@ -40,6 +40,8 @@ public class AudioService {
     private static final String RESPONSE_FORMAT = "verbose_json";
     private static final String TIMESTAMP_GRANULARITY = "segment";
     private static final MediaType AUDIO_MEDIA_TYPE = MediaType.parse("audio/mpeg");
+    private static final int LONG_SENTENCE_MATCH_LENGTH = 10;
+    private static final double SHORT_SENTENCE_MATCH_RATIO = 0.8;
 
     @Value("${openai.api-key}")
     private String apiKey;
@@ -121,14 +123,14 @@ public class AudioService {
     }
 
     private boolean isPartialMatch(String sentenceText, String segmentText) {
-        int minMatchLength = 10;
+        int minMatchLength = LONG_SENTENCE_MATCH_LENGTH;
 
         // 둘 중 짧은 문장 기준
         int minLength = Math.min(sentenceText.length(), segmentText.length());
 
         if (minLength < minMatchLength) {
             // 짧은 문장: 80% 이상 일치
-            int matchLength = (int) (minLength * 0.8);
+            int matchLength = (int) (minLength * SHORT_SENTENCE_MATCH_RATIO);
             return sentenceText.startsWith(segmentText.substring(0, Math.min(matchLength, segmentText.length())))
                     || segmentText.startsWith(sentenceText.substring(0, Math.min(matchLength, sentenceText.length())));
         } else {
