@@ -1,14 +1,15 @@
 package com.newslit.backend.global.setup;
 
-import com.deepl.api.DeepLException;
 import com.newslit.backend.article.Article;
 import com.newslit.backend.article.ArticleRepository;
+import com.newslit.backend.audio.AudioService;
 import com.newslit.backend.crawl.VoaArticleCrawlerService;
 import com.newslit.backend.crawl.VoaRssCrawlerService;
 import com.newslit.backend.daily.DailyService;
 import com.newslit.backend.daily.exception.DuplicateDailyException;
 import com.newslit.backend.sentence.SentenceService;
 import com.newslit.backend.vocabulary.VocabularyService;
+import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -28,6 +29,7 @@ public class DataSetupRunner implements CommandLineRunner {
     private final ArticleRepository articleRepository;
     private final SentenceService sentenceService;
     private final VocabularyService vocabularyService;
+    private final AudioService audioService;
 
     @Override
     public void run(String... args) throws Exception {
@@ -37,13 +39,22 @@ public class DataSetupRunner implements CommandLineRunner {
 
         List<Long> articleIds = articleRepository.findAll().stream().map(Article::getId).toList();
 
-        articleIds.stream().limit(5).forEach(i -> {
+        articleIds.stream().limit(2).forEach(i -> {
             try {
                 sentenceService.translateOneParagraph(i);
+                articleRepository.findById(i)
+                        .filter(article -> article.getAudioLink() == null || article.getAudioLink().isEmpty())
+                        .ifPresent(article -> {
+                            try {
+                                log.info("article {} 타임스탬프 시작", i);
+                                audioService.saveTimeStamp(i);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
                 log.info("Article {} 번역 완료", i);
-            } catch (DeepLException e) {
-                throw new RuntimeException(e);
-            } catch (InterruptedException e) {
+            } catch (Exception e) {
+                log.error("Article {} 처리 중 오류 발생", i, e);
                 throw new RuntimeException(e);
             }
         });

@@ -61,8 +61,8 @@ export async function fetchArticle(date: Date): Promise<DailyData> {
  */
 export async function fetchAvailableDates(
   year: number,
-  month: number
-): Promise<number[]> {
+  month: number,
+): Promise<AvailableDatesResponse> {
   try {
     const monthString = String(month).padStart(2, "0");
     const dateString = `${year}${monthString}`;
@@ -76,10 +76,7 @@ export async function fetchAvailableDates(
     }
 
     const data: AvailableDatesResponse = await response.json();
-    return data.map((item) => {
-      const day = parseInt(item.displayDate.slice(-2), 10);
-      return day;
-    });
+    return data;
   } catch (error) {
     console.error("Failed to fetch available dates:", error);
     return [];

@@ -14,6 +14,7 @@ public class ArticleRequestDto {
     private String title;
     private String originalText;
     private String sourceUrl;
+    private String mp3Link;
     private LocalDate publishedDate;
     private String source;
 }

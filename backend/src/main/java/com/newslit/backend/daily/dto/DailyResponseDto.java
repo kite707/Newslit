@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DailyResponseDto {
     private Long articleId;
+    private String audioUrl;
     private int startIndex;
     private int endIndex;
     private int wordCount;
