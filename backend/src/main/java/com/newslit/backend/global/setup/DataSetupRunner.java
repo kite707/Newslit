@@ -54,7 +54,7 @@ public class DataSetupRunner implements CommandLineRunner {
                         });
                 log.info("Article {} 번역 완료", i);
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Article {} 처리 중 오류 발생", i, e);
                 throw new RuntimeException(e);
             }
         });
