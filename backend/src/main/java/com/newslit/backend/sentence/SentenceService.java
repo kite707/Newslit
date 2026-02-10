@@ -17,7 +17,6 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -115,7 +114,6 @@ public class SentenceService {
                         .status(Status.SUCCESS)
                         .build();
             } catch (Exception e) {
-                lastException = e;
                 if (e instanceof InterruptedException) {
                     Thread.currentThread().interrupt();
                     sentence.setTranslationStatus(Status.FAILED);
@@ -127,10 +125,6 @@ public class SentenceService {
         }
         sentence.setTranslationStatus(Status.FAILED);
         sentenceRepository.save(sentence);
-
-        if (lastException instanceof DeepLException) {
-            throw new TranslationFailedException();
-        }
         throw new TranslationFailedException();
     }
 
