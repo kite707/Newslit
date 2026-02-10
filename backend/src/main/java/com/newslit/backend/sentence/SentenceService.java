@@ -6,14 +6,13 @@ import com.newslit.backend.article.Article;
 import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.article.exception.ArticleNotFoundException;
 import com.newslit.backend.global.common.enums.Status;
-import com.newslit.backend.global.setup.DataSetupRunner;
 import com.newslit.backend.sentence.dto.SentenceResponseDto;
+import com.newslit.backend.sentence.exception.TranslationFailedException;
+import com.newslit.backend.sentence.exception.TranslationInterruptedException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,11 +22,10 @@ public class SentenceService {
     private final DeepLClient deepLClient;
     private final SentenceRepository sentenceRepository;
     private final ArticleRepository articleRepository;
-    private static final Logger log = LoggerFactory.getLogger(DataSetupRunner.class);
 
-    public List<SentenceResponseDto> translateOneParagraph(Long articleId) throws DeepLException, InterruptedException {
+    public List<SentenceResponseDto> translateOneParagraph(Long articleId) {
         Article article = articleRepository.findById(articleId)
-                .orElseThrow(() -> new ArticleNotFoundException());
+                .orElseThrow(ArticleNotFoundException::new);
 
         String paragraph = article.getOriginalText();
         List<String> sentences = splitIntoSentencesAdvanced(paragraph);
@@ -43,46 +41,68 @@ public class SentenceService {
 
     @Transactional
     public SentenceResponseDto translateSingleSentence(Long articleId, Article article, String englishText,
-                                                       int orderIndex)
-            throws DeepLException, InterruptedException {
+                                                       int orderIndex) {
 
         Optional<Sentence> existing = sentenceRepository
                 .findByArticleIdAndEnglishText(articleId, englishText);
 
-        Sentence sentence;
-
-        if (existing.isPresent()) {
-            sentence = existing.get();
-            if (sentence.getTranslationStatus() == Status.SUCCESS) {
-                return toSentenceDto(sentence);
-            }
-            sentence.setTranslationStatus(Status.PROCESSING);
-            sentenceRepository.save(sentence);
-
-        } else {
-            sentence = Sentence.builder()
-                    .article(article)
-                    .translationStatus(Status.PROCESSING)
-                    .orderIndex(orderIndex)
-                    .englishText(englishText)
-                    .koreanText("")
-                    .build();
-            sentence = sentenceRepository.save(sentence);
+        //이미 번역 성공하여 저장되어있으면 pass
+        if (existing.isPresent() && existing.get().getTranslationStatus() == Status.SUCCESS) {
+            return toSentenceDto(existing.get());
         }
 
-        String translatedText = deepLClient.translateText(englishText, null, "ko").getText();
+        //실패 상태거나, 없는 문장이면 해석 API 호출
+        Sentence sentence = existing.orElseGet(() -> createNewSentence(article, englishText, orderIndex));
 
-        sentence.setKoreanText(translatedText);
-        sentence.setTranslationStatus(Status.SUCCESS);
-        Sentence saved = sentenceRepository.save(sentence);
+        return processTranslation(sentence, englishText, articleId, orderIndex);
+    }
 
-        return SentenceResponseDto.builder()
-                .articleId(articleId)
-                .orderIndex(orderIndex)
-                .englishText(englishText)
-                .koreanText(translatedText)
-                .status(saved.getTranslationStatus())
-                .build();
+    private Sentence createNewSentence(Article article, String englishText, int orderIndex) {
+        return sentenceRepository.save(
+                Sentence.builder()
+                        .article(article)
+                        .translationStatus(Status.PENDING)
+                        .orderIndex(orderIndex)
+                        .englishText(englishText)
+                        .koreanText("")
+                        .build()
+        );
+    }
+
+    private SentenceResponseDto processTranslation(Sentence sentence, String englishText,
+                                                   Long articleId, int orderIndex) {
+
+        sentence.setTranslationStatus(Status.PROCESSING);
+        sentenceRepository.save(sentence);
+
+        try {
+            String translatedText = deepLClient.translateText(englishText, null, "ko").getText();
+
+            sentence.setKoreanText(translatedText);
+            sentence.setTranslationStatus(Status.SUCCESS);
+            sentenceRepository.save(sentence);
+
+            return SentenceResponseDto.builder()
+                    .articleId(articleId)
+                    .orderIndex(orderIndex)
+                    .englishText(englishText)
+                    .koreanText(translatedText)
+                    .status(Status.SUCCESS)
+                    .build();
+        } catch (Exception e) {
+            sentence.setTranslationStatus(Status.FAILED);
+            sentenceRepository.save(sentence);
+
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+                throw new TranslationInterruptedException();
+            }
+            if (e instanceof DeepLException) {
+                throw new TranslationFailedException();
+            }
+            throw new TranslationFailedException();
+        }
+
     }
 
     private List<String> splitIntoSentencesAdvanced(String text) {
