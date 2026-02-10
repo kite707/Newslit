@@ -17,26 +17,31 @@ export default function AuthPage({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email || !password) {
-      alert("이메일과 비밀번호를 입력해주세요.");
+    const newErrors: Record<string, string> = {};
+
+    if (!email) newErrors.email = "이메일을 입력해주세요.";
+    if (!password) newErrors.password = "비밀번호를 입력해주세요.";
+
+    if (!isLogin) {
+      if (!nickname) newErrors.nickname = "닉네임을 입력해주세요.";
+      if (password && confirmPassword && password !== confirmPassword) {
+        newErrors.confirmPassword = "비밀번호가 일치하지 않습니다.";
+      } else if (!confirmPassword) {
+        newErrors.confirmPassword = "비밀번호 확인을 입력해주세요.";
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
-    if (!isLogin) {
-      if (!nickname) {
-        alert("닉네임을 입력해주세요.");
-        return;
-      }
-      if (password !== confirmPassword) {
-        alert("비밀번호가 일치하지 않습니다.");
-        return;
-      }
-    }
-
+    setErrors({});
     setLoading(true);
 
     try {
@@ -51,9 +56,9 @@ export default function AuthPage({
       const displayName = data.nickname || nickname || email;
       onLogin(email, displayName);
     } catch (error) {
-      alert(
-        error instanceof Error ? error.message : "서버 연결에 실패했습니다.",
-      );
+      setErrors({
+        form: error instanceof Error ? error.message : "서버 연결에 실패했습니다.",
+      });
     } finally {
       setLoading(false);
     }
@@ -126,6 +131,12 @@ export default function AuthPage({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {errors.form && (
+            <div className="p-3 rounded-lg bg-red-100 text-red-700 text-sm">
+              {errors.form}
+            </div>
+          )}
+
           <div>
             <label
               className={`block text-sm font-medium mb-2 ${
@@ -137,15 +148,24 @@ export default function AuthPage({
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); setErrors((prev) => { const { email: _, ...rest } = prev; return rest; }); }}
               placeholder="이메일을 입력하세요"
               disabled={loading}
               className={`w-full px-4 py-3 rounded-lg border transition-all ${
+                errors.email
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                  : darkMode
+                    ? "border-gray-600 focus:border-blue-500"
+                    : "border-gray-300 focus:border-blue-500"
+              } ${
                 darkMode
-                  ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
-                  : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500"
-              } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50`}
+                  ? "bg-gray-700 text-white placeholder-gray-400"
+                  : "bg-white text-gray-900 placeholder-gray-400"
+              } focus:outline-none focus:ring-2 focus:ring-opacity-50 disabled:opacity-50`}
             />
+            {errors.email && (
+              <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+            )}
           </div>
 
           {!isLogin && (
@@ -160,15 +180,24 @@ export default function AuthPage({
               <input
                 type="text"
                 value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
+                onChange={(e) => { setNickname(e.target.value); setErrors((prev) => { const { nickname: _, ...rest } = prev; return rest; }); }}
                 placeholder="닉네임을 입력하세요"
                 disabled={loading}
                 className={`w-full px-4 py-3 rounded-lg border transition-all ${
+                  errors.nickname
+                    ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                    : darkMode
+                      ? "border-gray-600 focus:border-blue-500"
+                      : "border-gray-300 focus:border-blue-500"
+                } ${
                   darkMode
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
-                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50`}
+                    ? "bg-gray-700 text-white placeholder-gray-400"
+                    : "bg-white text-gray-900 placeholder-gray-400"
+                } focus:outline-none focus:ring-2 focus:ring-opacity-50 disabled:opacity-50`}
               />
+              {errors.nickname && (
+                <p className="mt-1 text-sm text-red-500">{errors.nickname}</p>
+              )}
             </div>
           )}
 
@@ -183,15 +212,24 @@ export default function AuthPage({
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => { setPassword(e.target.value); setErrors((prev) => { const { password: _, ...rest } = prev; return rest; }); }}
               placeholder="비밀번호를 입력하세요"
               disabled={loading}
               className={`w-full px-4 py-3 rounded-lg border transition-all ${
+                errors.password
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                  : darkMode
+                    ? "border-gray-600 focus:border-blue-500"
+                    : "border-gray-300 focus:border-blue-500"
+              } ${
                 darkMode
-                  ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
-                  : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500"
-              } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50`}
+                  ? "bg-gray-700 text-white placeholder-gray-400"
+                  : "bg-white text-gray-900 placeholder-gray-400"
+              } focus:outline-none focus:ring-2 focus:ring-opacity-50 disabled:opacity-50`}
             />
+            {errors.password && (
+              <p className="mt-1 text-sm text-red-500">{errors.password}</p>
+            )}
           </div>
 
           {!isLogin && (
@@ -206,15 +244,24 @@ export default function AuthPage({
               <input
                 type="password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => { setConfirmPassword(e.target.value); setErrors((prev) => { const { confirmPassword: _, ...rest } = prev; return rest; }); }}
                 placeholder="비밀번호를 다시 입력하세요"
                 disabled={loading}
                 className={`w-full px-4 py-3 rounded-lg border transition-all ${
+                  errors.confirmPassword
+                    ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                    : darkMode
+                      ? "border-gray-600 focus:border-blue-500"
+                      : "border-gray-300 focus:border-blue-500"
+                } ${
                   darkMode
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
-                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-blue-500"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50`}
+                    ? "bg-gray-700 text-white placeholder-gray-400"
+                    : "bg-white text-gray-900 placeholder-gray-400"
+                } focus:outline-none focus:ring-2 focus:ring-opacity-50 disabled:opacity-50`}
               />
+              {errors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>
+              )}
             </div>
           )}
 
