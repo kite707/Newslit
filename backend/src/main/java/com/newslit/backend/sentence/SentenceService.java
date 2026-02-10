@@ -75,6 +75,7 @@ public class SentenceService {
     }
 
     public void retryTranslation(Sentence sentence) throws DeepLException, InterruptedException {
+        sentence.incrementRetryCount();
         try {
             String translatedText = deepLClient
                     .translateText(sentence.getEnglishText(), null, "ko")

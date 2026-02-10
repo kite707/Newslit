@@ -28,7 +28,6 @@ public class SentenceScheduler {
         int failCount = 0;
 
         for (Sentence sentence : failedSentences) {
-            sentence.incrementRetryCount();
             try {
                 sentenceService.retryTranslation(sentence);
                 successCount++;
