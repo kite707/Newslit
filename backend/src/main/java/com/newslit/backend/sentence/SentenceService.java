@@ -9,8 +9,10 @@ import com.newslit.backend.global.common.enums.Status;
 import com.newslit.backend.sentence.dto.SentenceResponseDto;
 import com.newslit.backend.sentence.exception.TranslationFailedException;
 import com.newslit.backend.sentence.exception.TranslationInterruptedException;
+import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,8 @@ public class SentenceService {
     private final DeepLClient deepLClient;
     private final SentenceRepository sentenceRepository;
     private final ArticleRepository articleRepository;
+
+    private static final Integer MAX_RETRY_CNT = 3;
 
     public List<SentenceResponseDto> translateOneParagraph(Long articleId) {
         Article article = articleRepository.findById(articleId)
@@ -71,38 +75,56 @@ public class SentenceService {
 
     private SentenceResponseDto processTranslation(Sentence sentence, String englishText,
                                                    Long articleId, int orderIndex) {
-
         sentence.setTranslationStatus(Status.PROCESSING);
         sentenceRepository.save(sentence);
 
-        try {
-            String translatedText = deepLClient.translateText(englishText, null, "ko").getText();
+        Exception lastException = null;
+        for (int retryCnt = 0; retryCnt < MAX_RETRY_CNT; retryCnt++) {
+            try {
+                String translatedText = deepLClient.translateText(englishText, null, "ko").getText();
 
-            sentence.setKoreanText(translatedText);
-            sentence.setTranslationStatus(Status.SUCCESS);
-            sentenceRepository.save(sentence);
+                sentence.setKoreanText(translatedText);
+                sentence.setTranslationStatus(Status.SUCCESS);
+                sentenceRepository.save(sentence);
 
-            return SentenceResponseDto.builder()
-                    .articleId(articleId)
-                    .orderIndex(orderIndex)
-                    .englishText(englishText)
-                    .koreanText(translatedText)
-                    .status(Status.SUCCESS)
-                    .build();
-        } catch (Exception e) {
-            sentence.setTranslationStatus(Status.FAILED);
-            sentenceRepository.save(sentence);
-
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-                throw new TranslationInterruptedException();
+                return SentenceResponseDto.builder()
+                        .articleId(articleId)
+                        .orderIndex(orderIndex)
+                        .englishText(englishText)
+                        .koreanText(translatedText)
+                        .status(Status.SUCCESS)
+                        .build();
+            } catch (Exception e) {
+                lastException = e;
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                    sentence.setTranslationStatus(Status.FAILED);
+                    sentenceRepository.save(sentence);
+                    throw new TranslationInterruptedException();
+                }
+                waitBeforeRetry(retryCnt, sentence);
             }
-            if (e instanceof DeepLException) {
-                throw new TranslationFailedException();
-            }
+        }
+        sentence.setTranslationStatus(Status.FAILED);
+        sentenceRepository.save(sentence);
+
+        if (lastException instanceof DeepLException) {
             throw new TranslationFailedException();
         }
+        throw new TranslationFailedException();
+    }
 
+    private void waitBeforeRetry(int retryCnt, Sentence sentence) {
+        if (retryCnt < MAX_RETRY_CNT - 1) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                sentence.setTranslationStatus(Status.FAILED);
+                sentenceRepository.save(sentence);
+                throw new TranslationInterruptedException();
+            }
+        }
     }
 
     private List<String> splitIntoSentencesAdvanced(String text) {
@@ -115,11 +137,11 @@ public class SentenceService {
         // 구분선 제거
         text = text.replaceAll("(?m)^[\\-_=]{4,}\\s*$", "");
 
-        java.text.BreakIterator boundary = java.text.BreakIterator.getSentenceInstance(java.util.Locale.ENGLISH);
+        BreakIterator boundary = BreakIterator.getSentenceInstance(Locale.ENGLISH);
         boundary.setText(text);
 
         int start = boundary.first();
-        for (int end = boundary.next(); end != java.text.BreakIterator.DONE; start = end, end = boundary.next()) {
+        for (int end = boundary.next(); end != BreakIterator.DONE; start = end, end = boundary.next()) {
             String sentence = text.substring(start, end).trim();
             if (!sentence.isEmpty() && sentence.length() > 1) {
                 sentences.add(sentence);
