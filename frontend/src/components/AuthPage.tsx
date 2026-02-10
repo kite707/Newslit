@@ -314,8 +314,9 @@ export default function AuthPage({
 
         {isLogin && (
           <div className="mt-6 text-center">
-            <a
-              href="#"
+            <button
+              type="button"
+              onClick={() => setErrors({ form: "준비 중인 기능입니다." })}
               className={`text-sm ${
                 darkMode
                   ? "text-blue-400 hover:text-blue-300"
@@ -323,7 +324,7 @@ export default function AuthPage({
               }`}
             >
               비밀번호를 잊으셨나요?
-            </a>
+            </button>
           </div>
         )}
       </div>
