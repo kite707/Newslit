@@ -25,7 +25,12 @@ public enum ErrorCode {
 
     //Daily
     DUPLICATE_DAILY(HttpStatus.CONFLICT, "DLY-001", "이미 존재하는 일일 컨텐츠입니다"),
-    DAILY_NOT_FOUND(HttpStatus.CONFLICT, "DLY-002", "존재하지 않는 일일 컨텐츠입니다");
+    DAILY_NOT_FOUND(HttpStatus.CONFLICT, "DLY-002", "존재하지 않는 일일 컨텐츠입니다"),
+
+    //Sentence
+    TRANSLATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "SNT-001", "번역 처리 중 오류가 발생했습니다"),
+    TRANSLATION_INTERRUPTED(HttpStatus.INTERNAL_SERVER_ERROR, "SNT-002", "번역 작업이 중단되었습니다"),
+    SENTENCE_NOT_FOUND(HttpStatus.NOT_FOUND, "SNT-003", "존재하지 않는 문장입니다");
 
     private final HttpStatus status;
     private final String code;

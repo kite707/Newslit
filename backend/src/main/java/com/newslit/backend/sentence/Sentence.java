@@ -67,7 +67,15 @@ public class Sentence {
     @Builder.Default
     private Status translationStatus = Status.PENDING;
 
+    @Column(name = "retry_count", nullable = false)
+    @Builder.Default
+    private int retryCount = 0;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    public void incrementRetryCount() {
+        this.retryCount++;
+    }
 }
