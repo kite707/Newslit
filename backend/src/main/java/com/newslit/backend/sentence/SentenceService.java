@@ -97,9 +97,11 @@ public class SentenceService {
         sentence.setTranslationStatus(Status.PROCESSING);
         sentenceRepository.save(sentence);
 
-        Exception lastException = null;
         for (int retryCnt = 0; retryCnt < MAX_RETRY_CNT; retryCnt++) {
             try {
+                if (retryCnt > 0) {
+                    Thread.sleep(500);
+                }
                 String translatedText = deepLClient.translateText(englishText, null, "ko").getText();
 
                 sentence.setKoreanText(translatedText);
@@ -120,25 +122,11 @@ public class SentenceService {
                     sentenceRepository.save(sentence);
                     throw new TranslationInterruptedException();
                 }
-                waitBeforeRetry(retryCnt, sentence);
             }
         }
         sentence.setTranslationStatus(Status.FAILED);
         sentenceRepository.save(sentence);
         throw new TranslationFailedException();
-    }
-
-    private void waitBeforeRetry(int retryCnt, Sentence sentence) {
-        if (retryCnt < MAX_RETRY_CNT - 1) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-                sentence.setTranslationStatus(Status.FAILED);
-                sentenceRepository.save(sentence);
-                throw new TranslationInterruptedException();
-            }
-        }
     }
 
     private List<String> splitIntoSentencesAdvanced(String text) {
