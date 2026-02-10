@@ -15,11 +15,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SentenceService {
     private final DeepLClient deepLClient;
     private final SentenceRepository sentenceRepository;
@@ -71,6 +73,24 @@ public class SentenceService {
                         .koreanText("")
                         .build()
         );
+    }
+
+    public void retryTranslation(Sentence sentence) throws DeepLException, InterruptedException {
+        try {
+            String translatedText = deepLClient
+                    .translateText(sentence.getEnglishText(), null, "ko")
+                    .getText();
+
+            sentence.setKoreanText(translatedText);
+            sentence.setTranslationStatus(Status.SUCCESS);
+
+        } catch (Exception e) {
+            log.warn("스케줄링 재처리 실패 - Sentence ID: {}, Error: {}",
+                    sentence.getId(), e.getMessage());
+            throw e;
+        } finally {
+            sentenceRepository.save(sentence);
+        }
     }
 
     private SentenceResponseDto processTranslation(Sentence sentence, String englishText,
@@ -157,7 +177,6 @@ public class SentenceService {
                 .orderIndex(sentence.getOrderIndex())
                 .englishText(sentence.getEnglishText())
                 .koreanText(sentence.getKoreanText())
-                .status(sentence.getTranslationStatus())
                 .status(sentence.getTranslationStatus())
                 .build();
     }
