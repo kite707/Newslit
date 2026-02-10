@@ -27,7 +27,7 @@ public class SentenceService {
     private final SentenceRepository sentenceRepository;
     private final ArticleRepository articleRepository;
 
-    private static final Integer MAX_RETRY_CNT = 3;
+    private static final int MAX_RETRY_CNT = 3;
 
     public List<SentenceResponseDto> translateOneParagraph(Long articleId) {
         Article article = articleRepository.findById(articleId)
