@@ -45,7 +45,6 @@ public class SentenceService {
         return responses;
     }
 
-    @Transactional
     public SentenceResponseDto translateSingleSentence(Long articleId, Article article, String englishText,
                                                        int orderIndex) {
 
