@@ -111,7 +111,7 @@ public class AudioService {
                 String segmentText = normalizeText(segments.get(segmentIdx).getText());
                 System.out.println("SegmentText is " + segmentText);
 
-                if (isPartialMatch(englishText, segmentText)) {
+                if (englishText.equals(segmentText)) {
                     sentence.setStartTime(segments.get(segmentIdx).getStart());
                     sentence.setEndTime(segments.get(segmentIdx).getEnd());
                     matched = true;
@@ -132,24 +132,6 @@ public class AudioService {
                 .toLowerCase()
                 .replaceAll("[,.!?;:\"']", "")
                 .replaceAll("\\s+", " ");
-    }
-
-    private boolean isPartialMatch(String sentenceText, String segmentText) {
-        int minMatchLength = LONG_SENTENCE_MATCH_LENGTH;
-
-        // 둘 중 짧은 문장 기준
-        int minLength = Math.min(sentenceText.length(), segmentText.length());
-
-        if (minLength < minMatchLength) {
-            // 짧은 문장: 80% 이상 일치
-            int matchLength = (int) (minLength * SHORT_SENTENCE_MATCH_RATIO);
-            return sentenceText.startsWith(segmentText.substring(0, Math.min(matchLength, segmentText.length())))
-                    || segmentText.startsWith(sentenceText.substring(0, Math.min(matchLength, sentenceText.length())));
-        } else {
-            // 긴 문장: 앞부분 10자 이상 일치
-            return sentenceText.startsWith(segmentText.substring(0, minMatchLength))
-                    || segmentText.startsWith(sentenceText.substring(0, minMatchLength));
-        }
     }
 
     public List<SegmentDto> transcribe(File audioFile) throws IOException {
