@@ -57,7 +57,7 @@ public class AudioService {
 
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
-    private final ObjectStorage objectStorage;
+    //    private final ObjectStorage objectStorage;
     private final ArticleRepository articleRepository;
 
     @Transactional
@@ -68,7 +68,7 @@ public class AudioService {
 
         File audioFile = downloadAudioFile(article.getAudioDownloadLink());
 
-        uploadMp3ToStorage(articleId, audioFile);
+//        uploadMp3ToStorage(articleId, audioFile);
 
         try {
             List<SegmentDto> segments = transcribe(audioFile);
@@ -106,20 +106,35 @@ public class AudioService {
 
     private void matchAndSaveTimestamps(List<SegmentDto> segments, List<Sentence> sentences) {
         for (Sentence sentence : sentences) {
-            String englishText = sentence.getEnglishText().trim().toLowerCase();
+            String englishText = normalizeText(sentence.getEnglishText());
+            System.out.println("CurSentence is " + englishText);
 
-            // 매칭되는 segment 찾기
+            boolean matched = false;
+
             for (SegmentDto segment : segments) {
-                String segmentText = segment.getText().trim().toLowerCase();
+                String segmentText = normalizeText(segment.getText());
+                System.out.println("SegmentText is " + segmentText);
 
-                // 앞부분 일치 확인 (최소 10자 이상 일치하거나, 짧은 문장은 80% 이상 일치)
                 if (isPartialMatch(englishText, segmentText)) {
                     sentence.setStartTime(segment.getStart());
                     sentence.setEndTime(segment.getEnd());
+                    matched = true;
+                    System.out.println("[SUCCESS] Matched!");
                     break;
                 }
             }
+
+            if (!matched) {
+                System.out.println("[FAILED] " + englishText);
+            }
         }
+    }
+
+    private String normalizeText(String text) {
+        return text.trim()
+                .toLowerCase()
+                .replaceAll("[,.!?;:\"']", "")
+                .replaceAll("\\s+", " ");
     }
 
     private boolean isPartialMatch(String sentenceText, String segmentText) {
@@ -198,46 +213,49 @@ public class AudioService {
         if (current != null) {
             mergedSegments.add(current);
         }
+        System.out.println("=============mergedSegments=====================");
+        mergedSegments.forEach(System.out::println);
+        System.out.println("=============mergedSegments=====================");
         return mergedSegments;
     }
 
-    public void uploadMp3ToStorage(Long articleId, File audioFile) throws IOException {
-        Article article = articleRepository.findById(articleId)
-                .orElseThrow(ArticleNotFoundException::new);
-
-        if (!audioFile.exists()) {
-            throw new IOException("Audio file does not exist: " + audioFile.getPath());
-        }
-
-        String objectName = article.getTitle()
-                .replaceAll("[^a-zA-Z0-9가-힣.-]", "_") + ".mp3";
-
-        // URL 인코딩 처리
-        String encodedObjectName = URLEncoder.encode(objectName, StandardCharsets.UTF_8)
-                .replace("+", "%20");
-
-        try (InputStream inputStream = new FileInputStream(audioFile)) {
-            PutObjectRequest putRequest = PutObjectRequest.builder()
-                    .namespaceName(namespace)
-                    .bucketName(bucket)
-                    .objectName(objectName)
-                    .contentLength(audioFile.length())
-                    .contentType("audio/mpeg")
-                    .putObjectBody(inputStream)
-                    .build();
-
-            objectStorage.putObject(putRequest);
-
-            String audioUrl = String.format(
-                    "https://objectstorage.%s.oraclecloud.com/n/%s/b/%s/o/%s",
-                    region,
-                    namespace,
-                    bucket,
-                    encodedObjectName
-            );
-
-            article.setAudioLink(audioUrl);
-            articleRepository.save(article);
-        }
-    }
+//    public void uploadMp3ToStorage(Long articleId, File audioFile) throws IOException {
+//        Article article = articleRepository.findById(articleId)
+//                .orElseThrow(ArticleNotFoundException::new);
+//
+//        if (!audioFile.exists()) {
+//            throw new IOException("Audio file does not exist: " + audioFile.getPath());
+//        }
+//
+//        String objectName = article.getTitle()
+//                .replaceAll("[^a-zA-Z0-9가-힣.-]", "_") + ".mp3";
+//
+//        // URL 인코딩 처리
+//        String encodedObjectName = URLEncoder.encode(objectName, StandardCharsets.UTF_8)
+//                .replace("+", "%20");
+//
+//        try (InputStream inputStream = new FileInputStream(audioFile)) {
+//            PutObjectRequest putRequest = PutObjectRequest.builder()
+//                    .namespaceName(namespace)
+//                    .bucketName(bucket)
+//                    .objectName(objectName)
+//                    .contentLength(audioFile.length())
+//                    .contentType("audio/mpeg")
+//                    .putObjectBody(inputStream)
+//                    .build();
+//
+//            objectStorage.putObject(putRequest);
+//
+//            String audioUrl = String.format(
+//                    "https://objectstorage.%s.oraclecloud.com/n/%s/b/%s/o/%s",
+//                    region,
+//                    namespace,
+//                    bucket,
+//                    encodedObjectName
+//            );
+//
+//            article.setAudioLink(audioUrl);
+//            articleRepository.save(article);
+//        }
+//    }
 }
