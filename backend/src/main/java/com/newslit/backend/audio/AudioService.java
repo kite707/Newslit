@@ -6,9 +6,11 @@ import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.article.exception.ArticleNotFoundException;
 import com.newslit.backend.audio.dto.SegmentDto;
 import com.newslit.backend.audio.dto.WhisperResponseDto;
+import com.newslit.backend.audio.dto.WordDto;
 import com.newslit.backend.sentence.Sentence;
 import jakarta.transaction.Transactional;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -20,6 +22,7 @@ import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.Request.Builder;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.springframework.beans.factory.annotation.Value;
@@ -66,12 +69,12 @@ public class AudioService {
 //        uploadMp3ToStorage(articleId, audioFile);
 
         try {
-            List<SegmentDto> segments = transcribe(audioFile);
+            List<WordDto> words = transcribe(audioFile, article);
             List<Sentence> sentences = article.getSentences().stream()
                     .sorted(Comparator.comparing(Sentence::getOrderIndex))
                     .collect(Collectors.toList());
 
-            matchAndSaveTimestamps(segments, sentences);
+            matchAndSaveTimestamps(words, sentences);
         } finally {
             audioFile.delete();
         }
@@ -79,7 +82,7 @@ public class AudioService {
     }
 
     private File downloadAudioFile(String url) throws IOException {
-        Request request = new Request.Builder()
+        Request request = new Builder()
                 .url(url)
                 .get()
                 .build();
@@ -92,59 +95,69 @@ public class AudioService {
             // 임시 파일 생성
             File tempFile = File.createTempFile("audio_", ".mp3");
             try (var inputStream = response.body().byteStream();
-                 var outputStream = new java.io.FileOutputStream(tempFile)) {
+                 var outputStream = new FileOutputStream(tempFile)) {
                 inputStream.transferTo(outputStream);
             }
             return tempFile;
         }
     }
 
-    private void matchAndSaveTimestamps(List<SegmentDto> segments, List<Sentence> sentences) {
-        int segmentStart = 0;
+    private void matchAndSaveTimestamps(List<WordDto> words, List<Sentence> sentences) {
+        int wordsStart = 0;
         for (Sentence sentence : sentences) {
             String englishText = normalizeText(sentence.getEnglishText());
-            System.out.println("CurSentence is " + englishText);
+            System.out.println("[CurSentence]" + englishText.replaceAll("\\s+", ""));
 
             boolean matched = false;
+            StringBuilder accumulated = new StringBuilder();
+            double startTime = -1;
 
-            for (int segmentIdx = segmentStart; segmentIdx < segments.size(); segmentIdx++) {
-                String segmentText = normalizeText(segments.get(segmentIdx).getText());
-                System.out.println("SegmentText is " + segmentText);
+            for (int wordsIdx = wordsStart; wordsIdx < words.size(); wordsIdx++) {
+                WordDto word = words.get(wordsIdx);
+                String normalizedWord = normalizeText(word.getWord());
 
-                if (englishText.equals(segmentText)) {
-                    sentence.setStartTime(segments.get(segmentIdx).getStart());
-                    sentence.setEndTime(segments.get(segmentIdx).getEnd());
+                accumulated.append(normalizedWord);
+
+                if (startTime == -1) {
+                    startTime = word.getStart();
+                }
+
+                if (englishText.replaceAll("\\s+", "").equals(accumulated.toString().replaceAll("\\s+", ""))) {
+                    System.out.println("[SegmentText] " + accumulated.toString().replaceAll("\\s+", ""));
+                    sentence.setStartTime(startTime);
+                    sentence.setEndTime(word.getEnd());
                     matched = true;
                     System.out.println("[SUCCESS] Matched!");
-                    segmentStart = segmentIdx + 1;
+                    wordsStart = wordsIdx + 1;
                     break;
                 }
             }
 
             if (!matched) {
-                System.out.println("[FAILED] " + englishText);
+                System.out.println("[FAILED] " + accumulated.toString().replaceAll("\\s+", ""));
             }
         }
     }
 
     private String normalizeText(String text) {
-        return text.trim()
+        return text.replaceAll("[^\\w\\s]", "")  // 특수문자 제거 (공백은 유지)
+                .replaceAll("\\s+", " ")       // 연속 공백을 하나로
                 .toLowerCase()
-                .replaceAll("[,.!?;:\"']", "")
-                .replaceAll("\\s+", " ");
+                .trim();
     }
 
-    public List<SegmentDto> transcribe(File audioFile) throws IOException {
+    public List<WordDto> transcribe(File audioFile, Article article) throws IOException {
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("file", audioFile.getName(),
                         RequestBody.create(audioFile, AUDIO_MEDIA_TYPE))
                 .addFormDataPart("model", WHISPER_MODEL)
                 .addFormDataPart("response_format", RESPONSE_FORMAT)
-                .addFormDataPart("timestamp_granularities[]", TIMESTAMP_GRANULARITY)
+                .addFormDataPart("timestamp_granularities[]", "word")
+                .addFormDataPart("prompt", article.getOriginalText())
                 .build();
 
-        Request request = new Request.Builder()
+        Request request = new Builder()
                 .url(openAIUrl)
                 .addHeader("Authorization", "Bearer " + apiKey)
                 .post(requestBody)
@@ -159,7 +172,10 @@ public class AudioService {
                     response.body().string(),
                     WhisperResponseDto.class
             );
-            return mergeSegments(responseDto);
+
+            return responseDto.getWords();
+
+//            return mergeSegments(responseDto);
         }
     }
 
@@ -167,8 +183,8 @@ public class AudioService {
         List<SegmentDto> mergedSegments = new ArrayList<>();
         SegmentDto current = null;
 
-        for (SegmentDto segment : response.getSegments()) {
-            String text = segment.getText().trim();
+        for (WordDto segment : response.getWords()) {
+            String text = segment.getWord().trim();
 
             if (current == null) {
                 current = new SegmentDto();
