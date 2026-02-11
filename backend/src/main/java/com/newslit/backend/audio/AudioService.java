@@ -7,8 +7,6 @@ import com.newslit.backend.article.exception.ArticleNotFoundException;
 import com.newslit.backend.audio.dto.SegmentDto;
 import com.newslit.backend.audio.dto.WhisperResponseDto;
 import com.newslit.backend.sentence.Sentence;
-import com.oracle.bmc.objectstorage.ObjectStorage;
-import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
 import jakarta.transaction.Transactional;
 import java.io.File;
 import java.io.IOException;
@@ -26,10 +24,6 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 @Service
 @RequiredArgsConstructor
@@ -68,6 +62,7 @@ public class AudioService {
 
         File audioFile = downloadAudioFile(article.getAudioDownloadLink());
 
+        //TODO : 추후 주석해제
 //        uploadMp3ToStorage(articleId, audioFile);
 
         try {
@@ -105,21 +100,23 @@ public class AudioService {
     }
 
     private void matchAndSaveTimestamps(List<SegmentDto> segments, List<Sentence> sentences) {
+        int segmentStart = 0;
         for (Sentence sentence : sentences) {
             String englishText = normalizeText(sentence.getEnglishText());
             System.out.println("CurSentence is " + englishText);
 
             boolean matched = false;
 
-            for (SegmentDto segment : segments) {
-                String segmentText = normalizeText(segment.getText());
+            for (int segmentIdx = segmentStart; segmentIdx < segments.size(); segmentIdx++) {
+                String segmentText = normalizeText(segments.get(segmentIdx).getText());
                 System.out.println("SegmentText is " + segmentText);
 
                 if (isPartialMatch(englishText, segmentText)) {
-                    sentence.setStartTime(segment.getStart());
-                    sentence.setEndTime(segment.getEnd());
+                    sentence.setStartTime(segments.get(segmentIdx).getStart());
+                    sentence.setEndTime(segments.get(segmentIdx).getEnd());
                     matched = true;
                     System.out.println("[SUCCESS] Matched!");
+                    segmentStart = segmentIdx + 1;
                     break;
                 }
             }
