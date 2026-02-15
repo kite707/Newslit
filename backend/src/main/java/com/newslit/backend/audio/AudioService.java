@@ -122,7 +122,7 @@ public class AudioService {
             for (int i = startIdx; i < words.size(); i++) {
                 String curWord = words.get(i).getWord();
                 if (isSimilar(word, curWord)) {
-                    startIdx++;
+                    startIdx = i + 1;
                     break;
                 }
             }
