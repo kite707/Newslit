@@ -4,15 +4,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newslit.backend.article.Article;
 import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.article.exception.ArticleNotFoundException;
-import com.newslit.backend.audio.dto.SegmentDto;
 import com.newslit.backend.audio.dto.WhisperResponseDto;
+import com.newslit.backend.audio.dto.WordDto;
 import com.newslit.backend.sentence.Sentence;
 import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
 import jakarta.transaction.Transactional;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,14 +26,11 @@ import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.Request.Builder;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 @Service
 @RequiredArgsConstructor
@@ -38,10 +39,8 @@ public class AudioService {
 
     private static final String WHISPER_MODEL = "whisper-1";
     private static final String RESPONSE_FORMAT = "verbose_json";
-    private static final String TIMESTAMP_GRANULARITY = "segment";
+    private static final String TIMESTAMP_GRANULARITY = "word";
     private static final MediaType AUDIO_MEDIA_TYPE = MediaType.parse("audio/mpeg");
-    private static final int LONG_SENTENCE_MATCH_LENGTH = 10;
-    private static final double SHORT_SENTENCE_MATCH_RATIO = 0.8;
 
     @Value("${openai.api-key}")
     private String apiKey;
@@ -71,12 +70,12 @@ public class AudioService {
         uploadMp3ToStorage(articleId, audioFile);
 
         try {
-            List<SegmentDto> segments = transcribe(audioFile);
+            List<WordDto> words = transcribe(audioFile, article);
             List<Sentence> sentences = article.getSentences().stream()
                     .sorted(Comparator.comparing(Sentence::getOrderIndex))
                     .collect(Collectors.toList());
 
-            matchAndSaveTimestamps(segments, sentences);
+            matchAndSaveTimestamps(words, sentences);
         } finally {
             audioFile.delete();
         }
@@ -84,7 +83,7 @@ public class AudioService {
     }
 
     private File downloadAudioFile(String url) throws IOException {
-        Request request = new Request.Builder()
+        Request request = new Builder()
                 .url(url)
                 .get()
                 .build();
@@ -97,50 +96,81 @@ public class AudioService {
             // 임시 파일 생성
             File tempFile = File.createTempFile("audio_", ".mp3");
             try (var inputStream = response.body().byteStream();
-                 var outputStream = new java.io.FileOutputStream(tempFile)) {
+                 var outputStream = new FileOutputStream(tempFile)) {
                 inputStream.transferTo(outputStream);
             }
             return tempFile;
         }
     }
 
-    private void matchAndSaveTimestamps(List<SegmentDto> segments, List<Sentence> sentences) {
+    private void matchAndSaveTimestamps(List<WordDto> words, List<Sentence> sentences) {
+        int wordsStart = 0;
         for (Sentence sentence : sentences) {
-            String englishText = sentence.getEnglishText().trim().toLowerCase();
+            int endIdx = getEndIdx(sentence, words, wordsStart);
+            
+            if (endIdx < wordsStart || endIdx >= words.size()) {
+                continue;
+            }
 
-            // 매칭되는 segment 찾기
-            for (SegmentDto segment : segments) {
-                String segmentText = segment.getText().trim().toLowerCase();
+            sentence.setStartTime(words.get(wordsStart).getStart());
+            sentence.setEndTime(words.get(endIdx).getEnd());
 
-                // 앞부분 일치 확인 (최소 10자 이상 일치하거나, 짧은 문장은 80% 이상 일치)
-                if (isPartialMatch(englishText, segmentText)) {
-                    sentence.setStartTime(segment.getStart());
-                    sentence.setEndTime(segment.getEnd());
+            wordsStart = endIdx + 1;
+        }
+    }
+
+    private int getEndIdx(Sentence sentence, List<WordDto> words, int start) {
+        int startIdx = start;
+        List<String> sentenceWords = List.of(sentence.getEnglishText().split(" "));
+        for (String word : sentenceWords) {
+            for (int i = startIdx; i < words.size(); i++) {
+                String curWord = words.get(i).getWord();
+                if (isSimilar(word, curWord)) {
+                    startIdx = i + 1;
                     break;
                 }
             }
         }
+        return startIdx - 1;
     }
 
-    private boolean isPartialMatch(String sentenceText, String segmentText) {
-        int minMatchLength = LONG_SENTENCE_MATCH_LENGTH;
+    private String normalizeText(String text) {
+        return text.replaceAll("[^\\w\\s]", "")
+                .replaceAll("\\s+", "")
+                .toLowerCase()
+                .trim();
+    }
 
-        // 둘 중 짧은 문장 기준
-        int minLength = Math.min(sentenceText.length(), segmentText.length());
+    private boolean isSimilar(String word1, String word2) {
+        word1 = normalizeText(word1);
+        word2 = normalizeText(word2);
 
-        if (minLength < minMatchLength) {
-            // 짧은 문장: 80% 이상 일치
-            int matchLength = (int) (minLength * SHORT_SENTENCE_MATCH_RATIO);
-            return sentenceText.startsWith(segmentText.substring(0, Math.min(matchLength, segmentText.length())))
-                    || segmentText.startsWith(sentenceText.substring(0, Math.min(matchLength, sentenceText.length())));
-        } else {
-            // 긴 문장: 앞부분 10자 이상 일치
-            return sentenceText.startsWith(segmentText.substring(0, minMatchLength))
-                    || segmentText.startsWith(sentenceText.substring(0, minMatchLength));
+        if (word1.equals(word2)) {
+            return true;
         }
+
+        int distance = levenshteinDistance(word1, word2);
+        int maxLen = Math.max(word1.length(), word2.length());
+        return distance <= (maxLen * 0.1);
+
     }
 
-    public List<SegmentDto> transcribe(File audioFile) throws IOException {
+    private int levenshteinDistance(String word1, String word2) {
+        int[][] dp = new int[word1.length() + 1][word2.length() + 1];
+
+        for (int i = 1; i <= word1.length(); i++) {
+            for (int j = 1; j <= word2.length(); j++) {
+                if (word1.charAt(i - 1) == word2.charAt(j - 1)) {
+                    dp[i][j] = dp[i - 1][j - 1];
+                } else {
+                    dp[i][j] = Math.min(Math.min(dp[i - 1][j], dp[i][j - 1]), dp[i - 1][j - 1]) + 1;
+                }
+            }
+        }
+        return dp[word1.length()][word2.length()];
+    }
+
+    private List<WordDto> transcribe(File audioFile, Article article) throws IOException {
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("file", audioFile.getName(),
@@ -148,9 +178,10 @@ public class AudioService {
                 .addFormDataPart("model", WHISPER_MODEL)
                 .addFormDataPart("response_format", RESPONSE_FORMAT)
                 .addFormDataPart("timestamp_granularities[]", TIMESTAMP_GRANULARITY)
+                .addFormDataPart("prompt", article.getOriginalText())
                 .build();
 
-        Request request = new Request.Builder()
+        Request request = new Builder()
                 .url(openAIUrl)
                 .addHeader("Authorization", "Bearer " + apiKey)
                 .post(requestBody)
@@ -165,43 +196,13 @@ public class AudioService {
                     response.body().string(),
                     WhisperResponseDto.class
             );
-            return mergeSegments(responseDto);
+
+            return responseDto.getWords();
         }
     }
 
-    private List<SegmentDto> mergeSegments(WhisperResponseDto response) {
-        List<SegmentDto> mergedSegments = new ArrayList<>();
-        SegmentDto current = null;
 
-        for (SegmentDto segment : response.getSegments()) {
-            String text = segment.getText().trim();
-
-            if (current == null) {
-                current = new SegmentDto();
-                current.setId(mergedSegments.size());
-                current.setStart(segment.getStart());
-                current.setEnd(segment.getEnd());
-                current.setText(text);
-            } else {
-                current.setText(current.getText() + " " + text);
-                current.setEnd(segment.getEnd());
-            }
-
-            // 문장 끝 판단 (. ! ? 로 끝나면)
-            if (text.endsWith(".") || text.endsWith("!") || text.endsWith("?")) {
-                mergedSegments.add(current);
-                current = null;
-            }
-        }
-
-        // 마지막 미완성 문장 처리
-        if (current != null) {
-            mergedSegments.add(current);
-        }
-        return mergedSegments;
-    }
-
-    public void uploadMp3ToStorage(Long articleId, File audioFile) throws IOException {
+    private void uploadMp3ToStorage(Long articleId, File audioFile) throws IOException {
         Article article = articleRepository.findById(articleId)
                 .orElseThrow(ArticleNotFoundException::new);
 
