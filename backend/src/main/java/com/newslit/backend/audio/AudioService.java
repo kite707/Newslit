@@ -104,8 +104,12 @@ public class AudioService {
     }
 
     private void matchAndSaveTimestamps(List<WordDto> words, List<Sentence> sentences) {
+        if (words.isEmpty()) {
+            return;
+        }
         int wordsStart = 0;
         for (Sentence sentence : sentences) {
+
             int endIdx = getEndIdx(sentence, words, wordsStart);
             
             if (endIdx < wordsStart || endIdx >= words.size()) {
