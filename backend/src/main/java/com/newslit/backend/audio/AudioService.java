@@ -151,7 +151,7 @@ public class AudioService {
 
     }
 
-    public int levenshteinDistance(String word1, String word2) {
+    private int levenshteinDistance(String word1, String word2) {
         int[][] dp = new int[100][100];
 
         for (int i = 1; i <= word1.length(); i++) {
@@ -166,7 +166,7 @@ public class AudioService {
         return dp[word1.length()][word2.length()];
     }
 
-    public List<WordDto> transcribe(File audioFile, Article article) throws IOException {
+    private List<WordDto> transcribe(File audioFile, Article article) throws IOException {
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("file", audioFile.getName(),
@@ -198,7 +198,7 @@ public class AudioService {
     }
 
 
-    public void uploadMp3ToStorage(Long articleId, File audioFile) throws IOException {
+    private void uploadMp3ToStorage(Long articleId, File audioFile) throws IOException {
         Article article = articleRepository.findById(articleId)
                 .orElseThrow(ArticleNotFoundException::new);
 
