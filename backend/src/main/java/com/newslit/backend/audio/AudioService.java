@@ -152,7 +152,7 @@ public class AudioService {
     }
 
     private int levenshteinDistance(String word1, String word2) {
-        int[][] dp = new int[100][100];
+        int[][] dp = new int[word1.length() + 1][word2.length() + 1];
 
         for (int i = 1; i <= word1.length(); i++) {
             for (int j = 1; j <= word2.length(); j++) {
