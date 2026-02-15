@@ -131,8 +131,8 @@ public class AudioService {
     }
 
     private String normalizeText(String text) {
-        return text.replaceAll("[^\\w\\s]", "")  // 특수문자 제거 (공백은 유지)
-                .replaceAll("\\s+", "")       // 연속 공백을 하나로
+        return text.replaceAll("[^\\w\\s]", "")
+                .replaceAll("\\s+", "")
                 .toLowerCase()
                 .trim();
     }
