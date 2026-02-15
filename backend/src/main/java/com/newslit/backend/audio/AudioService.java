@@ -107,6 +107,10 @@ public class AudioService {
         int wordsStart = 0;
         for (Sentence sentence : sentences) {
             int endIdx = getEndIdx(sentence, words, wordsStart);
+            
+            if (endIdx < wordsStart || endIdx >= words.size()) {
+                continue;
+            }
 
             sentence.setStartTime(words.get(wordsStart).getStart());
             sentence.setEndTime(words.get(endIdx).getEnd());
