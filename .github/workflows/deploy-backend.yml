@@ -7,5 +7,23 @@ on:
     paths:
       - 'backend/**'
 
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-    
+    steps:
+      - name: 체크아웃
+        uses: actions/checkout@v4
+
+      - name: JDK 17 설정
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: 설정 파일 생성
+        run: |
+         mkdir -p backend/src/main/resources
+         echo "${{secrets.APPLICATION_PROD_SECRET}}" > backend/src/main/resources/application-prod-secret.properties
+         
