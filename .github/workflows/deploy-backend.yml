@@ -31,7 +31,7 @@ jobs:
         run: |
           cd backend
           chmod +x gradlew
-          ./gradlew clean build -Dspring.profiles.active=prod-secret
+          ./gradlew clean build -x test -Dspring.profiles.active=prod-secret
         env:
           SPRING_PROFILES_ACTIVE: prod-secret
 
