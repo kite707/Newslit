@@ -35,6 +35,7 @@ public class ArticleService {
         Article article = Article.builder().title(articleRequestDto.getTitle())
                 .originalText(articleRequestDto.getOriginalText())
                 .sourceUrl(articleRequestDto.getSourceUrl())
+                .audioDownloadLink(articleRequestDto.getMp3Link())
                 .publishedDate(articleRequestDto.getPublishedDate())
                 .source(articleRequestDto.getSource()).build();
         return articleRepository.save(article);

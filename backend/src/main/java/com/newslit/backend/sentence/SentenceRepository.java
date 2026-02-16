@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SentenceRepository extends JpaRepository<Sentence, Long> {
-    List<Sentence> findAllByTranslationStatus(Status status);
+    List<Sentence> findAllByTranslationStatusAndRetryCountLessThan(Status status, int count);
 
     List<Sentence> findAllByArticleId(Long id);
 

@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 @Builder
 public class SentenceResponseDto {
     private Long articleId;
+    private Double startTime;
+    private Double endTime;
     private int orderIndex;
     private String englishText;
     private String koreanText;

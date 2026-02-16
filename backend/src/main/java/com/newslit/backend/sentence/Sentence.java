@@ -55,13 +55,27 @@ public class Sentence {
     @Column(name = "korean_text")
     private String koreanText;
 
+    @Column(name = "start_time")
+    private Double startTime;  // 초 단위
+
+    @Column(name = "end_time")
+    private Double endTime;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "translation_status", nullable = false)
     @ColumnDefault("'PENDING'")
     @Builder.Default
     private Status translationStatus = Status.PENDING;
 
+    @Column(name = "retry_count", nullable = false)
+    @Builder.Default
+    private int retryCount = 0;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    public void incrementRetryCount() {
+        this.retryCount++;
+    }
 }

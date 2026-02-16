@@ -19,8 +19,7 @@ public class SentenceController {
     private final SentenceService sentenceService;
 
     @GetMapping
-    ResponseEntity<List<SentenceResponseDto>> translateOneParagraph(@RequestParam(name = "articleId") Long articleId)
-            throws DeepLException, InterruptedException {
+    ResponseEntity<List<SentenceResponseDto>> translateOneParagraph(@RequestParam(name = "articleId") Long articleId) {
         List<SentenceResponseDto> responses = sentenceService.translateOneParagraph(articleId);
 
         return ResponseEntity.ok(responses);

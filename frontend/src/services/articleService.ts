@@ -25,6 +25,8 @@ export const DEFAULT_ARTICLE_DATA: DailyData = {
       koreanText:
         "오늘은 제공되는 기사가 없습니다. Newslit은 매일 한 단락의 영어 문장을 제공하여 영어 학습을 돕습니다. 내일 다시 확인해주세요!",
       status: "SUCCESS",
+      startTime: 0,
+      endTime: 0,
     },
   ],
 };
@@ -61,8 +63,8 @@ export async function fetchArticle(date: Date): Promise<DailyData> {
  */
 export async function fetchAvailableDates(
   year: number,
-  month: number
-): Promise<number[]> {
+  month: number,
+): Promise<AvailableDatesResponse> {
   try {
     const monthString = String(month).padStart(2, "0");
     const dateString = `${year}${monthString}`;
@@ -76,10 +78,7 @@ export async function fetchAvailableDates(
     }
 
     const data: AvailableDatesResponse = await response.json();
-    return data.map((item) => {
-      const day = parseInt(item.displayDate.slice(-2), 10);
-      return day;
-    });
+    return data;
   } catch (error) {
     console.error("Failed to fetch available dates:", error);
     return [];
