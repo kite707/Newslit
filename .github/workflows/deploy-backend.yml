@@ -29,7 +29,13 @@ jobs:
 
       - name: Gradle build
         run: |
-        
+          cd abckend
+          chmod +x gradlew
+          ./gradlew clean build -Dspring.profiles.active=prod-secret
+        env:
+          SPRING_PROFILES_ACTIVE: prod-secret
+
+      - name: JAR
 
 
 
