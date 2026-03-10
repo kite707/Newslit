@@ -22,12 +22,15 @@ import java.util.regex.Pattern;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VoaArticleCrawlerService {
@@ -74,11 +77,15 @@ public class VoaArticleCrawlerService {
 
                     Thread.sleep(1000);
 
+                } catch (DataIntegrityViolationException e) {
+                    log.info("중복 기사 스킵: {}", title);
                 } catch (Exception e) {
+                    log.error("기사 크롤링 실패: {}", title, e);
                 }
             }
 
         } catch (Exception e) {
+            log.error("RSS 피드 처리 실패", e);
         }
     }
 
