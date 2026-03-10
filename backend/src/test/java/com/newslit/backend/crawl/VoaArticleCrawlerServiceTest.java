@@ -1,25 +1,46 @@
 package com.newslit.backend.crawl;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 import com.newslit.backend.article.ArticleRepository;
-import com.newslit.backend.article.ArticleService;
+import com.newslit.backend.daily.DailyRespository;
+import com.newslit.backend.sentence.SentenceRepository;
+import com.newslit.backend.vocabulary.VocabularyRepository;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class VoaArticleCrawlerServiceTest {
 
     @Autowired
-    public VoaArticleCrawlerService voaArticleCrawlerService;
+    private VoaArticleCrawlerService voaArticleCrawlerService;
 
     @Autowired
-    public ArticleRepository articleRepository;
+    private ArticleRepository articleRepository;
+
+    @Autowired
+    private SentenceRepository sentenceRepository;
+
+    @Autowired
+    private VocabularyRepository vocabularyRepository;
+
+    @Autowired
+    private DailyRespository dailyRespository;
+
+    @BeforeAll
+    void setup() {
+        dailyRespository.deleteAll();
+        sentenceRepository.deleteAll();
+        vocabularyRepository.deleteAll();
+        articleRepository.deleteAll();
+    }
 
     @Test
     void 동시성_테스트() throws InterruptedException {
@@ -37,11 +58,8 @@ class VoaArticleCrawlerServiceTest {
             });
         }
 
-        latch.await(); // 모든 스레드가 끝날 때까지 대기
+        latch.await();
 
         assertThat(articleRepository.count()).isEqualTo(9L);
-
     }
-
-
 }
