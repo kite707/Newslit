@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.daily.DailyRespository;
+import com.newslit.backend.global.common.enums.Status;
+import com.newslit.backend.rss.Rss;
+import com.newslit.backend.rss.RssRepository;
 import com.newslit.backend.sentence.SentenceRepository;
 import com.newslit.backend.vocabulary.VocabularyRepository;
 import java.io.IOException;
@@ -19,6 +22,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class VoaArticleCrawlerServiceTest {
+
+    private Long rssId;
 
     @Autowired
     private VoaArticleCrawlerService voaArticleCrawlerService;
@@ -36,15 +41,22 @@ class VoaArticleCrawlerServiceTest {
     private DailyRespository dailyRespository;
 
     @Autowired
-    private VoaRssCrawlerService voaRssCrawlerService;
+    private RssRepository rssRepository;
 
     @BeforeAll
     void setup() throws IOException {
-        voaRssCrawlerService.crawlVoaRssLinks();
         dailyRespository.deleteAll();
         sentenceRepository.deleteAll();
         vocabularyRepository.deleteAll();
         articleRepository.deleteAll();
+
+        Rss rss = rssRepository.save(Rss.builder()
+                .category("Learning English")
+                .title("VOA Learning English")
+                .url("/z/8133")
+                .status(Status.PENDING)
+                .build());
+        rssId = rss.getId();
     }
 
     @Test
@@ -56,7 +68,7 @@ class VoaArticleCrawlerServiceTest {
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    voaArticleCrawlerService.crawlAndSaveArticles(3L);
+                    voaArticleCrawlerService.crawlAndSaveArticles(rssId);
                 } finally {
                     latch.countDown();
                 }
