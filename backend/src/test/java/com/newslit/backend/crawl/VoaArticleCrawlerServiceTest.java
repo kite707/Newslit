@@ -6,6 +6,7 @@ import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.daily.DailyRespository;
 import com.newslit.backend.sentence.SentenceRepository;
 import com.newslit.backend.vocabulary.VocabularyRepository;
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,8 +35,12 @@ class VoaArticleCrawlerServiceTest {
     @Autowired
     private DailyRespository dailyRespository;
 
+    @Autowired
+    private VoaRssCrawlerService voaRssCrawlerService;
+
     @BeforeAll
-    void setup() {
+    void setup() throws IOException {
+        voaRssCrawlerService.crawlVoaRssLinks();
         dailyRespository.deleteAll();
         sentenceRepository.deleteAll();
         vocabularyRepository.deleteAll();
@@ -51,7 +56,7 @@ class VoaArticleCrawlerServiceTest {
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    voaArticleCrawlerService.crawlAndSaveArticles(1L);
+                    voaArticleCrawlerService.crawlAndSaveArticles(3L);
                 } finally {
                     latch.countDown();
                 }
