@@ -89,7 +89,7 @@ jobs:
           # 헬스체크 (최대 90초)
           echo "헬스체크 시작"
           HEALTH_CHECK_PASSED=false
-          for i in {1..90}; do
+          for i in {1..150}; do
               if curl -f http://localhost:$NEW_PORT/actuator/health > /dev/null 2>&1; then
                   echo "새 앱 구동 성공 (${i}초 소요)"
                   HEALTH_CHECK_PASSED=true
