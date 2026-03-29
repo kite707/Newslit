@@ -49,6 +49,11 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.BACKEND_SERVER_IP }} >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config << EOF
+          Host *
+            ServerAliveInterval 15
+            ServerAliveCountMax 20
+          EOF
 
       - name: JAR 파일 업로드
         run: |
