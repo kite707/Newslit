@@ -10,9 +10,6 @@ import com.newslit.backend.vocabulary.VocabularyService;
 import com.newslit.backend.vocabulary.dto.VocabularyRequestDto;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
-import com.rometools.rome.io.SyndFeedInput;
-import com.rometools.rome.io.XmlReader;
-import java.net.URL;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -22,18 +19,22 @@ import java.util.regex.Pattern;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VoaArticleCrawlerService {
     private final ArticleService articleService;
     private final VocabularyService vocabularyService;
     private final RssService rssService;
+    private final RssFeedReader rssFeedReader;
     private static final String RSS_URL = "https://learningenglish.voanews.com";
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
 
@@ -43,8 +44,7 @@ public class VoaArticleCrawlerService {
             RssResponseDto rssDto = rssService.getRssById(rssId);
             String url = RSS_URL + rssDto.getUrl();
 
-            SyndFeedInput input = new SyndFeedInput();
-            SyndFeed feed = input.build(new XmlReader(new URL(url)));
+            SyndFeed feed = rssFeedReader.read(url);
 
             for (SyndEntry entry : feed.getEntries()) {
                 String title = entry.getTitle();
@@ -74,11 +74,15 @@ public class VoaArticleCrawlerService {
 
                     Thread.sleep(1000);
 
+                } catch (DataIntegrityViolationException e) {
+                    log.info("중복 기사 스킵: {}", title);
                 } catch (Exception e) {
+                    log.error("기사 크롤링 실패: {}", title, e);
                 }
             }
 
         } catch (Exception e) {
+            log.error("RSS 피드 처리 실패", e);
         }
     }
 
@@ -121,14 +125,12 @@ public class VoaArticleCrawlerService {
     private String extractMp3Link(Document doc) {
         String html = doc.html();
 
-        // 방법 1: 정규식으로 mp3 찾기
         Pattern fallbackPattern = Pattern.compile("(https://[^\"]*\\.mp3)\\?download=1");
         Matcher fallbackMatcher = fallbackPattern.matcher(html);
         if (fallbackMatcher.find()) {
             return fallbackMatcher.group(1) + "?download=1";
         }
 
-        // 방법 2: 셀렉터로 mp3 찾기
         Element link = doc.selectFirst("a[href*=_hq.mp3?download=1]");
         if (link != null) {
             return link.attr("href");

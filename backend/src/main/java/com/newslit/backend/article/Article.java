@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -23,11 +24,19 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
-@Table(name = "articles")
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Builder
+@Table(
+        name = "articles",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_article_title_source",
+                        columnNames = {"title", "source"}
+                )
+        }
+)
 public class Article {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -50,6 +50,7 @@ dependencies {
     implementation 'com.oracle.database.security:osdt_core'
     implementation 'com.oracle.database.security:osdt_cert'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 
     // Oracle Cloud SDK
     implementation 'com.oracle.oci.sdk:oci-java-sdk-common:3.30.0'
