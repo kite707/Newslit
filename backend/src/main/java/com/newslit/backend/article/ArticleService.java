@@ -28,10 +28,6 @@ public class ArticleService {
 
     @Transactional
     public Article saveArticle(ArticleRequestDto articleRequestDto) {
-        articleRepository.findByTitleAndSource(articleRequestDto.getTitle(),
-                articleRequestDto.getSource()).ifPresent(article -> {
-            throw new DuplicateArticleException();
-        });
         Article article = Article.builder().title(articleRequestDto.getTitle())
                 .originalText(articleRequestDto.getOriginalText())
                 .sourceUrl(articleRequestDto.getSourceUrl())
