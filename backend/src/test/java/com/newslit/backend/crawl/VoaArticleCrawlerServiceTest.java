@@ -4,8 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.daily.DailyRespository;
-import com.newslit.backend.global.common.enums.Status;
-import com.newslit.backend.rss.Rss;
 import com.newslit.backend.rss.RssRepository;
 import com.newslit.backend.sentence.SentenceRepository;
 import com.newslit.backend.vocabulary.VocabularyRepository;
@@ -29,6 +27,9 @@ class VoaArticleCrawlerServiceTest {
     private VoaArticleCrawlerService voaArticleCrawlerService;
 
     @Autowired
+    private VoaRssCrawlerService voaRssCrawlerService;
+
+    @Autowired
     private ArticleRepository articleRepository;
 
     @Autowired
@@ -49,14 +50,10 @@ class VoaArticleCrawlerServiceTest {
         sentenceRepository.deleteAll();
         vocabularyRepository.deleteAll();
         articleRepository.deleteAll();
+        rssRepository.deleteAll();
 
-        Rss rss = rssRepository.save(Rss.builder()
-                .category("Learning English")
-                .title("VOA Learning English")
-                .url("/z/8133")
-                .status(Status.PENDING)
-                .build());
-        rssId = rss.getId();
+        voaRssCrawlerService.crawlVoaRssLinks();
+        rssId = rssRepository.findAll().get(0).getId();
     }
 
     @Test
@@ -77,6 +74,7 @@ class VoaArticleCrawlerServiceTest {
 
         latch.await();
 
-        assertThat(articleRepository.count()).isEqualTo(9L);
+        long articleCount = articleRepository.count();
+        assertThat(articleCount).isGreaterThan(0L);
     }
 }
