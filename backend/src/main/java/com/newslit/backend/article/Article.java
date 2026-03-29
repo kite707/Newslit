@@ -32,8 +32,8 @@ import org.hibernate.annotations.CreationTimestamp;
         name = "articles",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_article_title_url",
-                        columnNames = {"title", "sourceUrl"}
+                        name = "uk_article_title_source",
+                        columnNames = {"title", "source"}
                 )
         }
 )
