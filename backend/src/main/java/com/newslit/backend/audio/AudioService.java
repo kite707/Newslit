@@ -6,10 +6,8 @@ import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.article.exception.ArticleNotFoundException;
 import com.newslit.backend.audio.dto.WhisperResponseDto;
 import com.newslit.backend.audio.dto.WordDto;
-import com.newslit.backend.sentence.Sentence;
 import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
-import jakarta.transaction.Transactional;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,9 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
@@ -59,8 +55,8 @@ public class AudioService {
     private final ObjectMapper objectMapper;
     private final ObjectStorage objectStorage;
     private final ArticleRepository articleRepository;
+    private final AudioPersistenceService audioPersistenceService;
 
-    @Transactional
     public void saveTimeStamp(Long articleId) throws IOException {
 
         Article article = articleRepository.findById(articleId)
@@ -68,15 +64,13 @@ public class AudioService {
 
         File audioFile = downloadAudioFile(article.getAudioDownloadLink());
 
-        uploadMp3ToStorage(articleId, audioFile);
-
         try {
+            String audioUrl = uploadMp3ToStorage(articleId, audioFile);
             List<WordDto> words = transcribe(audioFile, article);
-            List<Sentence> sentences = article.getSentences().stream()
-                    .sorted(Comparator.comparing(Sentence::getOrderIndex))
-                    .collect(Collectors.toList());
 
-            matchAndSaveTimestamps(words, sentences);
+            audioPersistenceService.persistResults(articleId, audioUrl, words);
+
+
         } finally {
             audioFile.delete();
         }
@@ -104,76 +98,6 @@ public class AudioService {
         }
     }
 
-    private void matchAndSaveTimestamps(List<WordDto> words, List<Sentence> sentences) {
-        if (words.isEmpty()) {
-            return;
-        }
-        int wordsStart = 0;
-        for (Sentence sentence : sentences) {
-
-            int endIdx = getEndIdx(sentence, words, wordsStart);
-
-            if (endIdx < wordsStart || endIdx >= words.size()) {
-                continue;
-            }
-
-            sentence.setStartTime(words.get(wordsStart).getStart());
-            sentence.setEndTime(words.get(endIdx).getEnd());
-
-            wordsStart = endIdx + 1;
-        }
-    }
-
-    private int getEndIdx(Sentence sentence, List<WordDto> words, int start) {
-        int startIdx = start;
-        List<String> sentenceWords = List.of(sentence.getEnglishText().split(" "));
-        for (String word : sentenceWords) {
-            for (int i = startIdx; i < words.size(); i++) {
-                String curWord = words.get(i).getWord();
-                if (isSimilar(word, curWord)) {
-                    startIdx = i + 1;
-                    break;
-                }
-            }
-        }
-        return startIdx - 1;
-    }
-
-    private String normalizeText(String text) {
-        return text.replaceAll("[^\\w\\s]", "")
-                .replaceAll("\\s+", "")
-                .toLowerCase()
-                .trim();
-    }
-
-    private boolean isSimilar(String word1, String word2) {
-        word1 = normalizeText(word1);
-        word2 = normalizeText(word2);
-
-        if (word1.equals(word2)) {
-            return true;
-        }
-
-        int distance = levenshteinDistance(word1, word2);
-        int maxLen = Math.max(word1.length(), word2.length());
-        return distance <= (maxLen * 0.1);
-
-    }
-
-    private int levenshteinDistance(String word1, String word2) {
-        int[][] dp = new int[word1.length() + 1][word2.length() + 1];
-
-        for (int i = 1; i <= word1.length(); i++) {
-            for (int j = 1; j <= word2.length(); j++) {
-                if (word1.charAt(i - 1) == word2.charAt(j - 1)) {
-                    dp[i][j] = dp[i - 1][j - 1];
-                } else {
-                    dp[i][j] = Math.min(Math.min(dp[i - 1][j], dp[i][j - 1]), dp[i - 1][j - 1]) + 1;
-                }
-            }
-        }
-        return dp[word1.length()][word2.length()];
-    }
 
     private List<WordDto> transcribe(File audioFile, Article article) throws IOException {
         RequestBody requestBody = new MultipartBody.Builder()
@@ -207,7 +131,7 @@ public class AudioService {
     }
 
 
-    private void uploadMp3ToStorage(Long articleId, File audioFile) throws IOException {
+    private String uploadMp3ToStorage(Long articleId, File audioFile) throws IOException {
         Article article = articleRepository.findById(articleId)
                 .orElseThrow(ArticleNotFoundException::new);
 
@@ -242,8 +166,7 @@ public class AudioService {
                     encodedObjectName
             );
 
-            article.setAudioLink(audioUrl);
-            articleRepository.save(article);
+            return audioUrl;
         }
     }
 }
