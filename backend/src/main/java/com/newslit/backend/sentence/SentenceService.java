@@ -15,11 +15,6 @@ import java.util.Locale;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -30,8 +25,6 @@ public class SentenceService {
     private final SentenceRepository sentenceRepository;
     private final ArticleRepository articleRepository;
     private final TranslationAsyncService translationAsyncService;
-    //TODO: 삭제 요망
-    private final OkHttpClient client;
 
 
     public void triggerTranslation(Long articleId) {
@@ -79,18 +72,10 @@ public class SentenceService {
     public void retryTranslation(Sentence sentence) throws DeepLException, InterruptedException, IOException {
         sentence.incrementRetryCount();
         try {
-            //TODO: 테스트 위해 잠시 주석처리
-//            String translatedText = deepLClient
-//                    .translateText(sentence.getEnglishText(), null, "ko")
-//                    .getText();
-            Request request = new Request.Builder()
-                    .url("http://localhost:8090/api/translate")
-                    .post(RequestBody.create("{\"text\":\"" + sentence.getEnglishText() + "\"}",
-                            MediaType.parse("application/json")))
-                    .build();
+            String translatedText = deepLClient
+                    .translateText(sentence.getEnglishText(), null, "ko")
+                    .getText();
 
-            Response response = client.newCall(request).execute();
-            String translatedText = response.body().string();
             sentence.setKoreanText(translatedText);
             sentence.setTranslationStatus(Status.SUCCESS);
 

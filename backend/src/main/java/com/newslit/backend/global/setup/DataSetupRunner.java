@@ -50,7 +50,7 @@ public class DataSetupRunner implements CommandLineRunner {
 
         articleIds.stream().limit(2).forEach(i -> {
             try {
-                sentenceService.translateOneParagraph(i);
+                sentenceService.triggerTranslation(i);
                 articleRepository.findById(i)
                         .filter(article -> article.getAudioLink() == null || article.getAudioLink().isEmpty())
                         .ifPresent(article -> {
