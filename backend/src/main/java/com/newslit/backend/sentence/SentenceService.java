@@ -7,8 +7,7 @@ import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.article.exception.ArticleNotFoundException;
 import com.newslit.backend.global.common.enums.Status;
 import com.newslit.backend.sentence.dto.SentenceResponseDto;
-import com.newslit.backend.sentence.exception.TranslationFailedException;
-import com.newslit.backend.sentence.exception.TranslationInterruptedException;
+import java.io.IOException;
 import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,40 +24,37 @@ public class SentenceService {
     private final DeepLClient deepLClient;
     private final SentenceRepository sentenceRepository;
     private final ArticleRepository articleRepository;
+    private final TranslationAsyncService translationAsyncService;
 
-    private static final int MAX_RETRY_CNT = 3;
 
-    public List<SentenceResponseDto> translateOneParagraph(Long articleId) {
+    public void triggerTranslation(Long articleId) {
         Article article = articleRepository.findById(articleId)
                 .orElseThrow(ArticleNotFoundException::new);
 
         String paragraph = article.getOriginalText();
-        List<String> sentences = splitIntoSentencesAdvanced(paragraph);
-        List<SentenceResponseDto> responses = new ArrayList<>();
+        List<String> sentenceTexts = splitIntoSentencesAdvanced(paragraph);
 
-        for (int i = 0; i < sentences.size(); i++) {
-            SentenceResponseDto response = translateSingleSentence(articleId, article, sentences.get(i), i + 1);
-            responses.add(response);
+        for (int i = 0; i < sentenceTexts.size(); i++) {
+            String englishText = sentenceTexts.get(i);
+            int orderIndex = i + 1;
+
+            Optional<Sentence> existing = sentenceRepository.findByArticleIdAndEnglishText(articleId, englishText);
+
+            if (existing.isPresent() && existing.get().getTranslationStatus() == Status.SUCCESS) {
+                continue;
+            } else if (existing.isPresent() && existing.get().getTranslationStatus() == Status.PROCESSING) {
+                log.info("번역 진행 중인 문장 스킵 - orderIndex: {}", orderIndex);
+            } else {
+                Sentence sentence = existing.orElseGet(() -> createNewSentence(article, englishText, orderIndex));
+                translationAsyncService.translateAsync(sentence, englishText, articleId, orderIndex);
+            }
         }
-
-        return responses;
     }
 
-    public SentenceResponseDto translateSingleSentence(Long articleId, Article article, String englishText,
-                                                       int orderIndex) {
-
-        Optional<Sentence> existing = sentenceRepository
-                .findByArticleIdAndEnglishText(articleId, englishText);
-
-        //이미 번역 성공하여 저장되어있으면 pass
-        if (existing.isPresent() && existing.get().getTranslationStatus() == Status.SUCCESS) {
-            return toSentenceDto(existing.get());
-        }
-
-        //실패 상태거나, 없는 문장이면 해석 API 호출
-        Sentence sentence = existing.orElseGet(() -> createNewSentence(article, englishText, orderIndex));
-
-        return processTranslation(sentence, englishText, articleId, orderIndex);
+    public List<SentenceResponseDto> getSentences(Long articleId) {
+        return sentenceRepository.findAllByArticleId(articleId).stream()
+                .map(this::toSentenceDto)
+                .toList();
     }
 
     private Sentence createNewSentence(Article article, String englishText, int orderIndex) {
@@ -73,7 +69,7 @@ public class SentenceService {
         );
     }
 
-    public void retryTranslation(Sentence sentence) throws DeepLException, InterruptedException {
+    public void retryTranslation(Sentence sentence) throws DeepLException, InterruptedException, IOException {
         sentence.incrementRetryCount();
         try {
             String translatedText = deepLClient
@@ -90,43 +86,6 @@ public class SentenceService {
         } finally {
             sentenceRepository.save(sentence);
         }
-    }
-
-    private SentenceResponseDto processTranslation(Sentence sentence, String englishText,
-                                                   Long articleId, int orderIndex) {
-        sentence.setTranslationStatus(Status.PROCESSING);
-        sentenceRepository.save(sentence);
-
-        for (int retryCnt = 0; retryCnt < MAX_RETRY_CNT; retryCnt++) {
-            try {
-                if (retryCnt > 0) {
-                    Thread.sleep(500);
-                }
-                String translatedText = deepLClient.translateText(englishText, null, "ko").getText();
-
-                sentence.setKoreanText(translatedText);
-                sentence.setTranslationStatus(Status.SUCCESS);
-                sentenceRepository.save(sentence);
-
-                return SentenceResponseDto.builder()
-                        .articleId(articleId)
-                        .orderIndex(orderIndex)
-                        .englishText(englishText)
-                        .koreanText(translatedText)
-                        .status(Status.SUCCESS)
-                        .build();
-            } catch (Exception e) {
-                if (e instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
-                    sentence.setTranslationStatus(Status.FAILED);
-                    sentenceRepository.save(sentence);
-                    throw new TranslationInterruptedException();
-                }
-            }
-        }
-        sentence.setTranslationStatus(Status.FAILED);
-        sentenceRepository.save(sentence);
-        throw new TranslationFailedException();
     }
 
     private List<String> splitIntoSentencesAdvanced(String text) {
