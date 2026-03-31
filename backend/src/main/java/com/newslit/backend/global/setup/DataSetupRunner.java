@@ -7,6 +7,7 @@ import com.newslit.backend.crawl.VoaArticleCrawlerService;
 import com.newslit.backend.crawl.VoaRssCrawlerService;
 import com.newslit.backend.daily.DailyService;
 import com.newslit.backend.daily.exception.DuplicateDailyException;
+import com.newslit.backend.rss.Rss;
 import com.newslit.backend.rss.RssRepository;
 import com.newslit.backend.sentence.SentenceService;
 import com.newslit.backend.vocabulary.VocabularyService;
@@ -39,7 +40,10 @@ public class DataSetupRunner implements CommandLineRunner {
     public void run(String... args) throws Exception {
         voaRssCrawlerService.crawlVoaRssLinks();
         log.debug("RSS 크롤링 완료");
-        Long rssIdx = rssRepository.findAll().get(0).getId();
+        Long rssIdx = rssRepository.findAll().stream()
+                .findFirst()
+                .map(Rss::getId)
+                .orElseThrow(() -> new RuntimeException("RSS data not found"));
         voaArticleCrawlerService.crawlAndSaveArticles(rssIdx);
 
         List<Long> articleIds = articleRepository.findAll().stream().map(Article::getId).toList();
