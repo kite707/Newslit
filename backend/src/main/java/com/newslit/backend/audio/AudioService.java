@@ -10,6 +10,7 @@ import com.newslit.backend.sentence.Sentence;
 import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
 import jakarta.transaction.Transactional;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -111,7 +112,7 @@ public class AudioService {
         for (Sentence sentence : sentences) {
 
             int endIdx = getEndIdx(sentence, words, wordsStart);
-            
+
             if (endIdx < wordsStart || endIdx >= words.size()) {
                 continue;
             }
@@ -221,7 +222,7 @@ public class AudioService {
         String encodedObjectName = URLEncoder.encode(objectName, StandardCharsets.UTF_8)
                 .replace("+", "%20");
 
-        try (InputStream inputStream = new FileInputStream(audioFile)) {
+        try (InputStream inputStream = new BufferedInputStream(new FileInputStream(audioFile))) {
             PutObjectRequest putRequest = PutObjectRequest.builder()
                     .namespaceName(namespace)
                     .bucketName(bucket)

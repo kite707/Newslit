@@ -1,0 +1,155 @@
+name: Backend Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 체크아웃
+        uses: actions/checkout@v4
+
+      - name: JDK 17 설정
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+          cache: "gradle"
+
+      - name: 설정 파일 생성
+        run: |
+          mkdir -p backend/src/main/resources
+          echo "${{secrets.APPLICATION_PROD_SECRET}}" > backend/src/main/resources/application-prod-secret.properties
+
+      - name: Gradle 빌드
+        run: |
+          cd backend
+          chmod +x gradlew
+          ./gradlew clean build -x test -Dspring.profiles.active=prod-secret
+        env:
+          SPRING_PROFILES_ACTIVE: prod-secret
+
+      - name: JAR 파일명 생성
+        id: jar
+        run: |
+          JAR_NAME="backend-$(date +%Y%m%d-%H%M%S).jar"
+          echo "name=$JAR_NAME" >> $GITHUB_OUTPUT
+          echo "path=backend/build/libs/backend-0.0.1-SNAPSHOT.jar" >> $GITHUB_OUTPUT
+
+      - name: SSH 키 설정
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.BACKEND_SERVER_IP }} >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config << EOF
+          Host *
+            ServerAliveInterval 15
+            ServerAliveCountMax 20
+          EOF
+
+      - name: JAR 파일 업로드
+        run: |
+          scp -i ~/.ssh/id_rsa \
+            ${{ steps.jar.outputs.path }} \
+            ubuntu@${{ secrets.BACKEND_SERVER_IP }}:/home/ubuntu/jars/${{ steps.jar.outputs.name }}
+      - name: 무중단 배포 실행
+        run: |
+          ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.BACKEND_SERVER_IP }} bash << 'ENDSSH'
+
+          # 현재 실행 중인 포트 확인
+          if [ -f /home/ubuntu/current-port ]; then
+              CURRENT_PORT=$(cat /home/ubuntu/current-port)
+          else
+              CURRENT_PORT=8080
+          fi
+
+          # 새 포트 결정
+          if [ "$CURRENT_PORT" = "8080" ]; then
+              NEW_PORT=8081
+          else
+              NEW_PORT=8080
+          fi
+
+          echo "현재 포트: $CURRENT_PORT → 새 포트: $NEW_PORT"
+
+          # 최신 jar 파일 찾기
+          LATEST_JAR=$(ls -t /home/ubuntu/jars/backend-*.jar | head -1)
+          echo "배포할 JAR: $LATEST_JAR"
+
+          # 심볼릭 링크 생성
+          ln -sf $LATEST_JAR /home/ubuntu/current-$NEW_PORT.jar
+
+          # 새 포트에 서비스 시작
+          echo "새 애플리케이션 시작 중 (포트: $NEW_PORT)..."
+          sudo systemctl start newslit@$NEW_PORT
+
+          # 헬스체크 (최대 90초)
+          echo "헬스체크 시작"
+          HEALTH_CHECK_PASSED=false
+          for i in {1..150}; do
+              if curl -f http://localhost:$NEW_PORT/actuator/health > /dev/null 2>&1; then
+                  echo "새 앱 구동 성공 (${i}초 소요)"
+                  HEALTH_CHECK_PASSED=true
+                  break
+              fi
+              sleep 1
+          done
+
+          if [ "$HEALTH_CHECK_PASSED" = false ]; then
+              echo "헬스체크 실패. 로그 확인:"
+              tail -30 /home/ubuntu/logs/app-$NEW_PORT.log
+              echo ""
+              sudo systemctl stop newslit@$NEW_PORT
+              exit 1
+          fi
+
+          # Nginx 설정 변경
+          sudo sed -i "s/proxy_pass http:\/\/localhost:[0-9]\+;/proxy_pass http:\/\/localhost:$NEW_PORT;/" \
+              /etc/nginx/sites-available/default
+
+          if sudo nginx -t 2>/dev/null; then
+              sudo nginx -s reload
+              echo "Nginx 전환 성공"
+          else
+              echo "Nginx 전환 실패"
+              exit 1
+          fi
+
+          # 기존 서비스 종료
+          echo "기존 앱 종료 중 (포트: $CURRENT_PORT)..."
+          sudo systemctl stop newslit@$CURRENT_PORT
+
+          # 현재 포트 정보 저장
+          echo $NEW_PORT > /home/ubuntu/current-port
+
+          # 오래된 jar 파일 정리 (최신 5개만 유지)
+          echo "오래된 jar 파일 정리"
+          cd /home/ubuntu/jars
+          ls -t backend-*.jar | tail -n +6 | xargs -r rm -f
+          REMAINING=$(ls -1 backend-*.jar 2>/dev/null | wc -l)
+          echo "정리 완료 (현재 $REMAINING개 jar 파일 보관)"
+
+          echo ""
+          echo "배포 완료, 활성 포트: $NEW_PORT"
+
+          ENDSSH
+
+      - name: 최종 헬스체크
+        run: |
+          ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.BACKEND_SERVER_IP }} bash << 'ENDSSH'
+          ACTIVE_PORT=$(cat /home/ubuntu/current-port)
+          if curl -f http://localhost:$ACTIVE_PORT/actuator/health > /dev/null 2>&1; then
+              echo "최종 헬스체크 성공!"
+          else
+              echo "최종 헬스체크 실패"
+              exit 1
+          fi
+          ENDSSH
