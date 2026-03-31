@@ -65,7 +65,7 @@ public class AudioService {
         File audioFile = downloadAudioFile(article.getAudioDownloadLink());
 
         try {
-            String audioUrl = uploadMp3ToStorage(articleId, audioFile);
+            String audioUrl = uploadMp3ToStorage(article, audioFile);
             List<WordDto> words = transcribe(audioFile, article);
 
             audioPersistenceService.persistResults(articleId, audioUrl, words);
