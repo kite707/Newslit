@@ -2,6 +2,8 @@ package com.newslit.backend.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -35,6 +37,11 @@ public class User {
 
     @Column(name = "name")
     private String name;
+
+    @Column(name = "role", nullable = false)
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    private Role role = Role.USER;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
