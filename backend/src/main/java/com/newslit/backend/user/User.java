@@ -38,7 +38,7 @@ public class User {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "role", nullable = false)
+    @Column(name = "role", nullable = false, columnDefinition = "VARCHAR(50) DEFAULT 'USER'")
     @Builder.Default
     @Enumerated(EnumType.STRING)
     private Role role = Role.USER;
