@@ -1,5 +1,6 @@
 package com.newslit.backend.user.dto;
 
+import com.newslit.backend.user.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,5 +15,6 @@ public class AuthResponseDto {
     private Long id;
     private String email;
     private String nickname;
+    private Role role;
     private String token;
 }

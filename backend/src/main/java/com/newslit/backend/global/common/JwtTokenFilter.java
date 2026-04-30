@@ -11,9 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.util.matcher.OrRequestMatcher;
-import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -22,15 +19,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtTokenFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
 
-    // JWT 인증이 필요한 경로만 지정
-    private final RequestMatcher protectedUrls = new OrRequestMatcher(
-            new AntPathRequestMatcher("/api/reading-history")
-    );
-
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !protectedUrls.matches(request);
-    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -38,15 +26,21 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         String token = extractTokenFromCookie(request);
 
         if (token == null || !jwtUtil.validateToken(token)) {
+            response.setContentType("application/json;charset=UTF-8");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        Long userId = jwtUtil.extractId(token);
+        String role = jwtUtil.extractRole(token);
+        if (role == null) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json;charset=UTF-8");
             return;
         }
 
-        Long userId = jwtUtil.extractId(token);
-
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userId,
-                null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         filterChain.doFilter(request, response);

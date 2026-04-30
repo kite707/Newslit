@@ -1,5 +1,6 @@
 package com.newslit.backend.global.common;
 
+import com.newslit.backend.user.Role;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
@@ -20,10 +21,11 @@ public class JwtUtil {
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String email, Long id) {
+    public String generateToken(String email, Long id, Role role) {
         return Jwts.builder()
                 .claim("email", email)
                 .claim("id", id)
+                .claim("role", role.name())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(signingKey)
@@ -40,6 +42,20 @@ public class JwtUtil {
                     .get("email", String.class);
         } catch (Exception e) {
             log.error("EXTRACT EMAIL ERROR", e);
+            return null;
+        }
+    }
+
+    public String extractRole(String token) {
+        try {
+            return Jwts.parser()
+                    .verifyWith(signingKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .get("role", String.class);
+        } catch (Exception e) {
+            log.error("EXTRACT ROLE ERROR", e);
             return null;
         }
     }

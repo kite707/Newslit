@@ -26,7 +26,7 @@ public class UserController {
     public ResponseEntity<AuthResponseDto> signup(@RequestBody SignupRequestDto request, HttpServletResponse response) {
         AuthResponseDto authResponseDto = userService.signup(request.getEmail(), request.getPassword(),
                 request.getNickname());
-        String token = jwtUtil.generateToken(request.getEmail(), authResponseDto.getId());
+        String token = jwtUtil.generateToken(request.getEmail(), authResponseDto.getId(), authResponseDto.getRole());
 
         ResponseCookie cookie = ResponseCookie.from("jwt", token)
                 .httpOnly(true)
@@ -43,7 +43,7 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDto> login(@RequestBody LoginRequestDto request, HttpServletResponse response) {
         AuthResponseDto authResponseDto = userService.login(request.getEmail(), request.getPassword());
-        String token = jwtUtil.generateToken(request.getEmail(), authResponseDto.getId());
+        String token = jwtUtil.generateToken(request.getEmail(), authResponseDto.getId(), authResponseDto.getRole());
 
         ResponseCookie cookie = ResponseCookie.from("jwt", token)
                 .httpOnly(true)

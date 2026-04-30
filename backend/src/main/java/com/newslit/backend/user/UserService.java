@@ -24,6 +24,7 @@ public class UserService {
         User user = User.builder()
                 .email(email)
                 .name(name)
+                .role(Role.USER)
                 .password(encodedPassword)
                 .build();
 
@@ -50,6 +51,7 @@ public class UserService {
         return AuthResponseDto.builder()
                 .message(message)
                 .email(user.getEmail())
+                .role(user.getRole())
                 .nickname(user.getName())
                 .id(user.getId())
                 .build();
