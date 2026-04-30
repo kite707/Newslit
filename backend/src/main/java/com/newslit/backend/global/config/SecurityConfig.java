@@ -36,9 +36,14 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))  // Stateless 설정
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()  // Preflight 허용
-                        .requestMatchers("/api/user/**").permitAll()  // 로그인/회원가입 허용
-                        .requestMatchers("/api/reading-history/**").authenticated()  // 인증 필요
-                        .anyRequest().permitAll()
+                        .requestMatchers("/api/user/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/daily/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/vocabulary").permitAll()
+                        .requestMatchers("/api/crawler/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/daily").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/article").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/**/translate").hasRole("ADMIN")
+                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
