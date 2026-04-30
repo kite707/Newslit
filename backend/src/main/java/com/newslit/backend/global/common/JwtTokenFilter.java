@@ -44,9 +44,15 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         }
 
         Long userId = jwtUtil.extractId(token);
+        String role = jwtUtil.extractRole(token);
+        if (role == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json;charset=UTF-8");
+            return;
+        }
 
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userId,
-                null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                null, List.of(new SimpleGrantedAuthority("ROLE_" + role)));
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         filterChain.doFilter(request, response);
