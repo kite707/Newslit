@@ -10,19 +10,22 @@ import com.newslit.backend.daily.exception.DuplicateDailyException;
 import com.newslit.backend.rss.Rss;
 import com.newslit.backend.rss.RssRepository;
 import com.newslit.backend.sentence.SentenceService;
+import com.newslit.backend.user.Role;
+import com.newslit.backend.user.User;
+import com.newslit.backend.user.UserRepository;
 import com.newslit.backend.vocabulary.VocabularyService;
 import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @RequiredArgsConstructor
 @Component
-@Profile({"local"})
 public class DataSetupRunner implements CommandLineRunner {
     private static final Logger log = LoggerFactory.getLogger(DataSetupRunner.class);
 
@@ -35,9 +38,31 @@ public class DataSetupRunner implements CommandLineRunner {
     private final SentenceService sentenceService;
     private final VocabularyService vocabularyService;
     private final AudioService audioService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @Value("${admin.email}")
+    String email;
+    @Value("${admin.name}")
+    String name;
+    @Value("${admin.password}")
+    String password;
+
 
     @Override
     public void run(String... args) throws Exception {
+
+        if (userRepository.findByEmail(email).isEmpty()) {
+            String encodedPassword = passwordEncoder.encode(password);
+            User user = User.builder()
+                    .email(email)
+                    .name(name)
+                    .role(Role.ADMIN)
+                    .password(encodedPassword)
+                    .build();
+            userRepository.save(user);
+        }
+
         voaRssCrawlerService.crawlVoaRssLinks();
         log.debug("RSS 크롤링 완료");
         Long rssIdx = rssRepository.findAll().stream()
