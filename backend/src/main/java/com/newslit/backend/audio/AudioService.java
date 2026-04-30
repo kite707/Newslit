@@ -65,7 +65,7 @@ public class AudioService {
         File audioFile = downloadAudioFile(article.getAudioDownloadLink());
 
         try {
-            String audioUrl = uploadMp3ToStorage(article.getId(), audioFile);
+            String audioUrl = uploadMp3ToStorage(article, audioFile);
             List<WordDto> words = transcribe(audioFile, article);
 
             audioPersistenceService.persistResults(articleId, audioUrl, words);
@@ -131,10 +131,7 @@ public class AudioService {
     }
 
 
-    private String uploadMp3ToStorage(Long articleId, File audioFile) throws IOException {
-        Article article = articleRepository.findById(articleId)
-                .orElseThrow(ArticleNotFoundException::new);
-
+    private String uploadMp3ToStorage(Article article, File audioFile) throws IOException {
         if (!audioFile.exists()) {
             throw new IOException("Audio file does not exist: " + audioFile.getPath());
         }
