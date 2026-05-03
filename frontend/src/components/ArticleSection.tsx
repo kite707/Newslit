@@ -28,7 +28,11 @@ export default function ArticleSection({
   const highlightVocabulary = (text: string, sentenceIndex: number) => {
     if (vocabularies.length === 0) return text;
 
-    const words = vocabularies.filter((v) => v.word).map((v) => v.word.toLowerCase());
+    const words = vocabularies
+      .filter((v) => v.word)
+      .map((v) => v.word.toLowerCase())
+      .sort((a, b) => b.length - a.length)
+      .map((word) => word.replace(/[.*+?^${}()|[\\\\]/g, "\\\\$&"));
     if (words.length === 0) return text;
     const regex = new RegExp(`\\b(${words.join("|")})\\b`, "gi");
 
