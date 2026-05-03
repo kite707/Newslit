@@ -360,7 +360,7 @@ export default function EnglishLearningApp() {
       .toLowerCase();
 
     return vocabularies.filter((vocab) =>
-      allText.includes(vocab.word.toLowerCase()),
+      vocab.word && allText.includes(vocab.word.toLowerCase()),
     );
   };
 
