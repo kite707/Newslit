@@ -70,12 +70,45 @@ jobs:
           echo "이전 JAR: $PREVIOUS_JAR"
 
           # 최신 jar 파일 찾기
-          LATEST_JAR=$(ls -t /home/ubuntu/jars/backend-*.jar | head -1)
+          LATEST_JAR=$(ls -t /home/ubuntu/jars/backend-*.jar 2>/dev/null | head -1)
+          if [ -z "$LATEST_JAR" ]; then
+              echo "배포할 JAR 파일이 없습니다. 배포 중단."
+              exit 1
+          fi
           echo "배포할 JAR: $LATEST_JAR"
 
-          # 현재 실행 중인 PID 저장
-          OLD_PID=$(pgrep -f "java -jar /home/ubuntu/current.jar" || echo "")
-          echo "기존 PID: $OLD_PID"
+          # 기존 프로세스 PID 확인 (PID 파일 우선, fallback으로 포트 점유 프로세스)
+          OLD_PID=""
+          if [ -f /home/ubuntu/app.pid ]; then
+              OLD_PID=$(cat /home/ubuntu/app.pid | tr -d '[:space:]')
+              if ! kill -0 "$OLD_PID" 2>/dev/null; then
+                  echo "PID 파일의 프로세스($OLD_PID)가 이미 없음. 포트로 재탐색..."
+                  OLD_PID=$(lsof -ti:8080 2>/dev/null | head -1 || echo "")
+              fi
+          else
+              OLD_PID=$(lsof -ti:8080 2>/dev/null | head -1 || echo "")
+          fi
+          echo "기존 PID: ${OLD_PID:-없음}"
+
+          # 기존 프로세스 먼저 종료 (포트 해제 후 새 앱 시작)
+          if [ -n "$OLD_PID" ]; then
+              echo "기존 프로세스 종료 (PID: $OLD_PID)..."
+              kill "$OLD_PID" 2>/dev/null || true
+              # SIGTERM 후 최대 15초 대기
+              for i in $(seq 1 15); do
+                  if ! kill -0 "$OLD_PID" 2>/dev/null; then
+                      echo "기존 프로세스 종료 완료 (${i}초 소요)"
+                      break
+                  fi
+                  sleep 1
+              done
+              # 여전히 살아있으면 SIGKILL
+              if kill -0 "$OLD_PID" 2>/dev/null; then
+                  echo "강제 종료(SIGKILL) 적용..."
+                  kill -9 "$OLD_PID" 2>/dev/null || true
+                  sleep 1
+              fi
+          fi
 
           # 심볼릭 링크 갱신
           ln -sf $LATEST_JAR /home/ubuntu/current.jar
@@ -88,6 +121,7 @@ jobs:
             --server.port=8080 \
             > /home/ubuntu/logs/app.log 2>&1 &
           NEW_PID=$!
+          echo "$NEW_PID" > /home/ubuntu/app.pid
           echo "새 PID: $NEW_PID"
 
           # 헬스체크 (최대 150초)
@@ -108,7 +142,11 @@ jobs:
               echo "헬스체크 실패. 롤백 시작..."
 
               # 새 프로세스 종료
-              kill $NEW_PID 2>/dev/null || true
+              kill "$NEW_PID" 2>/dev/null || true
+
+              # 실패 로그 먼저 출력 (롤백 앱 시작 전에 캡처)
+              echo "=== 실패 로그 (마지막 30줄) ==="
+              tail -30 /home/ubuntu/logs/app.log
 
               # 이전 jar로 롤백
               if [ -n "$PREVIOUS_JAR" ] && [ -f "$PREVIOUS_JAR" ]; then
@@ -117,20 +155,16 @@ jobs:
                     --spring.profiles.active=prod-secret \
                     --spring.config.additional-location=file:/home/ubuntu/ \
                     --server.port=8080 \
-                    > /home/ubuntu/logs/app.log 2>&1 &
-                  echo "롤백 완료: $PREVIOUS_JAR"
+                    >> /home/ubuntu/logs/app.log 2>&1 &
+                  ROLLBACK_PID=$!
+                  echo "$ROLLBACK_PID" > /home/ubuntu/app.pid
+                  echo "롤백 완료: $PREVIOUS_JAR (PID: $ROLLBACK_PID)"
               else
                   echo "롤백할 이전 JAR 없음"
+                  rm -f /home/ubuntu/app.pid
               fi
 
-              tail -30 /home/ubuntu/logs/app.log
               exit 1
-          fi
-
-          # 기존 프로세스 종료
-          if [ -n "$OLD_PID" ]; then
-              echo "기존 프로세스 종료 (PID: $OLD_PID)..."
-              kill $OLD_PID 2>/dev/null || true
           fi
 
           # 오래된 jar 파일 정리 (최신 5개만 유지)
