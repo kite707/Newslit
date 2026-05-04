@@ -80,14 +80,23 @@ jobs:
           # 심볼릭 링크 갱신
           ln -sf $LATEST_JAR /home/ubuntu/current-8080.jar
 
+          # 기존 로그를 JAR 이름으로 보관
+          JAR_TIMESTAMP=$(basename $LATEST_JAR .jar | sed 's/backend-//')
+          if [ -f /home/ubuntu/logs/app-8080.log ]; then
+              mv /home/ubuntu/logs/app-8080.log /home/ubuntu/logs/app-8080-${JAR_TIMESTAMP}.log
+          fi
+
+          # 오래된 로그 파일 정리 (최신 5개만 유지)
+          ls -t /home/ubuntu/logs/app-8080-*.log 2>/dev/null | tail -n +6 | xargs -r rm -f
+
           # 서비스 재시작
           echo "서비스 재시작 중..."
           sudo systemctl restart newslit@8080
 
-          # 헬스체크 (최대 150초)
+          # 헬스체크 (최대 200초)
           echo "헬스체크 시작..."
           HEALTH_OK=false
-          for i in $(seq 1 150); do
+          for i in $(seq 1 200); do
               if curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1; then
                   echo "구동 성공 (${i}초 소요)"
                   HEALTH_OK=true
