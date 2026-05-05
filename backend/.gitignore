@@ -43,6 +43,7 @@ tools/
 .env
 /src/main/resources/application-local-secret.properties
 /src/main/resources/application-prod-secret.properties
+/src/main/java/com/newslit/backend/global/config/CustomMySQLDialect.java
 
 ### Agent ###
 .claude
