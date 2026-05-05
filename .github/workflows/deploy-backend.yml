@@ -110,8 +110,10 @@ jobs:
               echo ""
               echo "헬스체크 실패. 롤백 시작..."
 
-              echo "=== 실패 로그 (마지막 30줄) ==="
-              sudo journalctl -u newslit@8080 -n 30 --no-pager
+              echo "=== 실패 로그 ==="
+              FAIL_LOG="/home/ubuntu/logs/app-8080-FAILED-${JAR_TIMESTAMP}.log"
+              cp /home/ubuntu/logs/app-8080.log "$FAIL_LOG" 2>/dev/null || true
+              tail -50 /home/ubuntu/logs/app-8080.log
 
               if [ -n "$PREVIOUS_JAR" ] && [ -f "$PREVIOUS_JAR" ]; then
                   ln -sf $PREVIOUS_JAR /home/ubuntu/current-8080.jar
