@@ -48,11 +48,11 @@ public class Sentence {
     @Column(name = "order_index", nullable = false)
     private Integer orderIndex;
 
-    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
+    @JdbcTypeCode(SqlTypes.CLOB)
     @Column(name = "english_text", nullable = false)
     private String englishText;
 
-    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
+    @JdbcTypeCode(SqlTypes.CLOB)
     @Column(name = "korean_text")
     private String koreanText;
 
