@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/article").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/vocabulary/translate").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/sentence/translate").hasRole("ADMIN")
+                        .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/swagger-ui/**").permitAll()
                         .requestMatchers("/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
