@@ -50,11 +50,11 @@ public class Vocabulary {
     @Column(name = "part_of_speech", length = 50)
     private PartOfSpeech partOfSpeech;
 
-    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
+    @JdbcTypeCode(SqlTypes.CLOB)
     @Column(name = "example_sentence")
     private String exampleSentence;
 
-    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
+    @JdbcTypeCode(SqlTypes.CLOB)
     @Column(name = "example_translation")
     private String exampleTranslation;
 

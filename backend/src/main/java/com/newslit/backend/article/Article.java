@@ -47,7 +47,7 @@ public class Article {
     @Column(length = 500, nullable = false)
     private String title;
 
-    @JdbcTypeCode(SqlTypes.LONG32VARCHAR)
+    @JdbcTypeCode(SqlTypes.CLOB)
     @Column(nullable = false)
     private String originalText;
 
