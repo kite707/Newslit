@@ -25,6 +25,8 @@ public class UserController {
 
     @Value("${app.cookie.secure}")
     private boolean cookieSecure;
+    @Value("${jwt.expiration}")
+    private long jwtExpiration;
 
     @PostMapping("/signup")
     public ResponseEntity<AuthResponseDto> signup(@RequestBody SignupRequestDto request, HttpServletResponse response) {
@@ -32,7 +34,7 @@ public class UserController {
                 request.getNickname());
         String token = jwtUtil.generateToken(request.getEmail(), authResponseDto.getId(), authResponseDto.getRole());
 
-        ResponseCookie cookie = makeCookie(token, 3600);
+        ResponseCookie cookie = makeCookie(token, jwtExpiration / 1000);
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return ResponseEntity.ok(authResponseDto);
@@ -43,7 +45,7 @@ public class UserController {
         AuthResponseDto authResponseDto = userService.login(request.getEmail(), request.getPassword());
         String token = jwtUtil.generateToken(request.getEmail(), authResponseDto.getId(), authResponseDto.getRole());
 
-        ResponseCookie cookie = makeCookie(token, 3600);
+        ResponseCookie cookie = makeCookie(token, jwtExpiration / 1000);
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return ResponseEntity.ok(authResponseDto);
     }
@@ -58,7 +60,7 @@ public class UserController {
         return ResponseEntity.ok("Logout successful");
     }
 
-    private ResponseCookie makeCookie(String token, int maxAge) {
+    private ResponseCookie makeCookie(String token, long maxAge) {
         return ResponseCookie.from("jwt", token)
                 .httpOnly(true)
                 .path("/")
