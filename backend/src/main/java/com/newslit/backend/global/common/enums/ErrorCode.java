@@ -16,6 +16,8 @@ public enum ErrorCode {
     // User
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USR-001", "사용자를 찾을 수 없습니다"),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "USR-002", "이미 존재하는 이메일입니다."),
+    ALREADY_VERIFIED(HttpStatus.CONFLICT, "USR-003", "이미 인증이 완료된 유저입니다."),
+    SEND_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "USR-004", "메일 발송 횟수를 초과했습니다."),
 
     // RSS
     RSS_NOT_FOUND(HttpStatus.NOT_FOUND, "RSS-002", "RSS 링크를 찾을 수 없습니다"),
@@ -31,6 +33,9 @@ public enum ErrorCode {
     TRANSLATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "SNT-001", "번역 처리 중 오류가 발생했습니다"),
     TRANSLATION_INTERRUPTED(HttpStatus.INTERNAL_SERVER_ERROR, "SNT-002", "번역 작업이 중단되었습니다"),
     SENTENCE_NOT_FOUND(HttpStatus.NOT_FOUND, "SNT-003", "존재하지 않는 문장입니다");
+
+    //Email Verify
+
 
     private final HttpStatus status;
     private final String code;
