@@ -2,7 +2,6 @@ package com.newslit.backend.mail;
 
 import com.newslit.backend.user.User;
 import com.newslit.backend.user.UserRepository;
-import com.newslit.backend.user.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -24,24 +23,13 @@ public class MailService {
         mailSender.send(message);
     }
 
-    public void sendVerifyMail(String to, String code) {
+    public void sendVerifyMail(User user, String code) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("noreply@newslit.net");
-        message.setTo(to);
+        message.setTo(user.getEmail());
         message.setSubject("[Newslit] 인증 코드");
         message.setText(code);
 
-        User user = userRepository.findByEmail(to).orElseThrow(UserNotFoundException::new);
-
-        EmailVerification verification = emailVerificationRepository.findByUser(user)
-                .orElseGet(() -> EmailVerification.builder()
-                        .user(user)
-                        .sendCount(0)
-                        .attemptCount(0)
-                        .build());
-        verification.setCode(code);
         mailSender.send(message);
-        emailVerificationRepository.save(verification);
-
     }
 }
