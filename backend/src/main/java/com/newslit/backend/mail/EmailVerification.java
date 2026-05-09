@@ -56,7 +56,7 @@ public class EmailVerification {
     }
 
     public void startNewSendCycle() {
-        this.sendCount = 1;
+        this.sendCount = 0;
         this.sendCountResetDt = LocalDateTime.now().plusDays(1);
     }
 

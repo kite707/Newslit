@@ -1,16 +1,22 @@
 package com.newslit.backend.user;
 
+import com.newslit.backend.global.common.enums.Verify;
 import com.newslit.backend.mail.EmailVerification;
 import com.newslit.backend.mail.EmailVerificationRepository;
 import com.newslit.backend.mail.MailService;
 import com.newslit.backend.user.dto.AuthResponseDto;
 import com.newslit.backend.user.dto.SendCodeResponseDto;
+import com.newslit.backend.user.exception.AlreadyVerifiedException;
 import com.newslit.backend.user.exception.DuplicatedEmailException;
+import com.newslit.backend.user.exception.SendLimitExceededException;
 import com.newslit.backend.user.exception.UserNotFoundException;
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +26,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
     private final EmailVerificationRepository emailVerificationRepository;
+
+    private static final Integer SEND_LIMIT = 20;
 
     public AuthResponseDto signup(String email, String password, String name) {
         userRepository.findByEmail(email).ifPresent(user -> {
@@ -64,26 +72,46 @@ public class UserService {
                 .build();
     }
 
+    @Transactional
     public SendCodeResponseDto sendCode(String email) {
         String code = String.format("%06d", new SecureRandom().nextInt(1_000_000));
 
-        User user = userRepository.findByEmail(email).orElseThrow(UserNotFoundException::new);
+        Optional<User> optionalUser = userRepository.findByEmail(email);
+        if (optionalUser.isEmpty()) {
+            return SendCodeResponseDto.builder()
+                    .message("인증코드 발송이 완료되었습니다.")
+                    .build();
+        }
+        User user = optionalUser.get();
+
+        if (user.getVerify() == Verify.VERIFIED) {
+            throw new AlreadyVerifiedException();
+        }
 
         EmailVerification verification = emailVerificationRepository.findByUser(user)
                 .orElseGet(() -> EmailVerification.builder()
                         .user(user)
                         .sendCount(0)
+                        .sendCountResetDt(LocalDateTime.now().plusDays(1))
                         .attemptCount(0)
                         .build());
+
+        if (verification.getSendCount() >= SEND_LIMIT) {
+            if (LocalDateTime.now().isAfter(verification.getSendCountResetDt())) {
+                verification.startNewSendCycle();
+            } else {
+                throw new SendLimitExceededException();
+            }
+        }
         verification.setCode(code);
+        verification.resetAttemptCount();
+        verification.increaseSendCount();
 
         mailService.sendVerifyMail(user, code);
         emailVerificationRepository.save(verification);
 
-        //TODO: 변경필요
         return SendCodeResponseDto.builder()
-                .code("200")
-                .message("성공")
+                .message("인증코드 발송이 완료되었습니다.")
                 .build();
     }
 }
