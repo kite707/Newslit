@@ -3,6 +3,8 @@ package com.newslit.backend.user;
 import com.newslit.backend.global.common.JwtUtil;
 import com.newslit.backend.user.dto.AuthResponseDto;
 import com.newslit.backend.user.dto.LoginRequestDto;
+import com.newslit.backend.user.dto.SendCodeRequestDto;
+import com.newslit.backend.user.dto.SendCodeResponseDto;
 import com.newslit.backend.user.dto.SignupRequestDto;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -58,6 +60,13 @@ public class UserController {
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         return ResponseEntity.ok("Logout successful");
+    }
+
+    @PostMapping("/email/send")
+    public ResponseEntity<SendCodeResponseDto> sendCode(@RequestBody SendCodeRequestDto request) {
+        SendCodeResponseDto dto = userService.sendCode(request.getEmail());
+
+        return ResponseEntity.ok(dto);
     }
 
     private ResponseCookie makeCookie(String token, long maxAge) {
