@@ -26,6 +26,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
     private final EmailVerificationRepository emailVerificationRepository;
+    private static final SecureRandom secureRandom = new SecureRandom();
 
     private static final Integer SEND_LIMIT = 20;
 
@@ -74,7 +75,7 @@ public class UserService {
 
     @Transactional
     public SendCodeResponseDto sendCode(String email) {
-        String code = String.format("%06d", new SecureRandom().nextInt(1_000_000));
+        String code = String.format("%06d", secureRandom.nextInt(1_000_000));
 
         Optional<User> optionalUser = userRepository.findByEmail(email);
         if (optionalUser.isEmpty()) {
