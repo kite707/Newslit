@@ -38,11 +38,13 @@ public class EmailVerification {
     @Column(name = "code_issued_at")
     private LocalDateTime codeIssuedAt;
 
+    @Builder.Default
     @Column(name = "attempt_count")
-    private Integer attemptCount;
-
+    private Integer attemptCount = 0;
+    
+    @Builder.Default
     @Column(name = "send_count")
-    private Integer sendCount;
+    private Integer sendCount = 0;
 
     @Column(name = "send_count_reset_dt")
     private LocalDateTime sendCountResetDt;
