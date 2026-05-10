@@ -27,6 +27,8 @@ jobs:
         run: |
           mkdir -p backend/src/main/resources
           echo "${{secrets.APPLICATION_PROD_SECRET}}" > backend/src/main/resources/application-prod-secret.properties
+        env:
+          APP_SECRET: ${{ secrets.APPLICATION_PROD_SECRET }}
 
       - name: Gradle 빌드
         run: |
