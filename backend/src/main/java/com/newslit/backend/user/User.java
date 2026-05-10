@@ -1,5 +1,6 @@
 package com.newslit.backend.user;
 
+import com.newslit.backend.global.common.enums.Verify;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -42,6 +43,11 @@ public class User {
     @Builder.Default
     @Enumerated(EnumType.STRING)
     private Role role = Role.USER;
+
+    @Column(name = "verify_status", nullable = false, columnDefinition = "VARCHAR(50) DEFAULT 'UNVERIFIED'")
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    private Verify verify = Verify.UNVERIFIED;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

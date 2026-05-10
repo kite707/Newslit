@@ -7,6 +7,7 @@ import com.newslit.backend.crawl.VoaArticleCrawlerService;
 import com.newslit.backend.crawl.VoaRssCrawlerService;
 import com.newslit.backend.daily.DailyService;
 import com.newslit.backend.daily.exception.DuplicateDailyException;
+import com.newslit.backend.mail.MailService;
 import com.newslit.backend.rss.Rss;
 import com.newslit.backend.rss.RssRepository;
 import com.newslit.backend.sentence.SentenceService;
@@ -42,6 +43,7 @@ public class DataSetupRunner implements CommandLineRunner {
     private final AudioService audioService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MailService mailService;
 
     @Value("${admin.email}")
     String email;
@@ -53,6 +55,8 @@ public class DataSetupRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+
+        mailService.sendTestMail("hyeyeonkang424@gmail.com");
 
         if (userRepository.findByEmail(email).isEmpty()) {
             String encodedPassword = passwordEncoder.encode(password);
