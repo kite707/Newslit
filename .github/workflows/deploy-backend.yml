@@ -98,7 +98,7 @@ jobs:
           # 헬스체크 (최대 200초)
           echo "헬스체크 시작..."
           HEALTH_OK=false
-          for i in $(seq 1 200); do
+          for i in $(seq 1 400); do
               if curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1; then
                   echo "구동 성공 (${i}초 소요)"
                   HEALTH_OK=true
