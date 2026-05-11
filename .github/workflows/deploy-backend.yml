@@ -88,8 +88,11 @@ jobs:
               mv /home/ubuntu/logs/app-8080.log /home/ubuntu/logs/app-8080-${JAR_TIMESTAMP}.log
           fi
 
-          # 오래된 로그 파일 정리 (최신 5개만 유지)
-          ls -t /home/ubuntu/logs/app-8080-*.log 2>/dev/null | tail -n +6 | xargs -r rm -f
+          # 오래된 로그 파일 정리 (최신 5개만 유지, FAILED 로그 제외)
+          ls -t /home/ubuntu/logs/app-8080-*.log 2>/dev/null | grep -v 'FAILED' | tail -n +6 | xargs -r rm -f
+          # FAILED 로그 정리 (최신 5개만 유지)
+          ls -t /home/ubuntu/logs/app-8080-FAILED-[0-9]*.log 2>/dev/null | tail -n +6 | xargs -r rm -f
+          ls -t /home/ubuntu/logs/app-8080-FAILED-JOURNAL-*.log 2>/dev/null | tail -n +6 | xargs -r rm -f
 
           # 서비스 재시작
           echo "서비스 재시작 중..."
@@ -112,10 +115,20 @@ jobs:
               echo ""
               echo "헬스체크 실패. 롤백 시작..."
 
-              echo "=== 실패 로그 ==="
               FAIL_LOG="/home/ubuntu/logs/app-8080-FAILED-${JAR_TIMESTAMP}.log"
+              JOURNAL_LOG="/home/ubuntu/logs/app-8080-FAILED-JOURNAL-${JAR_TIMESTAMP}.log"
+
+              # app 로그 저장
               cp /home/ubuntu/logs/app-8080.log "$FAIL_LOG" 2>/dev/null || true
+
+              # journalctl 로그 별도 저장
+              journalctl -u newslit@8080 -n 300 --no-pager > "$JOURNAL_LOG" 2>/dev/null || true
+
+              # GitHub Actions 출력
+              echo "=== APP LOG ==="
               tail -50 /home/ubuntu/logs/app-8080.log
+              echo "=== JOURNALCTL ==="
+              journalctl -u newslit@8080 -n 300 --no-pager
 
               if [ -n "$PREVIOUS_JAR" ] && [ -f "$PREVIOUS_JAR" ]; then
                   ln -sf $PREVIOUS_JAR /home/ubuntu/current-8080.jar
