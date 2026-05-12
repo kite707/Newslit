@@ -24,10 +24,10 @@ public class MailService {
         mailSender.send(message);
     }
 
-    public void sendVerifyMail(User user, String code) {
+    public void sendVerifyMail(String email, String code) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("noreply@newslit.net");
-        message.setTo(user.getEmail());
+        message.setTo(email);
         message.setSubject("[Newslit] 인증 코드");
         message.setText(code);
 

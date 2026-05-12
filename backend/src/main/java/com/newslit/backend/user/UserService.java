@@ -75,23 +75,14 @@ public class UserService {
 
     @Transactional
     public SendCodeResponseDto sendCode(String email) {
-        String code = String.format("%06d", secureRandom.nextInt(1_000_000));
-
-        Optional<User> optionalUser = userRepository.findByEmail(email);
-        if (optionalUser.isEmpty()) {
-            return SendCodeResponseDto.builder()
-                    .message("인증코드 발송이 완료되었습니다.")
-                    .build();
-        }
-        User user = optionalUser.get();
-
-        if (user.getVerify() == Verify.VERIFIED) {
+        if (userRepository.findByEmail(email).isPresent()) {
             throw new AlreadyVerifiedException();
         }
 
-        EmailVerification verification = emailVerificationRepository.findByUser(user)
+        String code = String.format("%06d", secureRandom.nextInt(1_000_000));
+        EmailVerification verification = emailVerificationRepository.findByEmail(email)
                 .orElseGet(() -> EmailVerification.builder()
-                        .user(user)
+                        .email(email)
                         .sendCount(0)
                         .sendCountResetDt(LocalDateTime.now().plusDays(1))
                         .attemptCount(0)
@@ -108,7 +99,7 @@ public class UserService {
         verification.resetAttemptCount();
         verification.increaseSendCount();
 
-        mailService.sendVerifyMail(user, code);
+        mailService.sendVerifyMail(email, code);
         emailVerificationRepository.save(verification);
 
         return SendCodeResponseDto.builder()
