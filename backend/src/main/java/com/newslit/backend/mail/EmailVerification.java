@@ -28,9 +28,8 @@ public class EmailVerification {
     @Column(name = "id")
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "email")
+    private String email;
 
     @Column(name = "code")
     private String code;
@@ -41,7 +40,7 @@ public class EmailVerification {
     @Builder.Default
     @Column(name = "attempt_count")
     private Integer attemptCount = 0;
-    
+
     @Builder.Default
     @Column(name = "send_count")
     private Integer sendCount = 0;
