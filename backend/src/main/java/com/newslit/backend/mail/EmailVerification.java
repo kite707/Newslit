@@ -23,6 +23,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EmailVerification {
+    private static final long EXPIRATION_MINUTES = 10;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -68,6 +70,10 @@ public class EmailVerification {
     public void setCode(String code) {
         this.code = code;
         this.codeIssuedAt = LocalDateTime.now();
+    }
+
+    public boolean isCodeExpired() {
+        return codeIssuedAt.plusMinutes(EXPIRATION_MINUTES).isBefore(LocalDateTime.now());
     }
 
 }
