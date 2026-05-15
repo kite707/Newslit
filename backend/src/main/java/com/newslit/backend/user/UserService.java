@@ -7,9 +7,12 @@ import com.newslit.backend.mail.MailService;
 import com.newslit.backend.user.dto.AuthResponseDto;
 import com.newslit.backend.user.dto.SendCodeResponseDto;
 import com.newslit.backend.user.exception.AlreadyVerifiedException;
+import com.newslit.backend.user.exception.CodeExpiredException;
+import com.newslit.backend.user.exception.CodeNotFoundException;
 import com.newslit.backend.user.exception.DuplicatedEmailException;
 import com.newslit.backend.user.exception.SendLimitExceededException;
 import com.newslit.backend.user.exception.UserNotFoundException;
+import com.newslit.backend.user.exception.WrongCodeException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -105,5 +108,24 @@ public class UserService {
         return SendCodeResponseDto.builder()
                 .message("인증코드 발송이 완료되었습니다.")
                 .build();
+    }
+
+    public void verifyCode(String email, String code) {
+
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new WrongCodeException();
+        }
+
+        EmailVerification emailVerification = emailVerificationRepository.findByEmail(email).orElseThrow(
+                CodeNotFoundException::new);
+
+        if (emailVerification.isCodeExpired()) {
+            throw new CodeExpiredException();
+        }
+
+        if (!emailVerification.getCode().equals(code)) {
+            throw new WrongCodeException();
+        }
+
     }
 }

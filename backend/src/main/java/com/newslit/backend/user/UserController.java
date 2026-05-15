@@ -6,6 +6,7 @@ import com.newslit.backend.user.dto.LoginRequestDto;
 import com.newslit.backend.user.dto.SendCodeRequestDto;
 import com.newslit.backend.user.dto.SendCodeResponseDto;
 import com.newslit.backend.user.dto.SignupRequestDto;
+import com.newslit.backend.user.dto.VerifyCodeRequestDto;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -67,6 +68,13 @@ public class UserController {
         SendCodeResponseDto dto = userService.sendCode(request.getEmail());
 
         return ResponseEntity.ok(dto);
+    }
+
+    @PostMapping("/email/verify")
+    public ResponseEntity<?> verifyCode(@RequestBody VerifyCodeRequestDto request) {
+        userService.verifyCode(request.getEmail(), request.getCode());
+
+        return ResponseEntity.ok().build();
     }
 
     private ResponseCookie makeCookie(String token, long maxAge) {
