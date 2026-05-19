@@ -2,8 +2,6 @@ package com.newslit.backend.sentence;
 
 import com.deepl.api.DeepLClient;
 import com.newslit.backend.global.common.enums.Status;
-import com.newslit.backend.sentence.dto.SentenceResponseDto;
-import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -30,14 +28,6 @@ public class TranslationAsyncService {
                 sentence.setKoreanText(translatedText);
                 sentence.setTranslationStatus(Status.SUCCESS);
                 sentenceRepository.save(sentence);
-
-                CompletableFuture.completedFuture(SentenceResponseDto.builder()
-                        .articleId(articleId)
-                        .orderIndex(orderIndex)
-                        .englishText(englishText)
-                        .koreanText(translatedText)
-                        .status(Status.SUCCESS)
-                        .build());
                 return;
             } catch (Exception e) {
                 log.warn("번역 실패 (재시도 {}/{}): {}", retryCnt + 1, MAX_RETRY_CNT, e.getMessage());
