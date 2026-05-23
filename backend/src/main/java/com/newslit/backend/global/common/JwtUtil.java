@@ -1,6 +1,9 @@
 package com.newslit.backend.global.common;
 
+import com.newslit.backend.global.common.enums.TokenType;
 import com.newslit.backend.user.Role;
+import com.newslit.backend.user.exception.InvalidTokenException;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
@@ -21,28 +24,44 @@ public class JwtUtil {
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String email, Long id, Role role) {
+    public String generateAuthToken(String email, Long id, Role role) {
         return Jwts.builder()
                 .claim("email", email)
                 .claim("id", id)
                 .claim("role", role.name())
+                .claim("type", TokenType.AUTH.name())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(signingKey)
                 .compact();
     }
 
-    public String extractEmail(String token) {
+    public String generateVerifyToken(String email) {
+        return Jwts.builder()
+                .claim("email", email)
+                .claim("type", TokenType.VERIFY.name())
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .signWith(signingKey)
+                .compact();
+    }
+
+    public String extractEmailFromVerifyToken(String token) {
         try {
-            return Jwts.parser()
-                    .verifyWith(signingKey)
-                    .build()
+            Claims claims = Jwts.parser()
+                    .verifyWith(signingKey).build()
                     .parseSignedClaims(token)
-                    .getPayload()
-                    .get("email", String.class);
+                    .getPayload();
+
+            if (!TokenType.VERIFY.name().equals(claims.get("type", String.class))) {
+                throw new InvalidTokenException();
+            }
+            return claims.get("email", String.class);
+        } catch (InvalidTokenException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("EXTRACT EMAIL ERROR", e);
-            return null;
+            log.error("EXTRACT EMAIL FROM VERIFY TOKEN ERROR", e);
+            throw new InvalidTokenException();
         }
     }
 
