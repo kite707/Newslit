@@ -1,5 +1,6 @@
 package com.newslit.backend.user;
 
+import com.newslit.backend.global.common.JwtUtil;
 import com.newslit.backend.global.common.enums.Verify;
 import com.newslit.backend.mail.EmailVerification;
 import com.newslit.backend.mail.EmailVerificationRepository;
@@ -10,6 +11,7 @@ import com.newslit.backend.user.exception.AlreadyVerifiedException;
 import com.newslit.backend.user.exception.CodeExpiredException;
 import com.newslit.backend.user.exception.CodeNotFoundException;
 import com.newslit.backend.user.exception.DuplicatedEmailException;
+import com.newslit.backend.user.exception.EmailMismatchException;
 import com.newslit.backend.user.exception.SendLimitExceededException;
 import com.newslit.backend.user.exception.UserNotFoundException;
 import com.newslit.backend.user.exception.WrongCodeException;
@@ -32,8 +34,15 @@ public class UserService {
     private static final SecureRandom secureRandom = new SecureRandom();
 
     private static final Integer SEND_LIMIT = 20;
+    private final JwtUtil jwtUtil;
 
-    public AuthResponseDto signup(String email, String password, String name) {
+    public AuthResponseDto signup(String email, String password, String name, String verifyToken) {
+        String tokenEmail = jwtUtil.extractEmailFromVerifyToken(verifyToken);
+
+        if (!tokenEmail.equals(email)) {
+            throw new EmailMismatchException();
+        }
+
         userRepository.findByEmail(email).ifPresent(user -> {
             throw new DuplicatedEmailException();
         });
