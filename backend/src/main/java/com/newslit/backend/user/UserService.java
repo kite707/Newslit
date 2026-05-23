@@ -88,7 +88,9 @@ public class UserService {
     @Transactional
     public SendCodeResponseDto sendCode(String email) {
         if (userRepository.findByEmail(email).isPresent()) {
-            throw new AlreadyVerifiedException();
+            return SendCodeResponseDto.builder()
+                    .message("인증코드 발송이 완료되었습니다.")
+                    .build();
         }
 
         String code = String.format("%06d", secureRandom.nextInt(1_000_000));
