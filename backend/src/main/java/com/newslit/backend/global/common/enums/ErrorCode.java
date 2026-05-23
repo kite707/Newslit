@@ -21,6 +21,8 @@ public enum ErrorCode {
     CODE_NOT_FOUND(HttpStatus.NOT_FOUND, "USR-005", "해당 이메일로 등록된 코드를 찾을 수 없습니다."),
     CODE_EXPIRED(HttpStatus.BAD_REQUEST, "USR-006", "만료된 코드입니다."),
     WRONG_CODE(HttpStatus.BAD_REQUEST, "USR-007", "코드가 일치하지 않습니다."),
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "USR-008", "유효하지 않은 토큰입니다."),
+    EMAIL_MISMATCH(HttpStatus.BAD_REQUEST, "USR-009", "인증된 이메일과 요청 이메일이 일치하지 않습니다."),
 
     // RSS
     RSS_NOT_FOUND(HttpStatus.NOT_FOUND, "RSS-002", "RSS 링크를 찾을 수 없습니다"),
