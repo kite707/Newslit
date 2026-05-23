@@ -48,6 +48,9 @@ public class JwtUtil {
 
     public String extractEmailFromVerifyToken(String token) {
         try {
+            if (token == null) {
+                throw new InvalidTokenException();
+            }
             Claims claims = Jwts.parser()
                     .verifyWith(signingKey).build()
                     .parseSignedClaims(token)
