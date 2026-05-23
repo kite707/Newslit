@@ -1,5 +1,6 @@
 package com.newslit.backend.global.common;
 
+import com.newslit.backend.global.common.enums.TokenType;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -31,6 +32,11 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             return;
         }
 
+        if (jwtUtil.extractType(token).equals(TokenType.VERIFY.name())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         Long userId = jwtUtil.extractId(token);
         String role = jwtUtil.extractRole(token);
         if (role == null) {
@@ -52,11 +58,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
-                if ("jwt".equals(cookie.getName())) {
+                if ("AUTH".equals(cookie.getName())) {
                     return cookie.getValue();
                 }
             }
         }
         return null;
     }
+
 }

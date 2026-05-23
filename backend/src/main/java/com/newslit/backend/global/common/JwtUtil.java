@@ -86,6 +86,20 @@ public class JwtUtil {
         }
     }
 
+    public String extractType(String token) {
+        try {
+            return Jwts.parser()
+                    .verifyWith(signingKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .get("type", String.class);
+        } catch (Exception e) {
+            log.error("EXTRACT TYPE ERROR", e);
+            return null;
+        }
+    }
+
     public Long extractId(String token) {
         try {
             return Jwts.parser()
