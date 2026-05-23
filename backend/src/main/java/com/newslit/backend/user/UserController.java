@@ -1,6 +1,7 @@
 package com.newslit.backend.user;
 
 import com.newslit.backend.global.common.JwtUtil;
+import com.newslit.backend.global.common.enums.TokenType;
 import com.newslit.backend.user.dto.AuthResponseDto;
 import com.newslit.backend.user.dto.LoginRequestDto;
 import com.newslit.backend.user.dto.SendCodeRequestDto;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,16 +30,20 @@ public class UserController {
 
     @Value("${app.cookie.secure}")
     private boolean cookieSecure;
-    @Value("${jwt.expiration}")
-    private long jwtExpiration;
+    @Value("${jwt.auth.expiration}")
+    private long authExpiration;
+    @Value("${jwt.verify.expiration}")
+    private long verifyExpiration;
 
     @PostMapping("/signup")
-    public ResponseEntity<AuthResponseDto> signup(@RequestBody SignupRequestDto request, HttpServletResponse response) {
+    public ResponseEntity<AuthResponseDto> signup(@RequestBody SignupRequestDto request, HttpServletResponse response,
+                                                  @CookieValue(name = "VERIFY", required = false) String verifyToken) {
         AuthResponseDto authResponseDto = userService.signup(request.getEmail(), request.getPassword(),
-                request.getNickname());
-        String token = jwtUtil.generateToken(request.getEmail(), authResponseDto.getId(), authResponseDto.getRole());
+                request.getNickname(), verifyToken);
+        String token = jwtUtil.generateAuthToken(request.getEmail(), authResponseDto.getId(),
+                authResponseDto.getRole());
 
-        ResponseCookie cookie = makeCookie(token, jwtExpiration / 1000);
+        ResponseCookie cookie = makeCookie(token, authExpiration / 1000, TokenType.AUTH);
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return ResponseEntity.ok(authResponseDto);
@@ -46,9 +52,10 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDto> login(@RequestBody LoginRequestDto request, HttpServletResponse response) {
         AuthResponseDto authResponseDto = userService.login(request.getEmail(), request.getPassword());
-        String token = jwtUtil.generateToken(request.getEmail(), authResponseDto.getId(), authResponseDto.getRole());
+        String token = jwtUtil.generateAuthToken(request.getEmail(), authResponseDto.getId(),
+                authResponseDto.getRole());
 
-        ResponseCookie cookie = makeCookie(token, jwtExpiration / 1000);
+        ResponseCookie cookie = makeCookie(token, authExpiration / 1000, TokenType.AUTH);
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return ResponseEntity.ok(authResponseDto);
     }
@@ -56,7 +63,7 @@ public class UserController {
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
 
-        ResponseCookie cookie = makeCookie("", 0);
+        ResponseCookie cookie = makeCookie("", 0, TokenType.AUTH);
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
@@ -71,14 +78,17 @@ public class UserController {
     }
 
     @PostMapping("/email/verify")
-    public ResponseEntity<?> verifyCode(@RequestBody VerifyCodeRequestDto request) {
+    public ResponseEntity<?> verifyCode(@RequestBody VerifyCodeRequestDto request, HttpServletResponse response) {
         userService.verifyCode(request.getEmail(), request.getCode());
+        String verifyToken = jwtUtil.generateVerifyToken(request.getEmail());
+        ResponseCookie cookie = makeCookie(verifyToken, verifyExpiration / 1000, TokenType.VERIFY);
 
-        return ResponseEntity.ok().build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        return ResponseEntity.ok("Verify successful");
     }
 
-    private ResponseCookie makeCookie(String token, long maxAge) {
-        return ResponseCookie.from("jwt", token)
+    private ResponseCookie makeCookie(String token, long maxAge, TokenType tokenType) {
+        return ResponseCookie.from(tokenType.name(), token)
                 .httpOnly(true)
                 .path("/")
                 .secure(cookieSecure)
