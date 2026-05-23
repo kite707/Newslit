@@ -16,11 +16,15 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class JwtUtil {
-    private final long EXPIRATION_TIME;
+    private final long AUTH_EXPIRATION_TIME;
+    private final long VERIFY_EXPIRATION_TIME;
     private final SecretKey signingKey;
 
-    public JwtUtil(@Value("${jwt.expiration}") long expirationTime, @Value("${jwt.secret}") String secret) {
-        this.EXPIRATION_TIME = expirationTime;
+    public JwtUtil(@Value("${jwt.auth.expiration}") long authExpirationTime,
+                   @Value("${jwt.verify.expiration}") long verifyExpirationTime,
+                   @Value("${jwt.secret}") String secret) {
+        this.AUTH_EXPIRATION_TIME = authExpirationTime;
+        this.VERIFY_EXPIRATION_TIME = verifyExpirationTime;
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -31,7 +35,7 @@ public class JwtUtil {
                 .claim("role", role.name())
                 .claim("type", TokenType.AUTH.name())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .expiration(new Date(System.currentTimeMillis() + AUTH_EXPIRATION_TIME))
                 .signWith(signingKey)
                 .compact();
     }
@@ -41,7 +45,7 @@ public class JwtUtil {
                 .claim("email", email)
                 .claim("type", TokenType.VERIFY.name())
                 .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .expiration(new Date(System.currentTimeMillis() + VERIFY_EXPIRATION_TIME))
                 .signWith(signingKey)
                 .compact();
     }
