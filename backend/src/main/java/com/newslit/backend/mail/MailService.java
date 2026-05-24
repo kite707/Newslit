@@ -43,7 +43,7 @@ public class MailService {
 
             mailSender.send(message);
         } catch (Exception e) {
-            throw new RuntimeException("이메일 발송 실패", e);
+            throw new MailSendException("이메일 발송 실패", e);
         }
     }
 }
