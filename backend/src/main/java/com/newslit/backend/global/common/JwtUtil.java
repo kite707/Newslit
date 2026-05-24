@@ -72,57 +72,16 @@ public class JwtUtil {
         }
     }
 
-    public String extractRole(String token) {
+
+    public Claims parseClaims(String token) {
         try {
             return Jwts.parser()
                     .verifyWith(signingKey)
                     .build()
                     .parseSignedClaims(token)
-                    .getPayload()
-                    .get("role", String.class);
+                    .getPayload();
         } catch (Exception e) {
-            log.error("EXTRACT ROLE ERROR", e);
             return null;
-        }
-    }
-
-    public String extractType(String token) {
-        try {
-            return Jwts.parser()
-                    .verifyWith(signingKey)
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload()
-                    .get("type", String.class);
-        } catch (Exception e) {
-            log.error("EXTRACT TYPE ERROR", e);
-            return null;
-        }
-    }
-
-    public Long extractId(String token) {
-        try {
-            return Jwts.parser()
-                    .verifyWith(signingKey)
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload()
-                    .get("id", Long.class);
-        } catch (Exception e) {
-            log.error("EXTRACT ID ERROR", e);
-            return null;
-        }
-    }
-
-    public boolean validateToken(String token) {
-        try {
-            Jwts.parser()
-                    .verifyWith(signingKey)
-                    .build()
-                    .parseSignedClaims(token);
-            return true;
-        } catch (Exception e) {
-            return false;
         }
     }
 }

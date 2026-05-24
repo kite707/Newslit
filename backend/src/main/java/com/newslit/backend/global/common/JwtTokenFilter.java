@@ -1,6 +1,7 @@
 package com.newslit.backend.global.common;
 
 import com.newslit.backend.global.common.enums.TokenType;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -26,19 +27,25 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String token = extractTokenFromCookie(request);
 
-        if (token == null || !jwtUtil.validateToken(token)) {
+        if (token == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        Claims claims = jwtUtil.parseClaims(token);
+        if (claims == null) {
             response.setContentType("application/json;charset=UTF-8");
             filterChain.doFilter(request, response);
             return;
         }
 
-        if (TokenType.VERIFY.name().equals(jwtUtil.extractType(token))) {
+        if (TokenType.VERIFY.name().equals(claims.get("type", String.class))) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        Long userId = jwtUtil.extractId(token);
-        String role = jwtUtil.extractRole(token);
+        Long userId = claims.get("id", Long.class);
+        String role = claims.get("role", String.class);
         if (role == null) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json;charset=UTF-8");
