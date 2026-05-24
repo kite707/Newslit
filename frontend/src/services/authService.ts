@@ -1,4 +1,4 @@
-import type { AuthResponse, LoginRequest, SignupRequest } from "@/types";
+import type { AuthResponse, LoginRequest, SignupRequest, SendCodeRequest, SendCodeResponse, VerifyCodeRequest } from "@/types";
 import { API_BASE_URL, API_ENDPOINTS } from "@/constants/api.constants";
 
 export class AuthService {
@@ -17,7 +17,7 @@ export class AuthService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({}));
       throw new Error(error.message || "로그인에 실패했습니다.");
     }
 
@@ -54,7 +54,7 @@ export class AuthService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({}));
       throw new Error(error.message || "회원가입에 실패했습니다.");
     }
 
@@ -71,6 +71,40 @@ export class AuthService {
     localStorage.setItem(this.EMAIL_KEY, email);
 
     return data;
+  }
+
+  static async sendCode(email: string): Promise<SendCodeResponse> {
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.EMAIL_SEND}`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email } as SendCodeRequest),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || "인증코드 발송에 실패했습니다.");
+    }
+
+    return response.json();
+  }
+
+  static async verifyCode(email: string, code: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.EMAIL_VERIFY}`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, code } as VerifyCodeRequest),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || "인증코드 검증에 실패했습니다.");
+    }
   }
 
   static async logout(): Promise<void> {

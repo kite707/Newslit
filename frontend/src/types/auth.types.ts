@@ -14,3 +14,16 @@ export interface AuthResponse {
   nickname?: string;
   email?: string;
 }
+
+export interface SendCodeRequest {
+  email: string;
+}
+
+export interface SendCodeResponse {
+  message: string;
+}
+
+export interface VerifyCodeRequest {
+  email: string;
+  code: string;
+}
