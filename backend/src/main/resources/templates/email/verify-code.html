@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f0ede8;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0ede8;padding:40px 0;">
+  <tr>
+    <td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="font-family:Georgia,serif;background:#faf9f6;border:1px solid #e2ddd5;border-radius:4px;overflow:hidden;max-width:600px;width:100%;">
+
+        <!-- Header -->
+        <tr>
+          <td style="padding:32px 48px;background:#1a1a1a;text-align:center;">
+            <div style="font-size:32px;font-weight:700;color:#ffffff;letter-spacing:4px;font-family:Georgia,serif;">NEWSLIT</div>
+            <div style="font-size:11px;color:#888888;margin-top:6px;letter-spacing:2px;text-transform:uppercase;">The English Learning Daily</div>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:0 48px 40px;">
+            <div style="border-bottom:3px double #1a1a1a;margin:24px 0 20px;"></div>
+            <div style="font-size:11px;color:#888888;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">Verification Notice</div>
+            <div style="border-bottom:1px solid #d4cfc7;margin-bottom:24px;padding-bottom:16px;">
+              <p style="margin:0;font-size:24px;font-weight:700;color:#1a1a1a;line-height:1.3;">이메일 인증을 완료해주세요</p>
+            </div>
+
+            <p style="font-size:15px;color:#444444;line-height:1.8;margin:0 0 28px;">
+              안녕하세요. Newslit 회원가입 인증 코드가 발급되었습니다.<br>
+              아래 코드를 <strong>10분 이내</strong>에 입력해주세요.
+            </p>
+
+            <!-- Code Box -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:2px solid #1a1a1a;margin-bottom:28px;">
+              <tr>
+                <td style="padding:28px;text-align:center;background:#ffffff;">
+                  <div style="font-size:11px;font-weight:600;color:#888888;letter-spacing:3px;text-transform:uppercase;margin-bottom:12px;">Your Code</div>
+                  <div th:text="${code}" style="letter-spacing:14px;font-size:44px;font-weight:700;color:#1a1a1a;font-family:'Courier New',Courier,monospace;">000000</div>
+                  <div style="margin-top:12px;font-size:12px;color:#999999;font-style:italic;">Expires in 10 minutes</div>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Disclaimer -->
+            <p style="font-size:13px;color:#888888;line-height:1.7;font-style:italic;border-top:1px solid #d4cfc7;padding-top:20px;margin:0;">
+              This message was sent to you because you initiated a sign-up request at Newslit.
+              If this was not you, please disregard this email.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:20px 48px;border-top:3px double #1a1a1a;text-align:center;">
+            <div style="font-size:11px;color:#aaaaaa;letter-spacing:1px;">© 2025 NEWSLIT · ALL RIGHTS RESERVED</div>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>
