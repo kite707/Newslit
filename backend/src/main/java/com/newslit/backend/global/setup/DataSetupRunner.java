@@ -15,7 +15,6 @@ import com.newslit.backend.user.Role;
 import com.newslit.backend.user.User;
 import com.newslit.backend.user.UserRepository;
 import com.newslit.backend.vocabulary.VocabularyService;
-import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -28,7 +27,7 @@ import org.springframework.stereotype.Component;
 
 @RequiredArgsConstructor
 @Component
-@Profile({"local"})
+@Profile({"local-secret"})
 public class DataSetupRunner implements CommandLineRunner {
     private static final Logger log = LoggerFactory.getLogger(DataSetupRunner.class);
 
@@ -82,16 +81,6 @@ public class DataSetupRunner implements CommandLineRunner {
         articleIds.stream().limit(2).forEach(i -> {
             try {
                 sentenceService.triggerTranslation(i);
-                articleRepository.findById(i)
-                        .filter(article -> article.getAudioLink() == null || article.getAudioLink().isEmpty())
-                        .ifPresent(article -> {
-                            try {
-                                log.info("article {} 타임스탬프 시작", i);
-                                audioService.saveTimeStamp(i);
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        });
                 log.info("Article {} 번역 완료", i);
             } catch (Exception e) {
                 log.error("Article {} 처리 중 오류 발생", i, e);
