@@ -53,6 +53,7 @@ dependencies {
     implementation 'com.oracle.database.security:osdt_cert'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 
     // Oracle Cloud SDK
