@@ -23,6 +23,7 @@ public enum ErrorCode {
     WRONG_CODE(HttpStatus.BAD_REQUEST, "USR-007", "코드가 일치하지 않습니다."),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "USR-008", "유효하지 않은 토큰입니다."),
     EMAIL_MISMATCH(HttpStatus.BAD_REQUEST, "USR-009", "인증된 이메일과 요청 이메일이 일치하지 않습니다."),
+    ATTEMPT_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "USR-010", "인증 시도 횟수를 초과했습니다."),
 
     // RSS
     RSS_NOT_FOUND(HttpStatus.NOT_FOUND, "RSS-002", "RSS 링크를 찾을 수 없습니다"),
