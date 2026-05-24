@@ -3,6 +3,7 @@ package com.newslit.backend.mail;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -32,6 +33,7 @@ public class MailService {
         try {
             Context context = new Context();
             context.setVariable("code", code);
+            context.setVariable("expirationMinutes", EmailVerification.EXPIRATION_MINUTES);
             String html = templateEngine.process("email/verify-code", context);
 
             MimeMessage message = mailSender.createMimeMessage();
