@@ -20,6 +20,7 @@ export default function AuthPage({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [message, setMessage] = useState("");
 
   const [signupStep, setSignupStep] = useState<SignupStep>(1);
   const [verificationCode, setVerificationCode] = useState("");
@@ -32,6 +33,7 @@ export default function AuthPage({
     setPassword("");
     setConfirmPassword("");
     setErrors({});
+    setMessage("");
   };
 
   const handleTabSwitch = (toLogin: boolean) => {
@@ -39,6 +41,7 @@ export default function AuthPage({
     resetSignupState();
     setPassword("");
     setErrors({});
+    setMessage("");
   };
 
   const handleSendCode = async () => {
@@ -81,11 +84,12 @@ export default function AuthPage({
 
   const handleResendCode = async () => {
     setErrors({});
+    setMessage("");
     setLoading(true);
     try {
       await AuthService.sendCode(email);
       setVerificationCode("");
-      setErrors({ form: "인증코드가 재발송되었습니다." });
+      setMessage("인증코드가 재발송되었습니다.");
     } catch (error) {
       setErrors({
         form: error instanceof Error ? error.message : "인증코드 재발송에 실패했습니다.",
@@ -437,12 +441,13 @@ export default function AuthPage({
         {stepIndicator()}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {message && (
+            <div className="p-3 rounded-lg text-sm bg-blue-100 text-blue-700">
+              {message}
+            </div>
+          )}
           {errors.form && (
-            <div className={`p-3 rounded-lg text-sm ${
-              errors.form.includes("재발송")
-                ? "bg-blue-100 text-blue-700"
-                : "bg-red-100 text-red-700"
-            }`}>
+            <div className="p-3 rounded-lg text-sm bg-red-100 text-red-700">
               {errors.form}
             </div>
           )}
@@ -539,7 +544,7 @@ export default function AuthPage({
           <div className="mt-6 text-center">
             <button
               type="button"
-              onClick={() => setErrors({ form: "준비 중인 기능입니다." })}
+              onClick={() => { setErrors({}); setMessage("준비 중인 기능입니다."); }}
               className={`text-sm ${
                 darkMode
                   ? "text-blue-400 hover:text-blue-300"
