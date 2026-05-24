@@ -12,4 +12,6 @@ export const API_ENDPOINTS = {
   LOGIN: "/user/login",
   SIGNUP: "/user/signup",
   LOGOUT: "/user/logout",
+  EMAIL_SEND: "/user/email/send",
+  EMAIL_VERIFY: "/user/email/verify",
 } as const;
