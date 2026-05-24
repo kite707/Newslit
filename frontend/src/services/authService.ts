@@ -17,7 +17,7 @@ export class AuthService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({}));
       throw new Error(error.message || "로그인에 실패했습니다.");
     }
 
@@ -54,7 +54,7 @@ export class AuthService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({}));
       throw new Error(error.message || "회원가입에 실패했습니다.");
     }
 
@@ -84,7 +84,7 @@ export class AuthService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({}));
       throw new Error(error.message || "인증코드 발송에 실패했습니다.");
     }
 
@@ -102,7 +102,7 @@ export class AuthService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const error = await response.json().catch(() => ({}));
       throw new Error(error.message || "인증코드 검증에 실패했습니다.");
     }
   }
