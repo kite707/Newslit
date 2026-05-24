@@ -32,7 +32,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (jwtUtil.extractType(token).equals(TokenType.VERIFY.name())) {
+        if (TokenType.VERIFY.name().equals(jwtUtil.extractType(token))) {
             filterChain.doFilter(request, response);
             return;
         }
