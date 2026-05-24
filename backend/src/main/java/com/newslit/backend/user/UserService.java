@@ -1,18 +1,21 @@
 package com.newslit.backend.user;
 
-import com.newslit.backend.global.common.enums.Verify;
+import com.newslit.backend.global.common.JwtUtil;
 import com.newslit.backend.mail.EmailVerification;
 import com.newslit.backend.mail.EmailVerificationRepository;
 import com.newslit.backend.mail.MailService;
 import com.newslit.backend.user.dto.AuthResponseDto;
 import com.newslit.backend.user.dto.SendCodeResponseDto;
-import com.newslit.backend.user.exception.AlreadyVerifiedException;
+import com.newslit.backend.user.exception.AttemptLimitExceededException;
+import com.newslit.backend.user.exception.CodeExpiredException;
+import com.newslit.backend.user.exception.CodeNotFoundException;
 import com.newslit.backend.user.exception.DuplicatedEmailException;
+import com.newslit.backend.user.exception.EmailMismatchException;
 import com.newslit.backend.user.exception.SendLimitExceededException;
 import com.newslit.backend.user.exception.UserNotFoundException;
+import com.newslit.backend.user.exception.WrongCodeException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,8 +32,16 @@ public class UserService {
     private static final SecureRandom secureRandom = new SecureRandom();
 
     private static final Integer SEND_LIMIT = 20;
+    private static final Integer MAX_ATTEMPT = 5;
+    private final JwtUtil jwtUtil;
 
-    public AuthResponseDto signup(String email, String password, String name) {
+    public AuthResponseDto signup(String email, String password, String name, String verifyToken) {
+        String tokenEmail = jwtUtil.extractEmailFromVerifyToken(verifyToken);
+
+        if (!tokenEmail.equals(email)) {
+            throw new EmailMismatchException();
+        }
+
         userRepository.findByEmail(email).ifPresent(user -> {
             throw new DuplicatedEmailException();
         });
@@ -75,23 +86,16 @@ public class UserService {
 
     @Transactional
     public SendCodeResponseDto sendCode(String email) {
-        String code = String.format("%06d", secureRandom.nextInt(1_000_000));
-
-        Optional<User> optionalUser = userRepository.findByEmail(email);
-        if (optionalUser.isEmpty()) {
+        if (userRepository.findByEmail(email).isPresent()) {
             return SendCodeResponseDto.builder()
                     .message("인증코드 발송이 완료되었습니다.")
                     .build();
         }
-        User user = optionalUser.get();
 
-        if (user.getVerify() == Verify.VERIFIED) {
-            throw new AlreadyVerifiedException();
-        }
-
-        EmailVerification verification = emailVerificationRepository.findByUser(user)
+        String code = String.format("%06d", secureRandom.nextInt(1_000_000));
+        EmailVerification verification = emailVerificationRepository.findByEmail(email)
                 .orElseGet(() -> EmailVerification.builder()
-                        .user(user)
+                        .email(email)
                         .sendCount(0)
                         .sendCountResetDt(LocalDateTime.now().plusDays(1))
                         .attemptCount(0)
@@ -108,11 +112,38 @@ public class UserService {
         verification.resetAttemptCount();
         verification.increaseSendCount();
 
-        mailService.sendVerifyMail(user, code);
+        mailService.sendVerifyMail(email, code);
         emailVerificationRepository.save(verification);
 
         return SendCodeResponseDto.builder()
                 .message("인증코드 발송이 완료되었습니다.")
                 .build();
+    }
+
+    @Transactional
+    public void verifyCode(String email, String code) {
+
+        if (userRepository.findByEmail(email).isPresent()) {
+            return;
+        }
+
+        EmailVerification emailVerification = emailVerificationRepository.findByEmail(email).orElseThrow(
+                CodeNotFoundException::new);
+
+        if (emailVerification.isCodeExpired()) {
+            throw new CodeExpiredException();
+        }
+
+        if (emailVerification.getAttemptCount() >= MAX_ATTEMPT) {
+            throw new AttemptLimitExceededException();
+        }
+
+        if (!emailVerification.getCode().equals(code)) {
+            emailVerification.increaseAttemptCount();
+            throw new WrongCodeException();
+        }
+
+        emailVerification.resetAttemptCount();
+
     }
 }

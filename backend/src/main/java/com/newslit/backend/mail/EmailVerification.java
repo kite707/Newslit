@@ -23,14 +23,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EmailVerification {
+    private static final long EXPIRATION_MINUTES = 10;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "email")
+    private String email;
 
     @Column(name = "code")
     private String code;
@@ -41,7 +42,7 @@ public class EmailVerification {
     @Builder.Default
     @Column(name = "attempt_count")
     private Integer attemptCount = 0;
-    
+
     @Builder.Default
     @Column(name = "send_count")
     private Integer sendCount = 0;
@@ -69,6 +70,10 @@ public class EmailVerification {
     public void setCode(String code) {
         this.code = code;
         this.codeIssuedAt = LocalDateTime.now();
+    }
+
+    public boolean isCodeExpired() {
+        return codeIssuedAt.plusMinutes(EXPIRATION_MINUTES).isBefore(LocalDateTime.now());
     }
 
 }
