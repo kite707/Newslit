@@ -124,7 +124,7 @@ public class UserService {
     public void verifyCode(String email, String code) {
 
         if (userRepository.findByEmail(email).isPresent()) {
-            throw new WrongCodeException();
+            return;
         }
 
         EmailVerification emailVerification = emailVerificationRepository.findByEmail(email).orElseThrow(
