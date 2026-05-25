@@ -8,7 +8,7 @@ export const getShortPos = (pos: string): string => {
   return posMap[pos] || pos;
 };
 
-export const getPosColor = (_pos: string, darkMode: boolean): string => {
+export const getPosColor = (darkMode: boolean): string => {
   // Monochrome newspaper tag: uppercase, bordered, no color.
   return darkMode
     ? "border border-edge-dark text-muted-dark uppercase tracking-wider"

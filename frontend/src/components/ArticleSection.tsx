@@ -79,7 +79,6 @@ export default function ArticleSection({
                 <span className="block font-bold">{vocab.word}</span>
                 <span
                   className={`text-xs px-2 py-0.5 ${getPosColor(
-                    vocab.partOfSpeech,
                     darkMode,
                   )} inline-block my-1`}
                 >

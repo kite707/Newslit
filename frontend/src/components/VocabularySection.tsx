@@ -79,10 +79,7 @@ export default function VocabularySection({
               <div className="flex items-center gap-2 mb-1">
                 <span className="font-bold text-lg">{item.word}</span>
                 <span
-                  className={`text-xs px-2 py-0.5 ${getPosColor(
-                    item.partOfSpeech,
-                    darkMode,
-                  )}`}
+                  className={`text-xs px-2 py-0.5 ${getPosColor(darkMode)}`}
                 >
                   {getShortPos(item.partOfSpeech)}
                 </span>
