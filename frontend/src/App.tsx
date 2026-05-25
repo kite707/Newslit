@@ -374,7 +374,7 @@ export default function EnglishLearningApp() {
   if (isInitializing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-paper">
-        <div className="news-eyebrow">Loading…</div>
+        <div className="news-eyebrow">불러오는 중…</div>
       </div>
     );
   }
@@ -391,7 +391,7 @@ export default function EnglishLearningApp() {
           darkMode ? "bg-paper-dark text-text-dark" : "bg-paper text-ink"
         }`}
       >
-        <div className="news-eyebrow">Loading article…</div>
+        <div className="news-eyebrow">기사를 불러오는 중…</div>
       </div>
     );
   }
@@ -450,7 +450,7 @@ export default function EnglishLearningApp() {
             ) : (
               <Volume2 className="w-4 h-4" />
             )}
-            {isPlayingFullAudio ? "Pause Audio" : "Play Audio"}
+            {isPlayingFullAudio ? "오디오 정지" : "오디오 재생"}
           </button>
           <button
             onClick={handleComplete}
@@ -465,7 +465,7 @@ export default function EnglishLearningApp() {
             }`}
           >
             <Check className="w-4 h-4" />
-            {completed ? "Completed" : "Mark as Complete"}
+            {completed ? "학습 완료" : "학습 완료하기"}
           </button>
         </div>
 

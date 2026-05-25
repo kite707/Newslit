@@ -186,7 +186,7 @@ export default function AuthPage({
 
   const stepIndicator = () => {
     if (isLogin) return null;
-    const steps = ["Email", "Verify", "Details"];
+    const steps = ["이메일", "인증", "정보입력"];
     return (
       <div className="flex items-center justify-center gap-2 mb-6">
         {steps.map((label, i) => {
@@ -311,7 +311,7 @@ export default function AuthPage({
                 darkMode ? "text-muted-dark" : "text-newsfaint"
               }`}
             >
-              Expires in 10 minutes
+              10분 후 만료됩니다
             </p>
             {errors.code && (
               <p className="mt-2 text-sm text-red-600">{errors.code}</p>
@@ -328,7 +328,7 @@ export default function AuthPage({
                   : "text-newsmuted hover:text-ink"
               } disabled:opacity-50`}
             >
-              Resend code
+              인증코드 재발송
             </button>
           </div>
         </>
@@ -428,7 +428,7 @@ export default function AuthPage({
           <div className="font-masthead text-3xl font-black tracking-[4px] text-white">
             NEWSLIT
           </div>
-          <div className="text-[11px] uppercase tracking-[2px] text-newsmuted mt-1.5">
+          <div className="text-[11px] uppercase tracking-[2px] text-[#9a948a] mt-1.5">
             The English Learning Daily
           </div>
         </div>
@@ -457,7 +457,7 @@ export default function AuthPage({
                     : "border-transparent text-newsmuted hover:text-ink"
               }`}
             >
-              Sign In
+              로그인
             </button>
             <button
               onClick={() => handleTabSwitch(false)}
@@ -471,7 +471,7 @@ export default function AuthPage({
                     : "border-transparent text-newsmuted hover:text-ink"
               }`}
             >
-              Register
+              회원가입
             </button>
           </div>
 
@@ -579,7 +579,7 @@ export default function AuthPage({
                   : "border-ink text-ink hover:bg-ink hover:text-paper"
               }`}
             >
-              Continue as Guest
+              비회원으로 시작하기
             </button>
           </div>
 

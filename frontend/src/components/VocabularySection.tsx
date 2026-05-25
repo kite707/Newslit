@@ -22,15 +22,6 @@ export default function VocabularySection({
 
   return (
     <div>
-      <div className="mb-1">
-        <span
-          className={`news-eyebrow font-semibold ${
-            darkMode ? "text-accent-dark" : "text-accent"
-          }`}
-        >
-          Glossary
-        </span>
-      </div>
       <div
         className={`flex justify-between items-end pb-2 mb-4 border-b ${
           darkMode ? "border-edge-dark" : "border-newsrule"
@@ -52,7 +43,7 @@ export default function VocabularySection({
               : "text-newsmuted hover:text-ink"
           }`}
         >
-          {allShown ? "Hide meanings" : "Show meanings"}
+          {allShown ? "뜻 숨기기" : "뜻 보기"}
         </button>
       </div>
 

@@ -1,9 +1,9 @@
 export const getShortPos = (pos: string): string => {
   const posMap: Record<string, string> = {
-    명사: "n",
-    동사: "v",
-    형용사: "a",
-    부사: "adv",
+    명사: "명사",
+    동사: "동사",
+    형용사: "형용사",
+    부사: "부사",
   };
   return posMap[pos] || pos;
 };

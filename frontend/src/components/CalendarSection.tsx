@@ -53,15 +53,6 @@ export default function CalendarSection({
         darkMode ? "bg-card-dark border-edge-dark" : "bg-white border-newsedge"
       }`}
     >
-      <div className="mb-1">
-        <span
-          className={`news-eyebrow font-semibold ${
-            darkMode ? "text-accent-dark" : "text-accent"
-          }`}
-        >
-          Archive
-        </span>
-      </div>
       <div
         className={`flex justify-between items-end pb-2 mb-4 border-b ${
           darkMode ? "border-edge-dark" : "border-newsrule"
@@ -153,7 +144,7 @@ export default function CalendarSection({
                 )}
                 {day && !isCompleted && !isCurrentSelected && hasArticle && (
                   <div
-                    className={`absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full ${
+                    className={`absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 ${
                       darkMode ? "bg-muted-dark" : "bg-newsmuted"
                     }`}
                   ></div>
@@ -185,7 +176,7 @@ export default function CalendarSection({
         </div>
         <div className="flex items-center gap-1.5">
           <div
-            className={`w-1 h-1 rounded-full ${
+            className={`w-1 h-1 ${
               darkMode ? "bg-muted-dark" : "bg-newsmuted"
             }`}
           ></div>

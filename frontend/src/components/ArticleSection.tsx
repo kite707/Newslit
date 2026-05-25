@@ -25,6 +25,8 @@ export default function ArticleSection({
     Record<number, boolean>
   >({});
 
+  // Build the highlight regex and a word -> vocab lookup map once per
+  // vocabulary change, instead of recreating them on every sentence render.
   const { highlightRegex, vocabMap } = useMemo(() => {
     const valid = vocabularies.filter((v) => v.word);
 
@@ -68,7 +70,7 @@ export default function ArticleSection({
             {part}
             {hoveredWordId === uniqueId && (
               <span
-                className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 shadow-lg whitespace-nowrap border ${
+                className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 whitespace-nowrap border ${
                   darkMode
                     ? "bg-card-dark text-text-dark border-edge-dark"
                     : "bg-white text-ink border-newsedge"
@@ -116,7 +118,7 @@ export default function ArticleSection({
             darkMode ? "text-muted-dark" : "text-newsmuted"
           }`}
         >
-          Page {articleData.currentPages} of {articleData.totalPages}
+          {articleData.currentPages} / {articleData.totalPages} 페이지
         </span>
       </div>
 
@@ -145,7 +147,7 @@ export default function ArticleSection({
                 : "text-accent hover:opacity-80"
             }`}
           >
-            Read original <ExternalLink className="w-3 h-3" />
+            원문 보기 <ExternalLink className="w-3 h-3" />
           </a>
         )}
       </div>
@@ -237,8 +239,8 @@ export default function ArticleSection({
           }`}
         >
           {articleData.sentences.every((_, i) => expandedSentences[i])
-            ? "Hide all translations ▲"
-            : "Show all translations ▼"}
+            ? "전체 번역 숨기기 ▲"
+            : "전체 번역 보기 ▼"}
         </button>
       </div>
     </article>

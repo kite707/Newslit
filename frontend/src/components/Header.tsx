@@ -23,11 +23,11 @@ export default function Header({
   // The displayed date is stable for the session, so compute it only once.
   const todayLabel = useMemo(
     () =>
-      new Date().toLocaleDateString("en-US", {
-        weekday: "long",
+      new Date().toLocaleDateString("ko-KR", {
         year: "numeric",
         month: "long",
         day: "numeric",
+        weekday: "long",
       }),
     [],
   );
@@ -36,7 +36,9 @@ export default function Header({
     <header className="mb-8">
       {/* Top bar: date + actions */}
       <div className="flex justify-between items-center mb-3">
-        <span className="news-eyebrow">{todayLabel}</span>
+        <span className="text-[11px] uppercase tracking-[0.5px] text-newsmuted">
+          {todayLabel}
+        </span>
         <div className="flex items-center gap-2">
           {isGuest && (
             <button
@@ -48,7 +50,7 @@ export default function Header({
               }`}
             >
               <LogIn className="w-3.5 h-3.5" />
-              Sign In
+              로그인
             </button>
           )}
           {isAuthenticated && (
@@ -60,7 +62,7 @@ export default function Header({
                   : "border-newsmuted text-newsmuted hover:border-ink hover:text-ink"
               }`}
             >
-              Sign Out
+              로그아웃
             </button>
           )}
           <button
@@ -103,8 +105,8 @@ export default function Header({
           }`}
         >
           {isAuthenticated
-            ? `Welcome back, ${userNickname}.`
-            : "Reading as Guest"}
+            ? `${userNickname}님, 환영합니다.`
+            : "비회원으로 이용 중"}
         </p>
       )}
     </header>
