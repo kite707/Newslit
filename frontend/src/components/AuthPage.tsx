@@ -168,67 +168,69 @@ export default function AuthPage({
   };
 
   const inputClass = (fieldError?: string) =>
-    `w-full px-4 py-3 rounded-lg border transition-all ${
+    `w-full px-4 py-3 border transition-all ${
       fieldError
-        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+        ? "border-red-600 focus:border-red-600"
         : darkMode
-          ? "border-gray-600 focus:border-blue-500"
-          : "border-gray-300 focus:border-blue-500"
+          ? "border-edge-dark focus:border-text-dark"
+          : "border-newsedge focus:border-ink"
     } ${
       darkMode
-        ? "bg-gray-700 text-white placeholder-gray-400"
-        : "bg-white text-gray-900 placeholder-gray-400"
-    } focus:outline-none focus:ring-2 focus:ring-opacity-50 disabled:opacity-50`;
+        ? "bg-paper-dark text-text-dark placeholder-muted-dark"
+        : "bg-white text-ink placeholder-newsfaint"
+    } focus:outline-none disabled:opacity-50`;
 
-  const labelClass = `block text-sm font-medium mb-2 ${
-    darkMode ? "text-gray-300" : "text-gray-700"
+  const labelClass = `block text-[11px] font-semibold uppercase tracking-[2px] mb-2 ${
+    darkMode ? "text-muted-dark" : "text-newsmuted"
   }`;
 
   const stepIndicator = () => {
     if (isLogin) return null;
-    const steps = ["이메일 인증", "코드 입력", "정보 입력"];
+    const steps = ["이메일", "인증", "정보입력"];
     return (
       <div className="flex items-center justify-center gap-2 mb-6">
         {steps.map((label, i) => {
           const stepNum = (i + 1) as SignupStep;
           const isActive = signupStep === stepNum;
           const isCompleted = signupStep > stepNum;
+          const onColor = darkMode
+            ? "bg-text-dark text-ink border-text-dark"
+            : "bg-ink text-paper border-ink";
+          const offColor = darkMode
+            ? "text-muted-dark border-edge-dark"
+            : "text-newsmuted border-newsedge";
           return (
             <div key={label} className="flex items-center gap-2">
               {i > 0 && (
                 <div
-                  className={`w-6 h-0.5 ${
+                  className={`w-6 h-px ${
                     isCompleted
-                      ? "bg-blue-500"
+                      ? darkMode
+                        ? "bg-text-dark"
+                        : "bg-ink"
                       : darkMode
-                        ? "bg-gray-600"
-                        : "bg-gray-300"
+                        ? "bg-edge-dark"
+                        : "bg-newsedge"
                   }`}
                 />
               )}
               <div className="flex flex-col items-center">
                 <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${
-                    isActive
-                      ? "bg-blue-500 text-white"
-                      : isCompleted
-                        ? "bg-blue-500 text-white"
-                        : darkMode
-                          ? "bg-gray-700 text-gray-400 border border-gray-600"
-                          : "bg-gray-200 text-gray-500"
+                  className={`w-7 h-7 flex items-center justify-center text-xs font-bold border ${
+                    isActive || isCompleted ? onColor : offColor
                   }`}
                 >
                   {isCompleted ? "✓" : stepNum}
                 </div>
                 <span
-                  className={`text-xs mt-1 ${
+                  className={`text-[10px] uppercase tracking-[1px] mt-1 ${
                     isActive
                       ? darkMode
-                        ? "text-blue-400"
-                        : "text-blue-600"
+                        ? "text-text-dark"
+                        : "text-ink"
                       : darkMode
-                        ? "text-gray-500"
-                        : "text-gray-400"
+                        ? "text-muted-dark"
+                        : "text-newsfaint"
                   }`}
                 >
                   {label}
@@ -258,7 +260,7 @@ export default function AuthPage({
             className={inputClass(errors.email)}
           />
           {errors.email && (
-            <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+            <p className="mt-1 text-sm text-red-600">{errors.email}</p>
           )}
         </div>
       );
@@ -267,13 +269,28 @@ export default function AuthPage({
     if (signupStep === 2) {
       return (
         <>
-          <div>
-            <label className={labelClass}>인증코드</label>
-            <p className={`text-sm mb-2 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+          <div
+            className={`border-2 p-6 text-center ${
+              darkMode ? "border-text-dark" : "border-ink"
+            }`}
+          >
+            <div
+              className={`news-eyebrow font-semibold mb-1 ${
+                darkMode ? "text-accent-dark" : "text-accent"
+              }`}
+            >
+              Your Code
+            </div>
+            <p
+              className={`text-xs mb-4 ${
+                darkMode ? "text-muted-dark" : "text-newsmuted"
+              }`}
+            >
               {email}로 발송된 6자리 코드를 입력하세요
             </p>
             <input
               type="text"
+              inputMode="numeric"
               value={verificationCode}
               onChange={(e) => {
                 const val = e.target.value.replace(/\D/g, "").slice(0, 6);
@@ -283,10 +300,21 @@ export default function AuthPage({
               placeholder="000000"
               maxLength={6}
               disabled={loading}
-              className={`${inputClass(errors.code)} text-center text-2xl tracking-[0.5em]`}
+              className={`w-full bg-transparent text-center font-mono text-4xl font-bold tracking-[0.4em] focus:outline-none disabled:opacity-50 ${
+                darkMode
+                  ? "text-text-dark placeholder-muted-dark"
+                  : "text-ink placeholder-newsfaint"
+              }`}
             />
+            <p
+              className={`mt-3 text-xs italic ${
+                darkMode ? "text-muted-dark" : "text-newsfaint"
+              }`}
+            >
+              10분 후 만료됩니다
+            </p>
             {errors.code && (
-              <p className="mt-1 text-sm text-red-500">{errors.code}</p>
+              <p className="mt-2 text-sm text-red-600">{errors.code}</p>
             )}
           </div>
           <div className="text-center">
@@ -294,10 +322,10 @@ export default function AuthPage({
               type="button"
               onClick={handleResendCode}
               disabled={loading}
-              className={`text-sm ${
+              className={`text-xs font-semibold uppercase tracking-[1.5px] underline underline-offset-2 ${
                 darkMode
-                  ? "text-blue-400 hover:text-blue-300"
-                  : "text-blue-600 hover:text-blue-700"
+                  ? "text-muted-dark hover:text-text-dark"
+                  : "text-newsmuted hover:text-ink"
               } disabled:opacity-50`}
             >
               인증코드 재발송
@@ -323,7 +351,7 @@ export default function AuthPage({
             className={inputClass(errors.nickname)}
           />
           {errors.nickname && (
-            <p className="mt-1 text-sm text-red-500">{errors.nickname}</p>
+            <p className="mt-1 text-sm text-red-600">{errors.nickname}</p>
           )}
         </div>
         <div>
@@ -340,7 +368,7 @@ export default function AuthPage({
             className={inputClass(errors.password)}
           />
           {errors.password && (
-            <p className="mt-1 text-sm text-red-500">{errors.password}</p>
+            <p className="mt-1 text-sm text-red-600">{errors.password}</p>
           )}
         </div>
         <div>
@@ -357,7 +385,7 @@ export default function AuthPage({
             className={inputClass(errors.confirmPassword)}
           />
           {errors.confirmPassword && (
-            <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>
+            <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
           )}
         </div>
       </>
@@ -374,83 +402,98 @@ export default function AuthPage({
 
   return (
     <div
-      className={`min-h-screen flex items-center justify-center ${
-        darkMode
-          ? "bg-gray-900"
-          : "bg-gradient-to-br from-blue-50 to-indigo-100"
+      className={`min-h-screen flex items-center justify-center p-4 ${
+        darkMode ? "bg-paper-dark" : "bg-paper"
       }`}
     >
       <button
         onClick={() => setDarkMode(!darkMode)}
-        className={`absolute top-6 right-6 p-3 rounded-full transition-all shadow-lg ${
+        aria-label="Toggle theme"
+        className={`absolute top-6 right-6 p-2.5 border transition-all ${
           darkMode
-            ? "bg-gray-800 hover:bg-gray-700 text-yellow-400"
-            : "bg-white hover:bg-gray-50 text-gray-700"
+            ? "border-edge-dark text-text-dark hover:border-text-dark"
+            : "border-newsedge text-ink hover:border-ink"
         }`}
       >
         {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
       </button>
 
       <div
-        className={`w-full max-w-md p-8 rounded-2xl shadow-2xl ${
-          darkMode ? "bg-gray-800" : "bg-white"
+        className={`w-full max-w-md border overflow-hidden ${
+          darkMode ? "bg-card-dark border-edge-dark" : "bg-white border-newsedge"
         }`}
       >
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2">🗞️ Newslit</h1>
-          <p
-            className={`text-sm ${
-              darkMode ? "text-gray-400" : "text-gray-600"
-            }`}
-          >
-            매일 영어 기사로 배우는 영어 학습
-          </p>
+        {/* Masthead bar (matches verification email) */}
+        <div className="bg-ink text-center px-8 py-7">
+          <div className="font-masthead text-3xl font-black tracking-[4px] text-white">
+            NEWSLIT
+          </div>
+          <div className="text-[11px] uppercase tracking-[2px] text-[#9a948a] mt-1.5">
+            The English Learning Daily
+          </div>
         </div>
 
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => handleTabSwitch(true)}
-            className={`flex-1 py-2.5 rounded-lg font-medium transition-all ${
-              isLogin
-                ? darkMode
-                  ? "bg-blue-600 text-white shadow-lg"
-                  : "bg-blue-500 text-white shadow-lg"
-                : darkMode
-                  ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+        <div className="p-8">
+          <div
+            className={`border-b-[3px] border-double mb-6 ${
+              darkMode ? "border-text-dark" : "border-ink"
+            }`}
+          />
+
+          <div
+            className={`flex mb-6 border-b ${
+              darkMode ? "border-edge-dark" : "border-newsrule"
             }`}
           >
-            로그인
-          </button>
-          <button
-            onClick={() => handleTabSwitch(false)}
-            className={`flex-1 py-2.5 rounded-lg font-medium transition-all ${
-              !isLogin
-                ? darkMode
-                  ? "bg-blue-600 text-white shadow-lg"
-                  : "bg-blue-500 text-white shadow-lg"
-                : darkMode
-                  ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            회원가입
-          </button>
-        </div>
+            <button
+              onClick={() => handleTabSwitch(true)}
+              className={`flex-1 py-2.5 text-sm font-semibold uppercase tracking-[1.5px] transition-all border-b-2 -mb-px ${
+                isLogin
+                  ? darkMode
+                    ? "border-text-dark text-text-dark"
+                    : "border-ink text-ink"
+                  : darkMode
+                    ? "border-transparent text-muted-dark hover:text-text-dark"
+                    : "border-transparent text-newsmuted hover:text-ink"
+              }`}
+            >
+              로그인
+            </button>
+            <button
+              onClick={() => handleTabSwitch(false)}
+              className={`flex-1 py-2.5 text-sm font-semibold uppercase tracking-[1.5px] transition-all border-b-2 -mb-px ${
+                !isLogin
+                  ? darkMode
+                    ? "border-text-dark text-text-dark"
+                    : "border-ink text-ink"
+                  : darkMode
+                    ? "border-transparent text-muted-dark hover:text-text-dark"
+                    : "border-transparent text-newsmuted hover:text-ink"
+              }`}
+            >
+              회원가입
+            </button>
+          </div>
 
-        {stepIndicator()}
+          {stepIndicator()}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {message && (
-            <div className="p-3 rounded-lg text-sm bg-blue-100 text-blue-700">
-              {message}
-            </div>
-          )}
-          {errors.form && (
-            <div className="p-3 rounded-lg text-sm bg-red-100 text-red-700">
-              {errors.form}
-            </div>
-          )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {message && (
+              <div
+                className={`p-3 text-sm border-l-2 ${
+                  darkMode
+                    ? "border-text-dark bg-paper-dark text-text-dark"
+                    : "border-ink bg-paper text-newsbody"
+                }`}
+              >
+                {message}
+              </div>
+            )}
+            {errors.form && (
+              <div className="p-3 text-sm border-l-2 border-red-600 bg-red-50 text-red-700">
+                {errors.form}
+              </div>
+            )}
 
           {isLogin ? (
             <>
@@ -468,7 +511,7 @@ export default function AuthPage({
                   className={inputClass(errors.email)}
                 />
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
                 )}
               </div>
               <div>
@@ -485,7 +528,7 @@ export default function AuthPage({
                   className={inputClass(errors.password)}
                 />
                 {errors.password && (
-                  <p className="mt-1 text-sm text-red-500">{errors.password}</p>
+                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
                 )}
               </div>
             </>
@@ -493,68 +536,69 @@ export default function AuthPage({
             renderSignupFields()
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full py-3 rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 ${
-              darkMode
-                ? "bg-blue-600 hover:bg-blue-700 text-white"
-                : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
-            } disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none`}
-          >
-            {getSubmitLabel()}
-          </button>
-        </form>
-
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div
-                className={`w-full border-t ${
-                  darkMode ? "border-gray-700" : "border-gray-300"
-                }`}
-              ></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span
-                className={`px-2 ${
-                  darkMode
-                    ? "bg-gray-800 text-gray-400"
-                    : "bg-white text-gray-500"
-                }`}
-              >
-                또는
-              </span>
-            </div>
-          </div>
-
-          <button
-            onClick={onGuestMode}
-            className={`w-full mt-4 py-3 rounded-lg font-medium transition-all border-2 ${
-              darkMode
-                ? "border-gray-600 text-gray-300 hover:bg-gray-700"
-                : "border-gray-300 text-gray-700 hover:bg-gray-50"
-            }`}
-          >
-            비회원으로 시작하기
-          </button>
-        </div>
-
-        {isLogin && (
-          <div className="mt-6 text-center">
             <button
-              type="button"
-              onClick={() => { setErrors({}); setMessage("준비 중인 기능입니다."); }}
-              className={`text-sm ${
+              type="submit"
+              disabled={loading}
+              className={`w-full py-3 text-sm font-semibold uppercase tracking-[2px] transition-all ${
                 darkMode
-                  ? "text-blue-400 hover:text-blue-300"
-                  : "text-blue-600 hover:text-blue-700"
+                  ? "bg-text-dark text-ink hover:bg-white"
+                  : "bg-ink text-paper hover:bg-black"
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {getSubmitLabel()}
+            </button>
+          </form>
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div
+                  className={`w-full border-t ${
+                    darkMode ? "border-edge-dark" : "border-newsrule"
+                  }`}
+                ></div>
+              </div>
+              <div className="relative flex justify-center">
+                <span
+                  className={`px-3 text-[11px] uppercase tracking-[2px] ${
+                    darkMode
+                      ? "bg-card-dark text-muted-dark"
+                      : "bg-white text-newsmuted"
+                  }`}
+                >
+                  or
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={onGuestMode}
+              className={`w-full mt-4 py-3 text-sm font-semibold uppercase tracking-[1.5px] transition-all border ${
+                darkMode
+                  ? "border-edge-dark text-text-dark hover:border-text-dark"
+                  : "border-ink text-ink hover:bg-ink hover:text-paper"
               }`}
             >
-              비밀번호를 잊으셨나요?
+              비회원으로 시작하기
             </button>
           </div>
-        )}
+
+          {isLogin && (
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                onClick={() => { setErrors({}); setMessage("준비 중인 기능입니다."); }}
+                className={`text-xs italic underline underline-offset-2 ${
+                  darkMode
+                    ? "text-muted-dark hover:text-text-dark"
+                    : "text-newsmuted hover:text-ink"
+                }`}
+              >
+                비밀번호를 잊으셨나요?
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

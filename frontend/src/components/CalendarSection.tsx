@@ -48,37 +48,53 @@ export default function CalendarSection({
   handleDateClick,
 }: CalendarSectionProps) {
   return (
-    <div
-      className={`rounded-xl p-6 ${
-        darkMode ? "bg-gray-800" : "bg-white"
-      } shadow-lg`}
+    <section
+      className={`p-6 sm:p-8 border ${
+        darkMode ? "bg-card-dark border-edge-dark" : "bg-white border-newsedge"
+      }`}
     >
-      <h2 className="text-2xl font-bold mb-4">Study Record</h2>
+      <div
+        className={`flex justify-between items-end pb-2 mb-4 border-b ${
+          darkMode ? "border-edge-dark" : "border-newsrule"
+        }`}
+      >
+        <h2 className="font-masthead text-2xl font-black">Study Record</h2>
+      </div>
+
       <div className="flex justify-between items-center mb-4">
         <button
           onClick={() => changeMonth(-1)}
-          className={`p-2 rounded-lg transition-colors ${
-            darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+          className={`p-2 border transition-colors ${
+            darkMode
+              ? "border-edge-dark hover:border-text-dark"
+              : "border-newsedge hover:border-ink"
           }`}
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-4 h-4" />
         </button>
-        <span className="font-semibold">
+        <span className="font-masthead text-lg font-bold uppercase tracking-[1px]">
           {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
         </span>
         <button
           onClick={() => changeMonth(1)}
-          className={`p-2 rounded-lg transition-colors ${
-            darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+          className={`p-2 border transition-colors ${
+            darkMode
+              ? "border-edge-dark hover:border-text-dark"
+              : "border-newsedge hover:border-ink"
           }`}
         >
-          <ChevronRight className="w-5 h-5" />
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-          <div key={day} className="text-center text-sm font-semibold p-2">
+          <div
+            key={day}
+            className={`text-center text-[10px] font-semibold uppercase tracking-[1px] p-2 ${
+              darkMode ? "text-muted-dark" : "text-newsmuted"
+            }`}
+          >
             {day}
           </div>
         ))}
@@ -95,30 +111,41 @@ export default function CalendarSection({
             <div
               key={idx}
               onClick={() => handleDateClick(day)}
-              className={`p-1 rounded-lg transition-all ${
-                hasArticle
-                  ? "cursor-pointer hover:bg-opacity-10"
-                  : "cursor-not-allowed opacity-40"
+              className={`${
+                hasArticle ? "cursor-pointer" : "cursor-not-allowed opacity-30"
               }`}
             >
               <div
-                className={`text-center text-sm relative rounded-lg p-2 transition-all ${
-                  isCompleted
+                className={`text-center text-sm relative p-2 border transition-all ${
+                  isCurrentSelected
                     ? darkMode
-                      ? "bg-green-600 text-white shadow-md"
-                      : "bg-green-500 text-white shadow-md"
-                    : isCurrentSelected
+                      ? "bg-accent-dark text-ink border-accent-dark font-bold"
+                      : "bg-accent text-white border-accent font-bold"
+                    : isCompleted
                       ? darkMode
-                        ? "bg-blue-600 text-white shadow-lg scale-105"
-                        : "bg-blue-500 text-white shadow-lg scale-105"
-                      : ""
+                        ? "border-text-dark text-text-dark font-bold"
+                        : "border-ink text-ink font-bold"
+                      : hasArticle
+                        ? darkMode
+                          ? "border-edge-dark hover:border-text-dark"
+                          : "border-newsedge hover:border-ink"
+                        : "border-transparent"
                 }`}
               >
                 {day}
+                {day && isCompleted && !isCurrentSelected && (
+                  <div
+                    className={`absolute top-0.5 right-0.5 text-[9px] leading-none ${
+                      darkMode ? "text-text-dark" : "text-ink"
+                    }`}
+                  >
+                    ✓
+                  </div>
+                )}
                 {day && !isCompleted && !isCurrentSelected && hasArticle && (
                   <div
-                    className={`absolute -bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 rounded-full ${
-                      darkMode ? "bg-blue-400" : "bg-blue-500"
+                    className={`absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-1 h-1 ${
+                      darkMode ? "bg-muted-dark" : "bg-newsmuted"
                     }`}
                   ></div>
                 )}
@@ -128,34 +155,34 @@ export default function CalendarSection({
         })}
       </div>
 
-      <div className="flex gap-4 mt-4 text-sm">
-        <div className="flex items-center gap-2">
-          <div
-            className={`w-4 h-4 rounded ${
-              darkMode ? "bg-green-600" : "bg-green-500"
-            }`}
-          ></div>
+      <div
+        className={`flex gap-5 mt-5 pt-4 text-xs border-t ${
+          darkMode
+            ? "border-edge-dark text-muted-dark"
+            : "border-newsrule text-newsmuted"
+        }`}
+      >
+        <div className="flex items-center gap-1.5">
+          <span className={darkMode ? "text-text-dark" : "text-ink"}>✓</span>
           <span>Completed</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <div
-            className={`w-4 h-4 rounded ${
-              darkMode ? "bg-blue-600" : "bg-blue-500"
+            className={`w-3 h-3 ${
+              darkMode ? "bg-accent-dark" : "bg-accent"
             }`}
           ></div>
           <span>Selected</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <div
-            className={`w-4 h-4 rounded ${
-              darkMode ? "bg-gray-700" : "bg-gray-100"
-            } relative flex items-end justify-center`}
-          >
-            <div className="w-1 h-1 rounded-full bg-blue-500 mb-0.5"></div>
-          </div>
-          <span>Article Available</span>
+            className={`w-1 h-1 ${
+              darkMode ? "bg-muted-dark" : "bg-newsmuted"
+            }`}
+          ></div>
+          <span>Available</span>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
