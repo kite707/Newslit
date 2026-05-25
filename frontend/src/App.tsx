@@ -464,7 +464,6 @@ export default function EnglishLearningApp() {
         >
           <VocabularySection
             darkMode={darkMode}
-            vocabularies={vocabularies}
             filteredVocabularies={filteredVocabularies}
           />
         </div>

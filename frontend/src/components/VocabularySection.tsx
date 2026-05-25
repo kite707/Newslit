@@ -1,26 +1,27 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { VocabularyItem } from "@/types";
 import { getShortPos, getPosColor } from "@/utils/pos";
 
 interface VocabularySectionProps {
   darkMode: boolean;
-  vocabularies: VocabularyItem[];
   filteredVocabularies: VocabularyItem[];
 }
 
 export default function VocabularySection({
   darkMode,
-  vocabularies,
   filteredVocabularies,
 }: VocabularySectionProps) {
+  // Keyed by stable vocabulary id (not array index) for O(1) lookups.
   const [showMeaning, setShowMeaning] = useState<Record<number, boolean>>({});
 
-  const allShown = filteredVocabularies.every((vocab) => {
-    const idx = vocabularies.indexOf(vocab);
-    return showMeaning[idx];
-  });
-
   const isEmpty = filteredVocabularies.length === 0;
+
+  const allShown = useMemo(
+    () =>
+      filteredVocabularies.length > 0 &&
+      filteredVocabularies.every((vocab) => showMeaning[vocab.id]),
+    [filteredVocabularies, showMeaning],
+  );
 
   return (
     <div>
@@ -35,8 +36,7 @@ export default function VocabularySection({
             onClick={() => {
               const newState: Record<number, boolean> = {};
               filteredVocabularies.forEach((vocab) => {
-                const idx = vocabularies.indexOf(vocab);
-                newState[idx] = !allShown;
+                newState[vocab.id] = !allShown;
               });
               setShowMeaning(newState);
             }}
@@ -63,12 +63,12 @@ export default function VocabularySection({
 
       <div className="grid sm:grid-cols-2 gap-px bg-transparent">
         {filteredVocabularies.map((item) => {
-          const idx = vocabularies.indexOf(item);
+          const shown = showMeaning[item.id];
           return (
             <div
               key={item.id}
               onClick={() =>
-                setShowMeaning({ ...showMeaning, [idx]: !showMeaning[idx] })
+                setShowMeaning({ ...showMeaning, [item.id]: !shown })
               }
               className={`p-4 border cursor-pointer transition-colors ${
                 darkMode
@@ -88,7 +88,7 @@ export default function VocabularySection({
                 </span>
               </div>
 
-              {showMeaning[idx] && (
+              {shown && (
                 <p
                   className={`text-sm mb-2 ${
                     darkMode ? "text-text-dark" : "text-newsbody"
@@ -98,7 +98,7 @@ export default function VocabularySection({
                 </p>
               )}
 
-              {item.exampleSentence && showMeaning[idx] && (
+              {item.exampleSentence && shown && (
                 <div
                   className={`mt-2 pl-3 border-l-2 ${
                     darkMode ? "border-edge-dark" : "border-newsrule"
