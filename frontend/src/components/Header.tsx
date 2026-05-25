@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Moon, Sun, LogIn } from "lucide-react";
 
 interface HeaderProps {
@@ -19,12 +20,17 @@ export default function Header({
   goToLogin,
   handleLogout,
 }: HeaderProps) {
-  const todayLabel = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  // The displayed date is stable for the session, so compute it only once.
+  const todayLabel = useMemo(
+    () =>
+      new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+    [],
+  );
 
   return (
     <header className="mb-8">
