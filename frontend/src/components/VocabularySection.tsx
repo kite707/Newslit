@@ -20,6 +20,8 @@ export default function VocabularySection({
     return showMeaning[idx];
   });
 
+  const isEmpty = filteredVocabularies.length === 0;
+
   return (
     <div>
       <div
@@ -28,24 +30,36 @@ export default function VocabularySection({
         }`}
       >
         <h2 className="font-masthead text-2xl font-black">Key Words</h2>
-        <button
-          onClick={() => {
-            const newState: Record<number, boolean> = {};
-            filteredVocabularies.forEach((vocab) => {
-              const idx = vocabularies.indexOf(vocab);
-              newState[idx] = !allShown;
-            });
-            setShowMeaning(newState);
-          }}
-          className={`text-xs font-semibold uppercase tracking-[1.5px] transition-colors ${
-            darkMode
-              ? "text-muted-dark hover:text-text-dark"
-              : "text-newsmuted hover:text-ink"
+        {!isEmpty && (
+          <button
+            onClick={() => {
+              const newState: Record<number, boolean> = {};
+              filteredVocabularies.forEach((vocab) => {
+                const idx = vocabularies.indexOf(vocab);
+                newState[idx] = !allShown;
+              });
+              setShowMeaning(newState);
+            }}
+            className={`text-xs font-semibold uppercase tracking-[1.5px] transition-colors ${
+              darkMode
+                ? "text-muted-dark hover:text-text-dark"
+                : "text-newsmuted hover:text-ink"
+            }`}
+          >
+            {allShown ? "뜻 숨기기" : "뜻 보기"}
+          </button>
+        )}
+      </div>
+
+      {isEmpty && (
+        <p
+          className={`py-6 text-center text-sm italic ${
+            darkMode ? "text-muted-dark" : "text-newsmuted"
           }`}
         >
-          {allShown ? "뜻 숨기기" : "뜻 보기"}
-        </button>
-      </div>
+          오늘의 핵심 단어가 없습니다.
+        </p>
+      )}
 
       <div className="grid sm:grid-cols-2 gap-px bg-transparent">
         {filteredVocabularies.map((item) => {
