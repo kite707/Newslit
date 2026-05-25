@@ -123,12 +123,12 @@ export default function CalendarSection({
                       : "bg-accent text-white border-accent font-bold"
                     : isCompleted
                       ? darkMode
-                        ? "border-text-dark text-text-dark font-bold"
-                        : "border-ink text-ink font-bold"
+                        ? "border-transparent text-text-dark font-bold"
+                        : "border-transparent text-ink font-bold"
                       : hasArticle
                         ? darkMode
-                          ? "border-edge-dark hover:border-text-dark"
-                          : "border-newsedge hover:border-ink"
+                          ? "border-transparent hover:bg-edge-dark/40"
+                          : "border-transparent hover:bg-newsedge/50"
                         : "border-transparent"
                 }`}
               >
