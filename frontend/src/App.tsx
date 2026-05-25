@@ -424,18 +424,6 @@ export default function EnglishLearningApp() {
           playSentenceAudio={playSentenceAudio}
         />
 
-        <div
-          className={`p-6 sm:p-8 mb-6 border ${
-            darkMode ? "bg-card-dark border-edge-dark" : "bg-white border-newsedge"
-          }`}
-        >
-          <VocabularySection
-            darkMode={darkMode}
-            vocabularies={vocabularies}
-            filteredVocabularies={filteredVocabularies}
-          />
-        </div>
-
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <button
             onClick={playAudio}
@@ -467,6 +455,18 @@ export default function EnglishLearningApp() {
             <Check className="w-4 h-4" />
             {completed ? "학습 완료" : "학습 완료하기"}
           </button>
+        </div>
+
+        <div
+          className={`p-6 sm:p-8 mb-6 border ${
+            darkMode ? "bg-card-dark border-edge-dark" : "bg-white border-newsedge"
+          }`}
+        >
+          <VocabularySection
+            darkMode={darkMode}
+            vocabularies={vocabularies}
+            filteredVocabularies={filteredVocabularies}
+          />
         </div>
 
         <CalendarSection
