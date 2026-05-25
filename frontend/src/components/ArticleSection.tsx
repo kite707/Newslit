@@ -164,11 +164,11 @@ export default function ArticleSection({
               className={`flex-shrink-0 mt-1 p-1.5 border transition-all ${
                 playingSentenceIndex === index
                   ? darkMode
-                    ? "bg-text-dark text-ink border-text-dark"
-                    : "bg-ink text-paper border-ink"
+                    ? "border-accent-dark text-accent-dark"
+                    : "border-accent text-accent"
                   : darkMode
-                    ? "border-edge-dark text-muted-dark hover:border-text-dark hover:text-text-dark"
-                    : "border-newsedge text-newsmuted hover:border-ink hover:text-ink"
+                    ? "border-edge-dark text-muted-dark hover:border-accent-dark hover:text-accent-dark"
+                    : "border-newsedge text-newsmuted hover:border-accent hover:text-accent"
               } disabled:opacity-40`}
               disabled={!currentAudioUrl}
             >
