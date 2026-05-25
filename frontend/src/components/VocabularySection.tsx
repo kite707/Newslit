@@ -15,16 +15,24 @@ export default function VocabularySection({
 }: VocabularySectionProps) {
   const [showMeaning, setShowMeaning] = useState<Record<number, boolean>>({});
 
+  const allShown = filteredVocabularies.every((vocab) => {
+    const idx = vocabularies.indexOf(vocab);
+    return showMeaning[idx];
+  });
+
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Key Words</h2>
+      <div className="mb-1">
+        <span className="news-eyebrow">Glossary</span>
+      </div>
+      <div
+        className={`flex justify-between items-end pb-2 mb-4 border-b ${
+          darkMode ? "border-edge-dark" : "border-newsrule"
+        }`}
+      >
+        <h2 className="font-masthead text-2xl font-black">Key Words</h2>
         <button
           onClick={() => {
-            const allShown = filteredVocabularies.every((vocab) => {
-              const idx = vocabularies.indexOf(vocab);
-              return showMeaning[idx];
-            });
             const newState: Record<number, boolean> = {};
             filteredVocabularies.forEach((vocab) => {
               const idx = vocabularies.indexOf(vocab);
@@ -32,22 +40,17 @@ export default function VocabularySection({
             });
             setShowMeaning(newState);
           }}
-          className={`text-xs font-medium px-3 py-1 rounded-full transition-colors ${
+          className={`text-xs font-semibold uppercase tracking-[1.5px] transition-colors ${
             darkMode
-              ? "bg-gray-600 hover:bg-gray-500 text-gray-300"
-              : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+              ? "text-muted-dark hover:text-text-dark"
+              : "text-newsmuted hover:text-ink"
           }`}
         >
-          {filteredVocabularies.every((vocab) => {
-            const idx = vocabularies.indexOf(vocab);
-            return showMeaning[idx];
-          })
-            ? "뜻 숨기기"
-            : "뜻 보기"}
+          {allShown ? "Hide meanings" : "Show meanings"}
         </button>
       </div>
 
-      <div className="space-y-4">
+      <div className="grid sm:grid-cols-2 gap-px bg-transparent">
         {filteredVocabularies.map((item) => {
           const idx = vocabularies.indexOf(item);
           return (
@@ -56,16 +59,16 @@ export default function VocabularySection({
               onClick={() =>
                 setShowMeaning({ ...showMeaning, [idx]: !showMeaning[idx] })
               }
-              className={`p-4 rounded-lg cursor-pointer transition-colors ${
+              className={`p-4 border cursor-pointer transition-colors ${
                 darkMode
-                  ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-gray-50 hover:bg-gray-100"
+                  ? "border-edge-dark hover:bg-paper-dark"
+                  : "border-newsedge hover:bg-paper"
               }`}
             >
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-1">
                 <span className="font-bold text-lg">{item.word}</span>
                 <span
-                  className={`text-xs px-2 py-1 rounded ${getPosColor(
+                  className={`text-xs px-2 py-0.5 ${getPosColor(
                     item.partOfSpeech,
                     darkMode,
                   )}`}
@@ -75,22 +78,30 @@ export default function VocabularySection({
               </div>
 
               {showMeaning[idx] && (
-                <div className="mt-2">
-                  <p className="text-sm mb-2">{item.meaning}</p>
-                </div>
+                <p
+                  className={`text-sm mb-2 ${
+                    darkMode ? "text-text-dark" : "text-newsbody"
+                  }`}
+                >
+                  {item.meaning}
+                </p>
               )}
 
               {item.exampleSentence && showMeaning[idx] && (
                 <div
-                  className={`mt-2 p-3 rounded ${
-                    darkMode ? "bg-gray-600" : "bg-white"
+                  className={`mt-2 pl-3 border-l-2 ${
+                    darkMode ? "border-edge-dark" : "border-newsrule"
                   }`}
                 >
-                  <p className="text-sm italic mb-1">
+                  <p className="text-sm italic mb-0.5">
                     "{item.exampleSentence}"
                   </p>
                   {item.exampleTranslation && (
-                    <p className="text-xs text-gray-500">
+                    <p
+                      className={`text-xs ${
+                        darkMode ? "text-muted-dark" : "text-newsmuted"
+                      }`}
+                    >
                       {item.exampleTranslation}
                     </p>
                   )}

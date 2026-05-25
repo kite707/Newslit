@@ -373,8 +373,8 @@ export default function EnglishLearningApp() {
   // 초기화 중일 때 로딩 화면
   if (isInitializing) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-xl">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-paper">
+        <div className="news-eyebrow">Loading…</div>
       </div>
     );
   }
@@ -388,10 +388,10 @@ export default function EnglishLearningApp() {
     return (
       <div
         className={`min-h-screen flex items-center justify-center ${
-          darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
+          darkMode ? "bg-paper-dark text-text-dark" : "bg-paper text-ink"
         }`}
       >
-        <div className="text-xl">Loading article...</div>
+        <div className="news-eyebrow">Loading article…</div>
       </div>
     );
   }
@@ -401,10 +401,10 @@ export default function EnglishLearningApp() {
   return (
     <div
       className={`min-h-screen ${
-        darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
+        darkMode ? "bg-paper-dark text-text-dark" : "bg-paper text-ink"
       }`}
     >
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         <Header
           darkMode={darkMode}
           setDarkMode={setDarkMode}
@@ -425,9 +425,9 @@ export default function EnglishLearningApp() {
         />
 
         <div
-          className={`rounded-xl p-6 mb-6 ${
-            darkMode ? "bg-gray-800" : "bg-white"
-          } shadow-lg`}
+          className={`p-6 sm:p-8 mb-6 border ${
+            darkMode ? "bg-card-dark border-edge-dark" : "bg-white border-newsedge"
+          }`}
         >
           <VocabularySection
             darkMode={darkMode}
@@ -436,40 +436,36 @@ export default function EnglishLearningApp() {
           />
         </div>
 
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-3 mb-6">
           <button
             onClick={playAudio}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${
-              isPlayingFullAudio
-                ? darkMode
-                  ? "bg-orange-600 hover:bg-orange-700"
-                  : "bg-orange-500 hover:bg-orange-600"
-                : darkMode
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "bg-blue-500 hover:bg-blue-600"
-            } text-white`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold uppercase tracking-[1.5px] transition-colors border ${
+              darkMode
+                ? "border-text-dark text-text-dark hover:bg-text-dark hover:text-ink"
+                : "border-ink text-ink hover:bg-ink hover:text-paper"
+            }`}
           >
             {isPlayingFullAudio ? (
-              <Pause className="w-5 h-5" />
+              <Pause className="w-4 h-4" />
             ) : (
-              <Volume2 className="w-5 h-5" />
+              <Volume2 className="w-4 h-4" />
             )}
             {isPlayingFullAudio ? "Pause Audio" : "Play Audio"}
           </button>
           <button
             onClick={handleComplete}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold uppercase tracking-[1.5px] transition-colors ${
               completed
                 ? darkMode
-                  ? "bg-green-600 hover:bg-green-700"
-                  : "bg-green-500 hover:bg-green-600"
+                  ? "bg-text-dark text-ink"
+                  : "bg-ink text-paper"
                 : darkMode
-                  ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-gray-200 hover:bg-gray-300"
-            } ${completed ? "text-white" : ""}`}
+                  ? "border border-edge-dark text-muted-dark hover:border-text-dark hover:text-text-dark"
+                  : "border border-newsedge text-newsmuted hover:border-ink hover:text-ink"
+            }`}
           >
-            <Check className="w-5 h-5" />
-            {completed ? "Completed!" : "Mark as Complete"}
+            <Check className="w-4 h-4" />
+            {completed ? "Completed" : "Mark as Complete"}
           </button>
         </div>
 

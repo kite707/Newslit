@@ -19,60 +19,88 @@ export default function Header({
   goToLogin,
   handleLogout,
 }: HeaderProps) {
+  const todayLabel = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   return (
-    <div className="flex justify-between items-center mb-8">
-      <div>
-        <h1 className="text-3xl font-bold">🗞️ Newslit</h1>
-        {isAuthenticated && (
-          <p className="text-sm text-gray-500 mt-1">
-            안녕하세요, {userNickname}님!
-          </p>
-        )}
-        {isGuest && (
-          <p className="text-sm text-gray-500 mt-1">비회원 모드</p>
-        )}
+    <header className="mb-8">
+      {/* Top bar: date + actions */}
+      <div className="flex justify-between items-center mb-3">
+        <span className="news-eyebrow">{todayLabel}</span>
+        <div className="flex items-center gap-2">
+          {isGuest && (
+            <button
+              onClick={goToLogin}
+              className={`px-4 py-1.5 text-xs font-semibold uppercase tracking-[1.5px] border transition-colors flex items-center gap-1.5 ${
+                darkMode
+                  ? "border-text-dark text-text-dark hover:bg-text-dark hover:text-ink"
+                  : "border-ink text-ink hover:bg-ink hover:text-paper"
+              }`}
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              Sign In
+            </button>
+          )}
+          {isAuthenticated && (
+            <button
+              onClick={handleLogout}
+              className={`px-4 py-1.5 text-xs font-semibold uppercase tracking-[1.5px] border transition-colors ${
+                darkMode
+                  ? "border-muted-dark text-muted-dark hover:border-text-dark hover:text-text-dark"
+                  : "border-newsmuted text-newsmuted hover:border-ink hover:text-ink"
+              }`}
+            >
+              Sign Out
+            </button>
+          )}
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            aria-label="Toggle theme"
+            className={`p-2 border transition-colors ${
+              darkMode
+                ? "border-edge-dark text-text-dark hover:border-text-dark"
+                : "border-newsedge text-ink hover:border-ink"
+            }`}
+          >
+            {darkMode ? (
+              <Sun className="w-4 h-4" />
+            ) : (
+              <Moon className="w-4 h-4" />
+            )}
+          </button>
+        </div>
       </div>
-      <div className="flex items-center gap-3">
-        {isGuest && (
-          <button
-            onClick={goToLogin}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-              darkMode
-                ? "bg-blue-600 hover:bg-blue-700 text-white"
-                : "bg-blue-500 hover:bg-blue-600 text-white"
-            }`}
-          >
-            <LogIn className="w-4 h-4" />
-            로그인
-          </button>
-        )}
-        {isAuthenticated && (
-          <button
-            onClick={handleLogout}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              darkMode
-                ? "bg-red-600 hover:bg-red-700 text-white"
-                : "bg-red-500 hover:bg-red-600 text-white"
-            }`}
-          >
-            로그아웃
-          </button>
-        )}
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className={`p-2 rounded-lg transition-colors ${
-            darkMode
-              ? "bg-gray-700 hover:bg-gray-600"
-              : "bg-gray-100 hover:bg-gray-200"
+
+      {/* Masthead */}
+      <div className="news-rule-double" />
+      <div className="text-center py-5">
+        <h1 className="font-masthead text-5xl sm:text-6xl font-black tracking-[2px] leading-none">
+          NEWSLIT
+        </h1>
+        <p className="news-eyebrow mt-2">The English Learning Daily</p>
+      </div>
+      <div
+        className={`border-b-[3px] border-double ${
+          darkMode ? "border-text-dark" : "border-ink"
+        }`}
+      />
+
+      {/* Greeting line */}
+      {(isAuthenticated || isGuest) && (
+        <p
+          className={`text-center text-xs italic mt-3 ${
+            darkMode ? "text-muted-dark" : "text-newsmuted"
           }`}
         >
-          {darkMode ? (
-            <Sun className="w-5 h-5" />
-          ) : (
-            <Moon className="w-5 h-5" />
-          )}
-        </button>
-      </div>
-    </div>
+          {isAuthenticated
+            ? `Welcome back, ${userNickname}.`
+            : "Reading as Guest"}
+        </p>
+      )}
+    </header>
   );
 }

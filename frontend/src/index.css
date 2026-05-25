@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-paper text-ink font-serif antialiased;
+  }
+}
+
+@layer components {
+  /* Uppercase newspaper "eyebrow" label */
+  .news-eyebrow {
+    @apply text-[11px] uppercase tracking-[2px] text-newsmuted;
+  }
+
+  /* Double rule used as section separators (like the email) */
+  .news-rule-double {
+    @apply border-b-[3px] border-double border-ink;
+  }
+
+  .news-rule-thin {
+    @apply border-b border-newsrule;
+  }
+}

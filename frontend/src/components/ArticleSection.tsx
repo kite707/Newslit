@@ -51,26 +51,26 @@ export default function ArticleSection({
         return (
           <span
             key={index}
-            className={`relative inline-block cursor-pointer font-semibold ${
+            className={`relative inline-block cursor-pointer font-bold border-b-2 ${
               darkMode
-                ? "text-yellow-300 hover:text-yellow-200"
-                : "text-blue-600 hover:text-blue-700"
-            } border-b-2 ${darkMode ? "border-yellow-300" : "border-blue-600"}`}
+                ? "text-text-dark border-muted-dark hover:border-text-dark"
+                : "text-ink border-newsmuted hover:border-ink"
+            }`}
             onMouseEnter={() => setHoveredWordId(uniqueId)}
             onMouseLeave={() => setHoveredWordId(null)}
           >
             {part}
             {hoveredWordId === uniqueId && (
               <span
-                className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 rounded-lg shadow-lg whitespace-nowrap ${
+                className={`absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 shadow-lg whitespace-nowrap border ${
                   darkMode
-                    ? "bg-gray-700 text-white"
-                    : "bg-white text-gray-900 border border-gray-200"
+                    ? "bg-card-dark text-text-dark border-edge-dark"
+                    : "bg-white text-ink border-newsedge"
                 }`}
               >
                 <span className="block font-bold">{vocab.word}</span>
                 <span
-                  className={`text-xs px-2 py-0.5 rounded ${getPosColor(
+                  className={`text-xs px-2 py-0.5 ${getPosColor(
                     vocab.partOfSpeech,
                     darkMode,
                   )} inline-block my-1`}
@@ -89,128 +89,123 @@ export default function ArticleSection({
   };
 
   return (
-    <div
-      className={`rounded-xl p-6 mb-6 ${
-        darkMode ? "bg-gray-800" : "bg-white"
-      } shadow-lg`}
+    <article
+      className={`p-6 sm:p-8 mb-6 border ${
+        darkMode
+          ? "bg-card-dark border-edge-dark"
+          : "bg-white border-newsedge"
+      }`}
     >
-      <div className="mb-4">
-        <div className="flex items-center gap-3 mb-2 flex-wrap">
-          <h2 className="text-2xl font-bold">{articleData.title}</h2>
-          <span
-            className={`text-sm font-medium px-3 py-1 rounded-full ${
-              darkMode
-                ? "bg-gray-700 text-gray-300"
-                : "bg-gray-200 text-gray-600"
-            }`}
-          >
-            {articleData.currentPages} / {articleData.totalPages}
-          </span>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <div
-            className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-              darkMode
-                ? "bg-blue-900 text-blue-200"
-                : "bg-blue-100 text-blue-700"
-            }`}
-          >
-            {articleData.source}
-          </div>
-          <span
-            className={`text-sm ${
-              darkMode ? "text-gray-400" : "text-gray-600"
-            }`}
-          >
-            {articleData.publishedDate}
-          </span>
-          {articleData.sourceUrl && (
-            <a
-              href={articleData.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`text-sm flex items-center gap-1 ${
-                darkMode
-                  ? "text-blue-400 hover:text-blue-300"
-                  : "text-blue-600 hover:text-blue-700"
-              }`}
-            >
-              원문 보기 <ExternalLink className="w-3 h-3" />
-            </a>
-          )}
-        </div>
+      {/* Section eyebrow + source line */}
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+        <span className="news-eyebrow">
+          {articleData.source} · Today's Edition
+        </span>
+        <span
+          className={`text-xs font-semibold ${
+            darkMode ? "text-muted-dark" : "text-newsmuted"
+          }`}
+        >
+          Page {articleData.currentPages} of {articleData.totalPages}
+        </span>
       </div>
 
-      <div className="space-y-6 mb-4">
-        {articleData.sentences.map((sentence, index) => (
-          <div
-            key={index}
-            className={`transition-all duration-200 ${
-              darkMode ? "hover:bg-gray-700/30" : "hover:bg-gray-50"
-            } rounded-lg p-4 -mx-4`}
-          >
-            <div className="flex items-start gap-3">
-              {/* 오디오 재생 버튼 */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  playSentenceAudio(index);
-                }}
-                className={`flex-shrink-0 p-2 rounded-full transition-all ${
-                  playingSentenceIndex === index
-                    ? darkMode
-                      ? "bg-blue-600 text-white"
-                      : "bg-blue-500 text-white"
-                    : darkMode
-                      ? "bg-gray-700 hover:bg-gray-600 text-gray-300"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-600"
-                }`}
-                disabled={!currentAudioUrl}
-              >
-                {playingSentenceIndex === index ? (
-                  <Pause className="w-4 h-4" />
-                ) : (
-                  <Play className="w-4 h-4" />
-                )}
-              </button>
+      {/* Headline */}
+      <h2 className="font-masthead text-3xl sm:text-4xl font-black leading-tight mb-3">
+        {articleData.title}
+      </h2>
 
-              {/* 문장 텍스트 */}
+      {/* Byline / dateline */}
+      <div
+        className={`flex items-center gap-4 flex-wrap text-sm italic pb-4 mb-6 ${
+          darkMode
+            ? "text-muted-dark border-b border-edge-dark"
+            : "text-newsmuted border-b border-newsrule"
+        }`}
+      >
+        <span>{articleData.publishedDate}</span>
+        {articleData.sourceUrl && (
+          <a
+            href={articleData.sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`not-italic flex items-center gap-1 underline underline-offset-2 ${
+              darkMode ? "hover:text-text-dark" : "hover:text-ink"
+            }`}
+          >
+            Read original <ExternalLink className="w-3 h-3" />
+          </a>
+        )}
+      </div>
+
+      {/* Body */}
+      <div className="space-y-5 mb-6">
+        {articleData.sentences.map((sentence, index) => (
+          <div key={index} className="flex items-start gap-3">
+            {/* Audio button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                playSentenceAudio(index);
+              }}
+              className={`flex-shrink-0 mt-1 p-1.5 border transition-all ${
+                playingSentenceIndex === index
+                  ? darkMode
+                    ? "bg-text-dark text-ink border-text-dark"
+                    : "bg-ink text-paper border-ink"
+                  : darkMode
+                    ? "border-edge-dark text-muted-dark hover:border-text-dark hover:text-text-dark"
+                    : "border-newsedge text-newsmuted hover:border-ink hover:text-ink"
+              } disabled:opacity-40`}
+              disabled={!currentAudioUrl}
+            >
+              {playingSentenceIndex === index ? (
+                <Pause className="w-3.5 h-3.5" />
+              ) : (
+                <Play className="w-3.5 h-3.5" />
+              )}
+            </button>
+
+            {/* Sentence */}
+            <div
+              className="flex-1 cursor-pointer"
+              onClick={() =>
+                setExpandedSentences((prev) => ({
+                  ...prev,
+                  [index]: !prev[index],
+                }))
+              }
+            >
+              <p className="text-lg leading-[1.9]">
+                {highlightVocabulary(sentence.englishText, index)}
+              </p>
               <div
-                className="flex-1 cursor-pointer"
-                onClick={() =>
-                  setExpandedSentences((prev) => ({
-                    ...prev,
-                    [index]: !prev[index],
-                  }))
-                }
+                className={`overflow-hidden transition-all duration-300 ${
+                  expandedSentences[index]
+                    ? "max-h-40 opacity-100 mt-2"
+                    : "max-h-0 opacity-0"
+                }`}
               >
-                <p className="text-lg leading-relaxed">
-                  {highlightVocabulary(sentence.englishText, index)}
-                </p>
-                <div
-                  className={`overflow-hidden transition-all duration-300 ${
-                    expandedSentences[index]
-                      ? "max-h-40 opacity-100 mt-3"
-                      : "max-h-0 opacity-0"
+                <p
+                  className={`text-base italic pl-4 border-l-2 ${
+                    darkMode
+                      ? "text-muted-dark border-edge-dark"
+                      : "text-newsbody border-newsrule"
                   }`}
                 >
-                  <p
-                    className={`text-base border-l-2 pl-3 ${
-                      darkMode
-                        ? "text-gray-300 border-blue-500"
-                        : "text-gray-600 border-blue-400"
-                    }`}
-                  >
-                    {sentence.koreanText}
-                  </p>
-                </div>
+                  {sentence.koreanText}
+                </p>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="flex items-center justify-center pt-2">
+      <div
+        className={`flex items-center justify-center pt-4 border-t ${
+          darkMode ? "border-edge-dark" : "border-newsrule"
+        }`}
+      >
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -223,17 +218,17 @@ export default function ArticleSection({
             });
             setExpandedSentences(newState);
           }}
-          className={`text-sm font-medium transition-colors ${
+          className={`text-xs font-semibold uppercase tracking-[1.5px] transition-colors ${
             darkMode
-              ? "text-blue-400 hover:text-blue-300"
-              : "text-blue-600 hover:text-blue-700"
+              ? "text-muted-dark hover:text-text-dark"
+              : "text-newsmuted hover:text-ink"
           }`}
         >
           {articleData.sentences.every((_, i) => expandedSentences[i])
-            ? "모든 번역 숨기기 ▲"
-            : "모든 번역 보기 ▼"}
+            ? "Hide all translations ▲"
+            : "Show all translations ▼"}
         </button>
       </div>
-    </div>
+    </article>
   );
 }
