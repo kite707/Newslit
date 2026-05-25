@@ -404,7 +404,7 @@ export default function EnglishLearningApp() {
         darkMode ? "bg-paper-dark text-text-dark" : "bg-paper text-ink"
       }`}
     >
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+      <div className="max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto px-4 sm:px-6 py-8">
         <Header
           darkMode={darkMode}
           setDarkMode={setDarkMode}
@@ -436,7 +436,7 @@ export default function EnglishLearningApp() {
           />
         </div>
 
-        <div className="flex gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <button
             onClick={playAudio}
             className={`flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold uppercase tracking-[1.5px] transition-colors border ${

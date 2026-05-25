@@ -145,7 +145,7 @@ export default function ArticleSection({
       </div>
 
       {/* Body */}
-      <div className="space-y-5 mb-6">
+      <div className="space-y-5 mb-6 max-w-[68ch]">
         {articleData.sentences.map((sentence, index) => (
           <div key={index} className="flex items-start gap-3">
             {/* Audio button */}
