@@ -53,8 +53,8 @@ export default function ArticleSection({
             key={index}
             className={`relative inline-block cursor-pointer font-bold border-b-2 ${
               darkMode
-                ? "text-text-dark border-muted-dark hover:border-text-dark"
-                : "text-ink border-newsmuted hover:border-ink"
+                ? "text-accent-dark border-accent-dark/50 hover:border-accent-dark"
+                : "text-accent border-accent/40 hover:border-accent"
             }`}
             onMouseEnter={() => setHoveredWordId(uniqueId)}
             onMouseLeave={() => setHoveredWordId(null)}
@@ -98,7 +98,11 @@ export default function ArticleSection({
     >
       {/* Section eyebrow + source line */}
       <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-        <span className="news-eyebrow">
+        <span
+          className={`news-eyebrow font-semibold ${
+            darkMode ? "text-accent-dark" : "text-accent"
+          }`}
+        >
           {articleData.source} · Today's Edition
         </span>
         <span
@@ -130,7 +134,9 @@ export default function ArticleSection({
             target="_blank"
             rel="noopener noreferrer"
             className={`not-italic flex items-center gap-1 underline underline-offset-2 ${
-              darkMode ? "hover:text-text-dark" : "hover:text-ink"
+              darkMode
+                ? "text-accent-dark hover:opacity-80"
+                : "text-accent hover:opacity-80"
             }`}
           >
             Read original <ExternalLink className="w-3 h-3" />

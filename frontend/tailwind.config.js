@@ -16,10 +16,13 @@ export default {
         paper: "#faf9f6",
         ink: "#1a1a1a",
         newsbody: "#444444",
-        newsmuted: "#888888",
+        newsmuted: "#6f6f6f",
         newsfaint: "#999999",
         newsrule: "#d4cfc7",
         newsedge: "#e2ddd5",
+        // Editorial spot color (newsprint red)
+        accent: "#a01e22",
+        "accent-dark": "#e08b84",
         // Dark newsprint
         "paper-dark": "#16140f",
         "card-dark": "#211e18",

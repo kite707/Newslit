@@ -54,7 +54,13 @@ export default function CalendarSection({
       }`}
     >
       <div className="mb-1">
-        <span className="news-eyebrow">Archive</span>
+        <span
+          className={`news-eyebrow font-semibold ${
+            darkMode ? "text-accent-dark" : "text-accent"
+          }`}
+        >
+          Archive
+        </span>
       </div>
       <div
         className={`flex justify-between items-end pb-2 mb-4 border-b ${
@@ -122,8 +128,8 @@ export default function CalendarSection({
                 className={`text-center text-sm relative p-2 border transition-all ${
                   isCurrentSelected
                     ? darkMode
-                      ? "bg-text-dark text-ink border-text-dark font-bold"
-                      : "bg-ink text-paper border-ink font-bold"
+                      ? "bg-accent-dark text-ink border-accent-dark font-bold"
+                      : "bg-accent text-white border-accent font-bold"
                     : isCompleted
                       ? darkMode
                         ? "border-text-dark text-text-dark font-bold"
@@ -172,7 +178,7 @@ export default function CalendarSection({
         <div className="flex items-center gap-1.5">
           <div
             className={`w-3 h-3 ${
-              darkMode ? "bg-text-dark" : "bg-ink"
+              darkMode ? "bg-accent-dark" : "bg-accent"
             }`}
           ></div>
           <span>Selected</span>

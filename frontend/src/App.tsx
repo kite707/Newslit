@@ -404,7 +404,7 @@ export default function EnglishLearningApp() {
         darkMode ? "bg-paper-dark text-text-dark" : "bg-paper text-ink"
       }`}
     >
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
         <Header
           darkMode={darkMode}
           setDarkMode={setDarkMode}
@@ -439,9 +439,9 @@ export default function EnglishLearningApp() {
         <div className="flex gap-3 mb-6">
           <button
             onClick={playAudio}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold uppercase tracking-[1.5px] transition-colors border ${
+            className={`flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold uppercase tracking-[1.5px] transition-colors border ${
               darkMode
-                ? "border-text-dark text-text-dark hover:bg-text-dark hover:text-ink"
+                ? "border-edge-dark text-text-dark hover:border-text-dark"
                 : "border-ink text-ink hover:bg-ink hover:text-paper"
             }`}
           >
@@ -457,11 +457,11 @@ export default function EnglishLearningApp() {
             className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold uppercase tracking-[1.5px] transition-colors ${
               completed
                 ? darkMode
-                  ? "bg-text-dark text-ink"
-                  : "bg-ink text-paper"
+                  ? "bg-accent-dark text-ink"
+                  : "bg-accent text-white"
                 : darkMode
-                  ? "border border-edge-dark text-muted-dark hover:border-text-dark hover:text-text-dark"
-                  : "border border-newsedge text-newsmuted hover:border-ink hover:text-ink"
+                  ? "bg-text-dark text-ink hover:bg-white"
+                  : "bg-ink text-paper hover:bg-black"
             }`}
           >
             <Check className="w-4 h-4" />

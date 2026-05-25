@@ -274,7 +274,13 @@ export default function AuthPage({
               darkMode ? "border-text-dark" : "border-ink"
             }`}
           >
-            <div className="news-eyebrow mb-1">Your Code</div>
+            <div
+              className={`news-eyebrow font-semibold mb-1 ${
+                darkMode ? "text-accent-dark" : "text-accent"
+              }`}
+            >
+              Your Code
+            </div>
             <p
               className={`text-xs mb-4 ${
                 darkMode ? "text-muted-dark" : "text-newsmuted"
