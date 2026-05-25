@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ExternalLink, Play, Pause } from "lucide-react";
 import type { DailyData, VocabularyItem } from "@/types";
 import { getShortPos, getPosColor } from "@/utils/pos";
@@ -25,24 +25,30 @@ export default function ArticleSection({
     Record<number, boolean>
   >({});
 
-  const highlightVocabulary = (text: string, sentenceIndex: number) => {
-    if (vocabularies.length === 0) return text;
+  const { highlightRegex, vocabMap } = useMemo(() => {
+    const valid = vocabularies.filter((v) => v.word);
 
-    const words = vocabularies
-      .filter((v) => v.word)
+    const map = new Map<string, VocabularyItem>();
+    valid.forEach((v) => map.set(v.word.toLowerCase(), v));
+
+    const words = valid
       .map((v) => v.word.toLowerCase())
       .sort((a, b) => b.length - a.length)
       .map((word) => word.replace(/[.*+?^${}()|[\\\\]/g, "\\\\$&"));
-    if (words.length === 0) return text;
-    const regex = new RegExp(`\\b(${words.join("|")})\\b`, "gi");
+    const regex =
+      words.length > 0 ? new RegExp(`\\b(${words.join("|")})\\b`, "gi") : null;
 
-    const parts = text.split(regex);
+    return { highlightRegex: regex, vocabMap: map };
+  }, [vocabularies]);
+
+  const highlightVocabulary = (text: string, sentenceIndex: number) => {
+    if (!highlightRegex) return text;
+
+    const parts = text.split(highlightRegex);
     let wordCounter = 0;
 
     return parts.map((part, index) => {
-      const vocab = vocabularies.find(
-        (v) => v.word && v.word.toLowerCase() === part.toLowerCase(),
-      );
+      const vocab = vocabMap.get(part.toLowerCase());
 
       if (vocab) {
         const uniqueId = `${sentenceIndex}-${wordCounter}`;
