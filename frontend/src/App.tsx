@@ -427,7 +427,7 @@ export default function EnglishLearningApp() {
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <button
             onClick={playAudio}
-            className={`flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold uppercase tracking-[1.5px] transition-colors border ${
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold uppercase tracking-[1.5px] transition-colors border ${
               darkMode
                 ? "border-edge-dark text-text-dark hover:border-text-dark"
                 : "border-ink text-ink hover:bg-ink hover:text-paper"
