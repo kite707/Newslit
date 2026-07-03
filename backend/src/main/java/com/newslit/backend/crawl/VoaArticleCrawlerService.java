@@ -46,7 +46,15 @@ public class VoaArticleCrawlerService {
 
             SyndFeed feed = rssFeedReader.read(url);
 
+            int crawledCnt = 0;
+            boolean hitLimit = false;
+
             for (SyndEntry entry : feed.getEntries()) {
+                if (crawledCnt == 3) {
+                    hitLimit = true;
+                    break;
+                }
+
                 String title = entry.getTitle();
                 String link = entry.getLink();
 
@@ -74,11 +82,17 @@ public class VoaArticleCrawlerService {
 
                     Thread.sleep(1000);
 
+                    crawledCnt++;
                 } catch (DataIntegrityViolationException e) {
                     log.info("중복 기사 스킵: {}", title);
                 } catch (Exception e) {
                     log.error("기사 크롤링 실패: {}", title, e);
                 }
+            }
+
+            if (!hitLimit) {
+                rssService.markAsDone(rssId);
+                log.info("RSS {} 크롤링 완료 → SUCCESS", rssId);
             }
 
         } catch (Exception e) {
