@@ -33,12 +33,6 @@ public class RssService {
         rssRepository.save(rss);
     }
 
-    public void markAsDone(Long rssId) {
-        Rss rss = rssRepository.findById(rssId).orElseThrow(NoRssFoundException::new);
-        rss.markAsDone();
-        rssRepository.save(rss);
-    }
-
     private RssResponseDto toDto(Rss rss) {
         return RssResponseDto.builder()
                 .id(rss.getId())

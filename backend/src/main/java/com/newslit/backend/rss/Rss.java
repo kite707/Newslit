@@ -48,8 +48,4 @@ public class Rss {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt;
-
-    public void markAsDone() {
-        this.status = Status.SUCCESS;
-    }
 }
