@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-@Profile("prod")
+@Profile("prod-secret")
 public class RssCrawlInitializer implements ApplicationRunner {
     private final VoaRssCrawlerService voaRssCrawlerService;
 
