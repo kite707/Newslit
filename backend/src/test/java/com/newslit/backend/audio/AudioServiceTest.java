@@ -103,8 +103,10 @@ class AudioServiceTest {
 
     @AfterEach
     void cleanup() {
-        sentenceRepository.deleteAll(sentenceRepository.findAllByArticleId(articleId));
-        articleRepository.deleteById(articleId);
+        if (articleId != null) {
+            sentenceRepository.deleteAll(sentenceRepository.findAllByArticleId(articleId));
+            articleRepository.deleteById(articleId);
+        }
     }
 
     @AfterAll
