@@ -46,7 +46,7 @@ public class SentenceService {
                 log.info("번역 진행 중인 문장 스킵 - orderIndex: {}", orderIndex);
             } else {
                 Sentence sentence = existing.orElseGet(() -> createNewSentence(article, englishText, orderIndex));
-                translationAsyncService.translateAsync(sentence, englishText, articleId, orderIndex);
+                translationAsyncService.translateAsync(sentence, englishText, articleId);
             }
         }
     }
