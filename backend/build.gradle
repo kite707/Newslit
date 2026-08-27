@@ -30,6 +30,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation 'org.springframework.retry:spring-retry'
     implementation 'com.github.ben-manes.caffeine:caffeine'
     implementation 'com.mysql:mysql-connector-j'
     compileOnly 'org.projectlombok:lombok'
