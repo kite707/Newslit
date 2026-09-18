@@ -10,6 +10,7 @@ import com.newslit.backend.global.common.enums.Status;
 import com.newslit.backend.rss.Rss;
 import com.newslit.backend.rss.RssRepository;
 import com.newslit.backend.sentence.SentenceRepository;
+import com.newslit.backend.support.IntegrationTestSupport;
 import com.newslit.backend.vocabulary.VocabularyRepository;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndEntryImpl;
@@ -29,12 +30,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
-@SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class VoaArticleCrawlerServiceTest {
+class VoaArticleCrawlerServiceTest extends IntegrationTestSupport {
 
     private static final String RSS_PATH = "/api/zjypq_l-vomx-tpebryqy";
     private static final int ARTICLE_COUNT = 3;
