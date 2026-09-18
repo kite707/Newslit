@@ -1,6 +1,7 @@
 package com.newslit.backend.sentence;
 
 import com.newslit.backend.global.common.enums.Status;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,12 +14,20 @@ import org.springframework.stereotype.Component;
 public class SentenceScheduler {
     private static final int MAX_RETRY_COUNT = 10;
     private static final long RETRY_INTERVAL_MS = 300_000;
+    private static final long STALE_PROCESSING_MINUTES = 10;
 
     private final SentenceService sentenceService;
     private final SentenceRepository sentenceRepository;
 
     @Scheduled(fixedDelay = RETRY_INTERVAL_MS)
     public void retryFailedTranslations() {
+        int recoveredCount = sentenceRepository.markStaleProcessingAsFailed(
+                LocalDateTime.now().minusMinutes(STALE_PROCESSING_MINUTES), Status.FAILED, Status.PROCESSING);
+
+        if (recoveredCount > 0) {
+            log.warn("{}분 넘게 PROCESSING인 문장 {}건을 FAILED로 복구", STALE_PROCESSING_MINUTES, recoveredCount);
+        }
+
         List<Sentence> failedSentences = sentenceRepository
                 .findAllByTranslationStatusAndRetryCountLessThan(Status.FAILED, MAX_RETRY_COUNT);
 
