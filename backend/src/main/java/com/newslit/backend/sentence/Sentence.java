@@ -69,6 +69,15 @@ public class Sentence {
     @Builder.Default
     private Status translationStatus = Status.PENDING;
 
+    @Column(name = "audio_url")
+    private String audioUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tts_status", nullable = false)
+    @ColumnDefault("'PENDING'")
+    @Builder.Default
+    private Status ttsStatus = Status.PENDING;
+
     @Column(name = "retry_count", nullable = false)
     @Builder.Default
     private int retryCount = 0;
