@@ -79,6 +79,8 @@ dependencies {
 }
 tasks.named('test') {
     useJUnitPlatform()
+    // application.properties의 기본 프로필(local,local-secret)을 덮어써서 모든 테스트가 test 프로필로 뜨게 한다
+    systemProperty 'spring.profiles.active', 'test'
     testLogging {
         exceptionFormat = 'full'
     }
