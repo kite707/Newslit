@@ -4,7 +4,6 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailSendException;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -19,15 +18,6 @@ public class MailService {
 
     @Value("${mail.verify-sender}")
     private String sender;
-
-    public void sendTestMail(String to) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(sender);
-        message.setTo(to);
-        message.setSubject("Newslit 테스트 메일");
-        message.setText("OCI Email Delivery로 발송된 메일입니다.");
-        mailSender.send(message);
-    }
 
     public void sendVerifyMail(String email, String code) {
         try {

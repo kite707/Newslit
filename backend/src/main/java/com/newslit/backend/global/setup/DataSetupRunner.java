@@ -7,7 +7,6 @@ import com.newslit.backend.crawl.VoaArticleCrawlerService;
 import com.newslit.backend.crawl.VoaRssCrawlerService;
 import com.newslit.backend.daily.DailyService;
 import com.newslit.backend.daily.exception.DuplicateDailyException;
-import com.newslit.backend.mail.MailService;
 import com.newslit.backend.rss.Rss;
 import com.newslit.backend.rss.RssRepository;
 import com.newslit.backend.sentence.SentenceService;
@@ -25,9 +24,15 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+/**
+ * 빈 로컬 DB에 ADMIN 계정과 기사·번역·청크 데이터를 채운다.
+ * 크롤링과 DeepL 호출이 나가므로 seed 프로필을 켰을 때만 실행한다.
+ * admin.* 값이 local-secret에 있어서 함께 켜야 한다.
+ * ./gradlew bootRun --args='--spring.profiles.active=local,local-secret,seed'
+ */
 @RequiredArgsConstructor
 @Component
-@Profile({"local-secret"})
+@Profile("seed")
 public class DataSetupRunner implements CommandLineRunner {
     private static final Logger log = LoggerFactory.getLogger(DataSetupRunner.class);
 
@@ -42,7 +47,6 @@ public class DataSetupRunner implements CommandLineRunner {
     private final AudioService audioService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final MailService mailService;
 
     @Value("${admin.email}")
     String email;
@@ -54,8 +58,6 @@ public class DataSetupRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-
-        mailService.sendTestMail("hyeyeonkang424@gmail.com");
 
         if (userRepository.findByEmail(email).isEmpty()) {
             String encodedPassword = passwordEncoder.encode(password);
