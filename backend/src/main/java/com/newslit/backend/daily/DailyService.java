@@ -11,6 +11,7 @@ import com.newslit.backend.sentence.SentenceRepository;
 import com.newslit.backend.sentence.dto.SentenceResponseDto;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +30,9 @@ public class DailyService {
 
     public List<DailyResponseDto> createChunks(Long id) {
         Article article = articleRepository.findById(id).orElseThrow(() -> new ArticleNotFoundException());
-        List<Sentence> sentences = sentenceRepository.findAllByArticleId(id);
+        List<Sentence> sentences = sentenceRepository.findAllByArticleId(id).stream()
+                .sorted(Comparator.comparing(Sentence::getOrderIndex))
+                .toList();
         List<DailyResponseDto> dailyResponseDto = new ArrayList<>();
 
         int[] wordCounts = new int[sentences.size()];
@@ -78,15 +81,18 @@ public class DailyService {
                         .map(latestDaily -> latestDaily.getDisplayDate().plusDays(1))
                         .orElse(LocalDate.now());
 
+                int startOrderIndex = sentences.get(chunkStart).getOrderIndex();
+                int endOrderIndex = sentences.get(i).getOrderIndex();
+
                 Daily daily = Daily.builder()
-                        .startIndex(chunkStart)
-                        .endIndex(i)
+                        .startIndex(startOrderIndex)
+                        .endIndex(endOrderIndex)
                         .wordCount(currentWordCount)
                         .article(article)
                         .displayDate(dateToSave)
                         .build();
 
-                dailyRespository.findByArticleIdAndStartIndexAndEndIndex(article.getId(), chunkStart, i)
+                dailyRespository.findByArticleIdAndStartIndexAndEndIndex(article.getId(), startOrderIndex, endOrderIndex)
                         .ifPresent(k -> {
                             throw new DuplicateDailyException();
                         });
