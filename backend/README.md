@@ -4,12 +4,13 @@
 
 로컬과 테스트는 Oracle Database Free를 사용하고, 운영은 Oracle Autonomous Database를 사용한다.
 
-로컬 DB를 실행한다.
+애플리케이션을 실행하면 Spring Boot가 `compose.yml`의 Oracle 컨테이너를 자동으로 시작하고 readiness 검사를 통과한 뒤 애플리케이션을 시작한다. 애플리케이션 종료 시 컨테이너는 중지되며 데이터 볼륨은 유지된다.
 
 ```bash
-docker compose up -d oracle
-docker compose ps
+./gradlew bootRun
 ```
+
+IDE에서 `BackendApplication`을 직접 실행할 때는 working directory를 `backend` 디렉터리로 설정한다.
 
 기본 접속 정보는 다음과 같다.
 
@@ -27,11 +28,7 @@ ORACLE_LOCAL_PASSWORD=change-me
 
 애플리케이션은 같은 이름의 환경 변수를 읽으므로 Compose와 Spring Boot의 인증 정보가 함께 변경된다.
 
-```bash
-./gradlew bootRun
-```
-
-DB를 중지하되 데이터를 보존하려면 `docker compose down`을 사용한다. 볼륨까지 초기화하려면 로컬 데이터가 삭제되는 것을 확인한 뒤 `docker compose down -v`를 실행한다.
+DB를 수동으로 실행하거나 상태를 확인하려면 `docker compose up -d oracle`, `docker compose ps`를 사용한다. DB를 중지하되 데이터를 보존하려면 `docker compose down`을 사용한다. 볼륨까지 초기화하려면 로컬 데이터가 삭제되는 것을 확인한 뒤 `docker compose down -v`를 실행한다.
 
 ## Test
 
