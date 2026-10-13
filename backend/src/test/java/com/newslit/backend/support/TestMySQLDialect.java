@@ -9,6 +9,10 @@ import org.hibernate.type.descriptor.sql.internal.DdlTypeImpl;
 
 // main의 CustomMySQLDialect는 로컬 전용(gitignore)이라 CI에서도 쓸 수 있게 테스트용으로 따로 둔다
 public class TestMySQLDialect extends MySQLDialect {
+    public TestMySQLDialect() {
+        super();
+    }
+
     public TestMySQLDialect(DialectResolutionInfo info) {
         super(info);
     }
