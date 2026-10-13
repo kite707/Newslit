@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.newslit.backend.article.Article;
 import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.global.common.enums.Status;
+import com.newslit.backend.support.OracleDatabaseTestSupport;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -16,7 +17,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-class SentenceRepositoryTest {
+class SentenceRepositoryTest extends OracleDatabaseTestSupport {
 
     @Autowired
     private ArticleRepository articleRepository;

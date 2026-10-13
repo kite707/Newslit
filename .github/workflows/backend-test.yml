@@ -11,21 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: test
-          MYSQL_DATABASE: newslit_test
-        # application-test.properties와 같은 포트를 써서 로컬과 CI가 설정 파일 하나를 공유한다
-        ports:
-          - 3307:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-
     steps:
       - name: 체크아웃
         uses: actions/checkout@v4
