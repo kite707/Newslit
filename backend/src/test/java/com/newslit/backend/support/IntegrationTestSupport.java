@@ -5,7 +5,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 @SpringBootTest
-public abstract class IntegrationTestSupport {
+public abstract class IntegrationTestSupport extends OracleDatabaseTestSupport {
 
     @MockBean
     protected ObjectStorage objectStorage;
