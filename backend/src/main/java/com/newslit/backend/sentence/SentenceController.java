@@ -21,6 +21,7 @@ public class SentenceController {
 
     @PostMapping("/translate")
     ResponseEntity<Void> triggerTranslation(@RequestParam(name = "articleId") Long articleId) {
+        sentenceService.splitSentences(articleId);
         sentenceService.triggerTranslation(articleId);
         return ResponseEntity.accepted().build();
     }

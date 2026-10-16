@@ -112,4 +112,11 @@ public class Article {
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
     private List<Daily> dailies = new ArrayList<>();
 
+    public void advancePipelineTo(ArticlePipelineStage nextStage) {
+        this.pipelineStage = nextStage;
+        this.pipelineStatus = Status.PENDING;
+        this.pipelineRetryCount = 0;
+        this.pipelineUpdatedAt = LocalDateTime.now();
+    }
+
 }

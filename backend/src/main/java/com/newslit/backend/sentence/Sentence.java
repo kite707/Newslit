@@ -11,10 +11,10 @@ import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,8 +28,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 @Entity
-@Table(name = "sentences", indexes = {
-        @Index(name = "sentences_index_3", columnList = "article_id, order_index")
+@Table(name = "sentences", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_sentence_article_order", columnNames = {"article_id", "order_index"})
 })
 @Getter
 @NoArgsConstructor

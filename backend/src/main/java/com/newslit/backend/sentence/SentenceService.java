@@ -3,6 +3,7 @@ package com.newslit.backend.sentence;
 import com.deepl.api.DeepLClient;
 import com.deepl.api.DeepLException;
 import com.newslit.backend.article.Article;
+import com.newslit.backend.article.ArticlePipelineStage;
 import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.article.exception.ArticleNotFoundException;
 import com.newslit.backend.global.common.enums.Status;
@@ -10,12 +11,14 @@ import com.newslit.backend.sentence.dto.SentenceResponseDto;
 import java.io.IOException;
 import java.text.BreakIterator;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -26,33 +29,53 @@ public class SentenceService {
     private final ArticleRepository articleRepository;
     private final TranslationAsyncService translationAsyncService;
 
-
-    public void triggerTranslation(Long articleId) {
+    @Transactional
+    public List<Sentence> splitSentences(Long articleId) {
         Article article = articleRepository.findById(articleId)
                 .orElseThrow(ArticleNotFoundException::new);
 
-        String paragraph = article.getOriginalText();
-        List<String> sentenceTexts = splitIntoSentencesAdvanced(paragraph);
+        List<Sentence> existingSentences = sentenceRepository.findAllByArticleIdOrderByOrderIndexAsc(articleId);
+        if (article.getPipelineStage() != ArticlePipelineStage.SENTENCE_SPLIT) {
+            return existingSentences;
+        }
+
+        List<String> sentenceTexts = splitIntoSentencesAdvanced(article.getOriginalText());
+        Map<Integer, Sentence> sentencesByOrder = new HashMap<>();
+        existingSentences.forEach(sentence -> sentencesByOrder.put(sentence.getOrderIndex(), sentence));
 
         for (int i = 0; i < sentenceTexts.size(); i++) {
-            String englishText = sentenceTexts.get(i);
             int orderIndex = i + 1;
-
-            Optional<Sentence> existing = sentenceRepository.findByArticleIdAndEnglishText(articleId, englishText);
-
-            if (existing.isPresent() && existing.get().getTranslationStatus() == Status.SUCCESS) {
+            if (sentencesByOrder.containsKey(orderIndex)) {
                 continue;
-            } else if (existing.isPresent() && existing.get().getTranslationStatus() == Status.PROCESSING) {
-                log.info("번역 진행 중인 문장 스킵 - orderIndex: {}", orderIndex);
+            }
+
+            Sentence sentence = createNewSentence(article, sentenceTexts.get(i), orderIndex);
+            sentencesByOrder.put(orderIndex, sentence);
+        }
+
+        if (!sentenceTexts.isEmpty()) {
+            article.advancePipelineTo(ArticlePipelineStage.TRANSLATION);
+        }
+
+        return sentenceRepository.findAllByArticleIdOrderByOrderIndexAsc(articleId);
+    }
+
+    public void triggerTranslation(Long articleId) {
+        List<Sentence> sentences = sentenceRepository.findAllByArticleIdOrderByOrderIndexAsc(articleId);
+
+        for (Sentence sentence : sentences) {
+            if (sentence.getTranslationStatus() == Status.SUCCESS) {
+                continue;
+            } else if (sentence.getTranslationStatus() == Status.PROCESSING) {
+                log.info("번역 진행 중인 문장 스킵 - orderIndex: {}", sentence.getOrderIndex());
             } else {
-                Sentence sentence = existing.orElseGet(() -> createNewSentence(article, englishText, orderIndex));
-                translationAsyncService.translateAsync(sentence, englishText, articleId);
+                translationAsyncService.translateAsync(sentence, sentence.getEnglishText(), articleId);
             }
         }
     }
 
     public List<SentenceResponseDto> getSentences(Long articleId) {
-        return sentenceRepository.findAllByArticleId(articleId).stream()
+        return sentenceRepository.findAllByArticleIdOrderByOrderIndexAsc(articleId).stream()
                 .map(this::toSentenceDto)
                 .toList();
     }
