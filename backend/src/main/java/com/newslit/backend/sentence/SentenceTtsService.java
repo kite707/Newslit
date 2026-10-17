@@ -42,6 +42,7 @@ public class SentenceTtsService {
             sentence.setTtsStatus(Status.SUCCESS);
         } catch (Exception e) {
             log.error("TTS 생성 실패 - sentenceId: {}, articleId: {}", sentence.getId(), articleId, e);
+            sentence.incrementTtsRetryCount();
             sentence.setTtsStatus(Status.FAILED);
         } finally {
             sentenceRepository.save(sentence);

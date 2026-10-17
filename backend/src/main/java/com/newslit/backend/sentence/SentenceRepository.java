@@ -3,6 +3,8 @@ package com.newslit.backend.sentence;
 import com.newslit.backend.global.common.enums.Status;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -12,7 +14,76 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface SentenceRepository extends JpaRepository<Sentence, Long> {
-    List<Sentence> findAllByTranslationStatusAndRetryCountLessThan(Status status, int count);
+    interface TranslationCandidate {
+        Long getSentenceId();
+
+        Long getArticleId();
+    }
+
+    @Query("""
+            SELECT s.id AS sentenceId, s.article.id AS articleId
+            FROM Sentence s
+            WHERE s.article.pipelineStage = :pipelineStage
+              AND s.article.pipelineStatus IN :pipelineStatuses
+              AND s.translationStatus IN :translationStatuses
+              AND s.translationRetryCount < :maxRetryCount
+            ORDER BY s.id
+            """)
+    List<TranslationCandidate> findTranslationCandidates(
+            @Param("pipelineStage") com.newslit.backend.article.ArticlePipelineStage pipelineStage,
+            @Param("pipelineStatuses") List<Status> pipelineStatuses,
+            @Param("translationStatuses") List<Status> translationStatuses,
+            @Param("maxRetryCount") int maxRetryCount,
+            Pageable pageable);
+
+    @Query("""
+            SELECT s.id AS sentenceId, s.article.id AS articleId
+            FROM Sentence s
+            WHERE s.article.id = :articleId
+              AND s.article.pipelineStage = :pipelineStage
+              AND s.article.pipelineStatus IN :pipelineStatuses
+              AND s.translationStatus IN :translationStatuses
+              AND s.translationRetryCount < :maxRetryCount
+            ORDER BY s.id
+            """)
+    List<TranslationCandidate> findTranslationCandidatesByArticleId(
+            @Param("articleId") Long articleId,
+            @Param("pipelineStage") com.newslit.backend.article.ArticlePipelineStage pipelineStage,
+            @Param("pipelineStatuses") List<Status> pipelineStatuses,
+            @Param("translationStatuses") List<Status> translationStatuses,
+            @Param("maxRetryCount") int maxRetryCount,
+            Pageable pageable);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE Sentence s
+            SET s.translationStatus = :processingStatus,
+                s.updatedAt = :claimedAt
+            WHERE s.id = :sentenceId
+              AND s.article.pipelineStage = :pipelineStage
+              AND s.article.pipelineStatus IN :pipelineStatuses
+              AND s.translationStatus IN :claimableStatuses
+              AND s.translationRetryCount < :maxRetryCount
+            """)
+    int claimTranslation(@Param("sentenceId") Long sentenceId,
+                         @Param("pipelineStage") com.newslit.backend.article.ArticlePipelineStage pipelineStage,
+                         @Param("pipelineStatuses") List<Status> pipelineStatuses,
+                         @Param("claimableStatuses") List<Status> claimableStatuses,
+                         @Param("processingStatus") Status processingStatus,
+                         @Param("maxRetryCount") int maxRetryCount,
+                         @Param("claimedAt") LocalDateTime claimedAt);
+
+    @Query("""
+            SELECT s
+            FROM Sentence s
+            JOIN FETCH s.article
+            WHERE s.id = :sentenceId
+              AND s.translationStatus = :status
+            """)
+    Optional<Sentence> findTranslationWork(@Param("sentenceId") Long sentenceId,
+                                           @Param("status") Status status);
+
+    long countByArticleIdAndTranslationStatusNot(Long articleId, Status status);
 
     @Transactional
     @Modifying(flushAutomatically = true, clearAutomatically = true)
