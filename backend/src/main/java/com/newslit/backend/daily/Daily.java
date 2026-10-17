@@ -67,5 +67,6 @@ public class Daily {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "daily", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<ReadingHistory> readingHistories = new ArrayList<>();
 }

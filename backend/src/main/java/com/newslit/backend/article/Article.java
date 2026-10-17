@@ -104,12 +104,15 @@ public class Article {
     private LocalDateTime pipelineUpdatedAt;
 
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Sentence> sentences = new ArrayList<>();
 
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Vocabulary> vocabularies = new ArrayList<>();
 
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Daily> dailies = new ArrayList<>();
 
     public void advancePipelineTo(ArticlePipelineStage nextStage) {

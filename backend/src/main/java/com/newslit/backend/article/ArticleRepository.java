@@ -16,6 +16,101 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     @Query("""
             SELECT a.id
             FROM Article a
+            WHERE a.pipelineStage = :translationStage
+              AND a.pipelineStatus IN :activeStatuses
+              AND EXISTS (
+                    SELECT s.id
+                    FROM Sentence s
+                    WHERE s.article = a
+              )
+              AND NOT EXISTS (
+                    SELECT s.id
+                    FROM Sentence s
+                    WHERE s.article = a
+                      AND s.translationStatus <> :successStatus
+              )
+            ORDER BY a.pipelineUpdatedAt, a.id
+            """)
+    List<Long> findTranslationCompletedArticleIds(
+            @Param("translationStage") ArticlePipelineStage translationStage,
+            @Param("activeStatuses") List<Status> activeStatuses,
+            @Param("successStatus") Status successStatus,
+            Pageable pageable);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE Article a
+            SET a.pipelineStage = :completedStage,
+                a.pipelineStatus = :successStatus,
+                a.pipelineRetryCount = 0,
+                a.pipelineUpdatedAt = :updatedAt
+            WHERE a.pipelineStage = :initialStage
+              AND a.pipelineStatus = :pendingStatus
+              AND EXISTS (
+                    SELECT d.id
+                    FROM Daily d
+                    WHERE d.article = a
+              )
+            """)
+    int backfillLegacyCompletedArticles(
+            @Param("initialStage") ArticlePipelineStage initialStage,
+            @Param("completedStage") ArticlePipelineStage completedStage,
+            @Param("pendingStatus") Status pendingStatus,
+            @Param("successStatus") Status successStatus,
+            @Param("updatedAt") LocalDateTime updatedAt);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE Article a
+            SET a.pipelineStage = :dailyChunkStage,
+                a.pipelineStatus = :pendingStatus,
+                a.pipelineRetryCount = 0,
+                a.pipelineUpdatedAt = :updatedAt
+            WHERE a.pipelineStage = :initialStage
+              AND a.pipelineStatus = :pendingStatus
+              AND EXISTS (
+                    SELECT s.id
+                    FROM Sentence s
+                    WHERE s.article = a
+              )
+              AND NOT EXISTS (
+                    SELECT s.id
+                    FROM Sentence s
+                    WHERE s.article = a
+                      AND s.translationStatus <> :successStatus
+              )
+            """)
+    int backfillLegacyDailyChunkArticles(
+            @Param("initialStage") ArticlePipelineStage initialStage,
+            @Param("dailyChunkStage") ArticlePipelineStage dailyChunkStage,
+            @Param("pendingStatus") Status pendingStatus,
+            @Param("successStatus") Status successStatus,
+            @Param("updatedAt") LocalDateTime updatedAt);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE Article a
+            SET a.pipelineStage = :translationStage,
+                a.pipelineStatus = :pendingStatus,
+                a.pipelineRetryCount = 0,
+                a.pipelineUpdatedAt = :updatedAt
+            WHERE a.pipelineStage = :initialStage
+              AND a.pipelineStatus = :pendingStatus
+              AND EXISTS (
+                    SELECT s.id
+                    FROM Sentence s
+                    WHERE s.article = a
+              )
+            """)
+    int backfillLegacyTranslationArticles(
+            @Param("initialStage") ArticlePipelineStage initialStage,
+            @Param("translationStage") ArticlePipelineStage translationStage,
+            @Param("pendingStatus") Status pendingStatus,
+            @Param("updatedAt") LocalDateTime updatedAt);
+
+    @Query("""
+            SELECT a.id
+            FROM Article a
             WHERE a.pipelineStage = :stage
               AND a.pipelineStatus IN :statuses
               AND a.pipelineRetryCount < :maxRetryCount

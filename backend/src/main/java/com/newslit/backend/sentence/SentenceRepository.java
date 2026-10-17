@@ -84,6 +84,21 @@ public interface SentenceRepository extends JpaRepository<Sentence, Long> {
 
     long countByArticleIdAndTranslationStatusNot(Long articleId, Status status);
 
+    long countByArticleId(Long articleId);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE Sentence s
+            SET s.translationRetryCount = 0
+            WHERE s.article.pipelineStage = :initialStage
+              AND s.article.pipelineStatus = :pendingStatus
+              AND s.translationStatus <> :successStatus
+            """)
+    int resetLegacyTranslationRetryCounts(
+            @Param("initialStage") com.newslit.backend.article.ArticlePipelineStage initialStage,
+            @Param("pendingStatus") Status pendingStatus,
+            @Param("successStatus") Status successStatus);
+
     @Query("""
             SELECT s.id AS sentenceId, s.article.id AS articleId
             FROM Sentence s

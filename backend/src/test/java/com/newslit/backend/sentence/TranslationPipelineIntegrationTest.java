@@ -148,6 +148,31 @@ class TranslationPipelineIntegrationTest extends IntegrationTestSupport {
     }
 
     @Test
+    void 마지막_번역_성공_후_상태_전이가_누락돼도_다음_배치에서_복구한다() {
+        Article article = saveTranslationArticle();
+        article.setPipelineStatus(Status.PROCESSING);
+        articleRepository.save(article);
+        saveSentence(article, 1, Status.SUCCESS);
+        saveSentence(article, 2, Status.SUCCESS);
+
+        int claimedCount = translationBatchService.processBatch();
+
+        assertThat(claimedCount).isZero();
+        Article reconciled = articleRepository.findById(article.getId()).orElseThrow();
+        assertThat(reconciled.getPipelineStage()).isEqualTo(ArticlePipelineStage.DAILY_CHUNK);
+        assertThat(reconciled.getPipelineStatus()).isEqualTo(Status.PENDING);
+    }
+
+    @Test
+    void 문장이_없는_Article은_번역_완료로_간주하지_않는다() {
+        Article article = saveTranslationArticle();
+
+        assertThat(translationStateService.advanceArticleIfComplete(article.getId())).isFalse();
+        assertThat(articleRepository.findById(article.getId()).orElseThrow().getPipelineStage())
+                .isEqualTo(ArticlePipelineStage.TRANSLATION);
+    }
+
+    @Test
     void 번역_재시도_횟수는_TTS_재시도_횟수와_독립적이다() {
         Article article = saveTranslationArticle();
         Sentence sentence = sentenceRepository.save(Sentence.builder()

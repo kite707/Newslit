@@ -80,6 +80,9 @@ public class TranslationStateService {
 
     @Transactional
     public boolean advanceArticleIfComplete(Long articleId) {
+        if (sentenceRepository.countByArticleId(articleId) == 0) {
+            return false;
+        }
         if (sentenceRepository.countByArticleIdAndTranslationStatusNot(articleId, Status.SUCCESS) > 0) {
             return false;
         }
