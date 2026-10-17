@@ -25,6 +25,11 @@ public class TranslationAsyncService {
             String translatedText = translationRetryService.translate(work.englishText());
             translationStateService.completeSuccess(sentenceId, translatedText);
             translationStateService.advanceArticleIfComplete(work.articleId());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            translationStateService.completeFailure(sentenceId);
+            log.error("번역 작업 인터럽트 - sentenceId: {}, articleId: {}",
+                    sentenceId, work.articleId(), e);
         } catch (Exception e) {
             translationStateService.completeFailure(sentenceId);
             log.error("번역 처리 중 복구되지 않은 예외 - sentenceId: {}, articleId: {}",
