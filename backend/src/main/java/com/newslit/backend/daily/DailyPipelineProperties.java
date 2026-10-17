@@ -11,5 +11,7 @@ import org.springframework.stereotype.Component;
 @Setter
 public class DailyPipelineProperties {
     private int batchSize = 5;
+    private int maxRetryCount = 3;
     private long fixedDelayMs = 300_000;
+    private long staleProcessingMinutes = 10;
 }

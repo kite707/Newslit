@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class TranslationStateService {
+    private static final List<Status> ACTIVE_PIPELINE_STATUSES = List.of(Status.PENDING, Status.PROCESSING);
+
     private final SentenceRepository sentenceRepository;
     private final ArticleRepository articleRepository;
 
@@ -37,14 +39,43 @@ public class TranslationStateService {
     }
 
     @Transactional
-    public void completeFailure(Long sentenceId) {
-        sentenceRepository.findById(sentenceId).ifPresent(sentence -> {
-            if (sentence.getTranslationStatus() != Status.PROCESSING) {
-                return;
-            }
-            sentence.incrementTranslationRetryCount();
-            sentence.setTranslationStatus(Status.FAILED);
-        });
+    public TranslationFailure completeFailure(Long sentenceId) {
+        Sentence sentence = sentenceRepository.findById(sentenceId).orElse(null);
+        if (sentence == null || sentence.getTranslationStatus() != Status.PROCESSING) {
+            return null;
+        }
+
+        sentence.incrementTranslationRetryCount();
+        sentence.setTranslationStatus(Status.FAILED);
+        return new TranslationFailure(
+                sentence.getId(),
+                sentence.getArticle().getId(),
+                sentence.getTranslationRetryCount()
+        );
+    }
+
+    @Transactional
+    public TranslationFailure recoverStale(Long sentenceId, LocalDateTime threshold, int maxRetryCount) {
+        int recovered = sentenceRepository.recoverStaleTranslation(
+                sentenceId,
+                ArticlePipelineStage.TRANSLATION,
+                ACTIVE_PIPELINE_STATUSES,
+                threshold,
+                Status.FAILED,
+                Status.PROCESSING,
+                maxRetryCount,
+                LocalDateTime.now()
+        );
+        if (recovered == 0) {
+            return null;
+        }
+
+        Sentence sentence = sentenceRepository.findById(sentenceId).orElseThrow();
+        return new TranslationFailure(
+                sentence.getId(),
+                sentence.getArticle().getId(),
+                sentence.getTranslationRetryCount()
+        );
     }
 
     @Transactional
@@ -64,5 +95,8 @@ public class TranslationStateService {
     }
 
     public record TranslationWork(Long sentenceId, Long articleId, String englishText) {
+    }
+
+    public record TranslationFailure(Long sentenceId, Long articleId, int retryCount) {
     }
 }

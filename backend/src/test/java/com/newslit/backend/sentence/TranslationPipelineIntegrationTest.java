@@ -8,8 +8,10 @@ import com.newslit.backend.article.Article;
 import com.newslit.backend.article.ArticlePipelineStage;
 import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.global.common.enums.Status;
+import com.newslit.backend.global.pipeline.PipelineFailureEventPublisher;
 import com.newslit.backend.support.IntegrationTestSupport;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,7 @@ import org.springframework.test.context.TestPropertySource;
 
 @TestPropertySource(properties = {
         "pipeline.translation.batch-size=2",
+        "pipeline.translation.max-retry-count=3",
         "pipeline.translation.fixed-delay-ms=3600000"
 })
 class TranslationPipelineIntegrationTest extends IntegrationTestSupport {
@@ -34,6 +37,9 @@ class TranslationPipelineIntegrationTest extends IntegrationTestSupport {
     private TranslationStateService translationStateService;
 
     @Autowired
+    private TranslationRecoveryService translationRecoveryService;
+
+    @Autowired
     private SentenceRepository sentenceRepository;
 
     @Autowired
@@ -41,6 +47,9 @@ class TranslationPipelineIntegrationTest extends IntegrationTestSupport {
 
     @MockBean
     private TranslationAsyncService translationAsyncService;
+
+    @MockBean
+    private PipelineFailureEventPublisher failureEventPublisher;
 
     @BeforeEach
     void setUp() {
@@ -119,6 +128,51 @@ class TranslationPipelineIntegrationTest extends IntegrationTestSupport {
         assertThat(updatedSentence.getTranslationRetryCount()).isEqualTo(1);
         assertThat(updatedSentence.getTtsRetryCount()).isEqualTo(4);
         assertThat(updatedSentence.getTranslationStatus()).isEqualTo(Status.FAILED);
+    }
+
+    @Test
+    void 오래된_PROCESSING이_재시도_한도에_도달하면_Article을_최종_FAILED로_처리한다() {
+        Article article = saveTranslationArticle();
+        article.setPipelineStatus(Status.PROCESSING);
+        articleRepository.save(article);
+        Sentence sentence = sentenceRepository.save(Sentence.builder()
+                .article(article)
+                .orderIndex(1)
+                .englishText("Stale sentence.")
+                .translationStatus(Status.PROCESSING)
+                .translationRetryCount(2)
+                .build());
+
+        int recoveredCount = translationRecoveryService
+                .recoverStaleProcessing(LocalDateTime.now().plusMinutes(1));
+
+        assertThat(recoveredCount).isEqualTo(1);
+        Sentence updatedSentence = sentenceRepository.findById(sentence.getId()).orElseThrow();
+        assertThat(updatedSentence.getTranslationStatus()).isEqualTo(Status.FAILED);
+        assertThat(updatedSentence.getTranslationRetryCount()).isEqualTo(3);
+        Article updatedArticle = articleRepository.findById(article.getId()).orElseThrow();
+        assertThat(updatedArticle.getPipelineStatus()).isEqualTo(Status.FAILED);
+        verify(failureEventPublisher).publish(
+                article.getId(),
+                ArticlePipelineStage.TRANSLATION,
+                3,
+                "stale-processing sentenceId=" + sentence.getId()
+        );
+    }
+
+    @Test
+    void 재시도_한도에_도달한_번역은_배치_대상에서_제외한다() {
+        Article article = saveTranslationArticle();
+        article.setPipelineStatus(Status.PROCESSING);
+        articleRepository.save(article);
+        Sentence exhausted = saveSentence(article, 1, Status.FAILED);
+        exhausted.setTranslationRetryCount(3);
+        sentenceRepository.saveAndFlush(exhausted);
+
+        int claimedCount = translationBatchService.processBatch();
+
+        assertThat(claimedCount).isZero();
+        verify(translationAsyncService, times(0)).translateAsync(org.mockito.ArgumentMatchers.anyLong());
     }
 
     private Article saveTranslationArticle() {

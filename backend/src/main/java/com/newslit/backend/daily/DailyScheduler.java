@@ -15,7 +15,8 @@ public class DailyScheduler {
             initialDelayString = "${pipeline.daily.fixed-delay-ms:300000}",
             fixedDelayString = "${pipeline.daily.fixed-delay-ms:300000}")
     public void createDailyChunks() {
+        int recoveredCount = dailyPipelineService.recoverStaleProcessing();
         int claimedCount = dailyPipelineService.processBatch();
-        log.info("Daily 스케줄 실행 완료 - 선점: {}건", claimedCount);
+        log.info("Daily 스케줄 실행 완료 - 복구: {}건, 선점: {}건", recoveredCount, claimedCount);
     }
 }

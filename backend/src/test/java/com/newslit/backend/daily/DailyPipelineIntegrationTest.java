@@ -1,24 +1,29 @@
 package com.newslit.backend.daily;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 
 import com.newslit.backend.article.Article;
 import com.newslit.backend.article.ArticlePipelineStage;
 import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.global.common.enums.Status;
+import com.newslit.backend.global.pipeline.PipelineFailureEventPublisher;
 import com.newslit.backend.sentence.Sentence;
 import com.newslit.backend.sentence.SentenceRepository;
 import com.newslit.backend.support.IntegrationTestSupport;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
 
 @TestPropertySource(properties = {
         "pipeline.daily.batch-size=2",
+        "pipeline.daily.max-retry-count=3",
         "pipeline.daily.fixed-delay-ms=3600000"
 })
 class DailyPipelineIntegrationTest extends IntegrationTestSupport {
@@ -40,6 +45,9 @@ class DailyPipelineIntegrationTest extends IntegrationTestSupport {
 
     @Autowired
     private ArticleRepository articleRepository;
+
+    @MockBean
+    private PipelineFailureEventPublisher failureEventPublisher;
 
     @BeforeEach
     void setUp() {
@@ -132,8 +140,62 @@ class DailyPipelineIntegrationTest extends IntegrationTestSupport {
     void 같은_기사는_한_번만_선점된다() {
         Article article = saveDailyChunkArticle("daily-claim");
 
-        assertThat(dailyPipelineStateService.claim(article.getId())).isTrue();
-        assertThat(dailyPipelineStateService.claim(article.getId())).isFalse();
+        assertThat(dailyPipelineStateService.claim(article.getId(), 3)).isTrue();
+        assertThat(dailyPipelineStateService.claim(article.getId(), 3)).isFalse();
+    }
+
+    @Test
+    void FAILED_Daily는_재시도_한도_미만이면_다시_처리한다() {
+        Article article = saveDailyChunkArticle("daily-retry");
+        article.setPipelineStatus(Status.FAILED);
+        article.setPipelineRetryCount(1);
+        articleRepository.save(article);
+        IntStream.rangeClosed(1, 4)
+                .forEach(index -> saveSentence(article, index, Status.SUCCESS, 30));
+
+        int claimedCount = dailyPipelineService.processBatch();
+
+        assertThat(claimedCount).isEqualTo(1);
+        Article updatedArticle = articleRepository.findById(article.getId()).orElseThrow();
+        assertThat(updatedArticle.getPipelineStage()).isEqualTo(ArticlePipelineStage.COMPLETED);
+        assertThat(updatedArticle.getPipelineStatus()).isEqualTo(Status.SUCCESS);
+        assertThat(updatedArticle.getPipelineRetryCount()).isZero();
+    }
+
+    @Test
+    void 재시도_한도에_도달한_Daily는_배치_대상에서_제외한다() {
+        Article article = saveDailyChunkArticle("daily-exhausted");
+        article.setPipelineStatus(Status.FAILED);
+        article.setPipelineRetryCount(3);
+        articleRepository.save(article);
+
+        int claimedCount = dailyPipelineService.processBatch();
+
+        assertThat(claimedCount).isZero();
+        assertThat(articleRepository.findById(article.getId()).orElseThrow().getPipelineStatus())
+                .isEqualTo(Status.FAILED);
+    }
+
+    @Test
+    void 오래된_PROCESSING_Daily가_한도에_도달하면_최종_실패_이벤트를_발행한다() {
+        Article article = saveDailyChunkArticle("daily-stale");
+        article.setPipelineStatus(Status.PROCESSING);
+        article.setPipelineRetryCount(2);
+        articleRepository.save(article);
+
+        int recoveredCount = dailyPipelineService
+                .recoverStaleProcessing(LocalDateTime.now().plusMinutes(1));
+
+        assertThat(recoveredCount).isEqualTo(1);
+        Article updatedArticle = articleRepository.findById(article.getId()).orElseThrow();
+        assertThat(updatedArticle.getPipelineStatus()).isEqualTo(Status.FAILED);
+        assertThat(updatedArticle.getPipelineRetryCount()).isEqualTo(3);
+        verify(failureEventPublisher).publish(
+                article.getId(),
+                ArticlePipelineStage.DAILY_CHUNK,
+                3,
+                "stale-processing"
+        );
     }
 
     private Article saveDailyChunkArticle(String title) {

@@ -12,6 +12,8 @@ public class TranslationAsyncService {
 
     private final TranslationRetryService translationRetryService;
     private final TranslationStateService translationStateService;
+    private final TranslationFailureService translationFailureService;
+    private final TranslationProperties properties;
 
     @Async("externalApiExecutor")
     public void translateAsync(Long sentenceId) {
@@ -27,13 +29,39 @@ public class TranslationAsyncService {
             translationStateService.advanceArticleIfComplete(work.articleId());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            translationStateService.completeFailure(sentenceId);
-            log.error("번역 작업 인터럽트 - sentenceId: {}, articleId: {}",
-                    sentenceId, work.articleId(), e);
+            TranslationStateService.TranslationFailure failure = handleFailure(sentenceId, "interrupted");
+            logFailure(work, failure, "interrupted", e);
         } catch (Exception e) {
-            translationStateService.completeFailure(sentenceId);
-            log.error("번역 처리 중 복구되지 않은 예외 - sentenceId: {}, articleId: {}",
-                    sentenceId, work.articleId(), e);
+            String reason = e.getClass().getSimpleName() + ": " + e.getMessage();
+            TranslationStateService.TranslationFailure failure = handleFailure(sentenceId, reason);
+            logFailure(work, failure, reason, e);
         }
+    }
+
+    private TranslationStateService.TranslationFailure handleFailure(Long sentenceId, String reason) {
+        TranslationStateService.TranslationFailure failure = translationStateService.completeFailure(sentenceId);
+        translationFailureService.finalizeIfExhausted(
+                failure,
+                properties.getMaxRetryCount(),
+                reason
+        );
+        return failure;
+    }
+
+    private void logFailure(
+            TranslationStateService.TranslationWork work,
+            TranslationStateService.TranslationFailure failure,
+            String reason,
+            Exception exception
+    ) {
+        int retryCount = failure == null ? -1 : failure.retryCount();
+        log.error(
+                "pipelineFailure=true articleId={} sentenceId={} stage=TRANSLATION retryCount={} reason={}",
+                work.articleId(),
+                work.sentenceId(),
+                retryCount,
+                reason,
+                exception
+        );
     }
 }

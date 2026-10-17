@@ -17,12 +17,29 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
             SELECT a.id
             FROM Article a
             WHERE a.pipelineStage = :stage
-              AND a.pipelineStatus = :status
+              AND a.pipelineStatus IN :statuses
+              AND a.pipelineRetryCount < :maxRetryCount
             ORDER BY a.pipelineUpdatedAt, a.id
             """)
     List<Long> findPipelineCandidateIds(@Param("stage") ArticlePipelineStage stage,
-                                        @Param("status") Status status,
+                                        @Param("statuses") List<Status> statuses,
+                                        @Param("maxRetryCount") int maxRetryCount,
                                         Pageable pageable);
+
+    @Query("""
+            SELECT a.id
+            FROM Article a
+            WHERE a.pipelineStage = :stage
+              AND a.pipelineStatus = :processingStatus
+              AND a.pipelineRetryCount < :maxRetryCount
+              AND (a.pipelineUpdatedAt IS NULL OR a.pipelineUpdatedAt < :threshold)
+            ORDER BY a.pipelineUpdatedAt, a.id
+            """)
+    List<Long> findStalePipelineCandidateIds(@Param("stage") ArticlePipelineStage stage,
+                                             @Param("processingStatus") Status processingStatus,
+                                             @Param("maxRetryCount") int maxRetryCount,
+                                             @Param("threshold") LocalDateTime threshold,
+                                             Pageable pageable);
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
@@ -64,12 +81,14 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
                 a.pipelineUpdatedAt = :updatedAt
             WHERE a.id = :articleId
               AND a.pipelineStage = :dailyChunkStage
-              AND a.pipelineStatus = :pendingStatus
+              AND a.pipelineStatus IN :claimableStatuses
+              AND a.pipelineRetryCount < :maxRetryCount
             """)
     int claimDailyChunk(@Param("articleId") Long articleId,
                         @Param("dailyChunkStage") ArticlePipelineStage dailyChunkStage,
-                        @Param("pendingStatus") Status pendingStatus,
+                        @Param("claimableStatuses") List<Status> claimableStatuses,
                         @Param("processingStatus") Status processingStatus,
+                        @Param("maxRetryCount") int maxRetryCount,
                         @Param("updatedAt") LocalDateTime updatedAt);
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
@@ -99,10 +118,48 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
             WHERE a.id = :articleId
               AND a.pipelineStage = :dailyChunkStage
               AND a.pipelineStatus = :processingStatus
+              AND a.pipelineRetryCount < :maxRetryCount
             """)
     int failDailyChunk(@Param("articleId") Long articleId,
                        @Param("dailyChunkStage") ArticlePipelineStage dailyChunkStage,
                        @Param("processingStatus") Status processingStatus,
                        @Param("failedStatus") Status failedStatus,
+                       @Param("maxRetryCount") int maxRetryCount,
                        @Param("updatedAt") LocalDateTime updatedAt);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE Article a
+            SET a.pipelineStatus = :failedStatus,
+                a.pipelineRetryCount = a.pipelineRetryCount + 1,
+                a.pipelineUpdatedAt = :updatedAt
+            WHERE a.id = :articleId
+              AND a.pipelineStage = :dailyChunkStage
+              AND a.pipelineStatus = :processingStatus
+              AND a.pipelineRetryCount < :maxRetryCount
+              AND (a.pipelineUpdatedAt IS NULL OR a.pipelineUpdatedAt < :threshold)
+            """)
+    int recoverStaleDailyChunk(@Param("articleId") Long articleId,
+                               @Param("dailyChunkStage") ArticlePipelineStage dailyChunkStage,
+                               @Param("processingStatus") Status processingStatus,
+                               @Param("failedStatus") Status failedStatus,
+                               @Param("maxRetryCount") int maxRetryCount,
+                               @Param("threshold") LocalDateTime threshold,
+                               @Param("updatedAt") LocalDateTime updatedAt);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE Article a
+            SET a.pipelineStatus = :failedStatus,
+                a.pipelineRetryCount = a.pipelineRetryCount + 1,
+                a.pipelineUpdatedAt = :updatedAt
+            WHERE a.id = :articleId
+              AND a.pipelineStage = :translationStage
+              AND a.pipelineStatus IN :activeStatuses
+            """)
+    int failTranslationPipeline(@Param("articleId") Long articleId,
+                                @Param("translationStage") ArticlePipelineStage translationStage,
+                                @Param("activeStatuses") List<Status> activeStatuses,
+                                @Param("failedStatus") Status failedStatus,
+                                @Param("updatedAt") LocalDateTime updatedAt);
 }

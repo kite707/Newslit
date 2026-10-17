@@ -10,7 +10,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface SentenceRepository extends JpaRepository<Sentence, Long> {
@@ -85,17 +84,45 @@ public interface SentenceRepository extends JpaRepository<Sentence, Long> {
 
     long countByArticleIdAndTranslationStatusNot(Long articleId, Status status);
 
-    @Transactional
+    @Query("""
+            SELECT s.id AS sentenceId, s.article.id AS articleId
+            FROM Sentence s
+            WHERE s.article.pipelineStage = :pipelineStage
+              AND s.article.pipelineStatus IN :pipelineStatuses
+              AND s.translationStatus = :processingStatus
+              AND s.translationRetryCount < :maxRetryCount
+              AND (s.updatedAt IS NULL OR s.updatedAt < :threshold)
+            ORDER BY s.updatedAt, s.id
+            """)
+    List<TranslationCandidate> findStaleTranslationCandidates(
+            @Param("pipelineStage") com.newslit.backend.article.ArticlePipelineStage pipelineStage,
+            @Param("pipelineStatuses") List<Status> pipelineStatuses,
+            @Param("processingStatus") Status processingStatus,
+            @Param("maxRetryCount") int maxRetryCount,
+            @Param("threshold") LocalDateTime threshold,
+            Pageable pageable);
+
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
             UPDATE Sentence s
-            SET s.translationStatus = :failedStatus
-            WHERE s.translationStatus = :processingStatus
+            SET s.translationStatus = :failedStatus,
+                s.translationRetryCount = s.translationRetryCount + 1,
+                s.updatedAt = :updatedAt
+            WHERE s.id = :sentenceId
+              AND s.article.pipelineStage = :pipelineStage
+              AND s.article.pipelineStatus IN :pipelineStatuses
+              AND s.translationStatus = :processingStatus
+              AND s.translationRetryCount < :maxRetryCount
               AND (s.updatedAt IS NULL OR s.updatedAt < :threshold)
             """)
-    int markStaleProcessingAsFailed(@Param("threshold") LocalDateTime threshold,
-                                    @Param("failedStatus") Status failedStatus,
-                                    @Param("processingStatus") Status processingStatus);
+    int recoverStaleTranslation(@Param("sentenceId") Long sentenceId,
+                                @Param("pipelineStage") com.newslit.backend.article.ArticlePipelineStage pipelineStage,
+                                @Param("pipelineStatuses") List<Status> pipelineStatuses,
+                                @Param("threshold") LocalDateTime threshold,
+                                @Param("failedStatus") Status failedStatus,
+                                @Param("processingStatus") Status processingStatus,
+                                @Param("maxRetryCount") int maxRetryCount,
+                                @Param("updatedAt") LocalDateTime updatedAt);
 
     List<Sentence> findAllByArticleId(Long id);
 
