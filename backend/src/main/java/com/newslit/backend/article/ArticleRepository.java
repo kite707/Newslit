@@ -162,4 +162,59 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
                                 @Param("activeStatuses") List<Status> activeStatuses,
                                 @Param("failedStatus") Status failedStatus,
                                 @Param("updatedAt") LocalDateTime updatedAt);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE Article a
+            SET a.pipelineStatus = :processingStatus,
+                a.pipelineUpdatedAt = :updatedAt
+            WHERE a.id = :articleId
+              AND a.pipelineStage = :sentenceSplitStage
+              AND a.pipelineStatus IN :claimableStatuses
+              AND a.pipelineRetryCount < :maxRetryCount
+            """)
+    int claimSentenceSplit(@Param("articleId") Long articleId,
+                           @Param("sentenceSplitStage") ArticlePipelineStage sentenceSplitStage,
+                           @Param("claimableStatuses") List<Status> claimableStatuses,
+                           @Param("processingStatus") Status processingStatus,
+                           @Param("maxRetryCount") int maxRetryCount,
+                           @Param("updatedAt") LocalDateTime updatedAt);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE Article a
+            SET a.pipelineStatus = :failedStatus,
+                a.pipelineRetryCount = a.pipelineRetryCount + 1,
+                a.pipelineUpdatedAt = :updatedAt
+            WHERE a.id = :articleId
+              AND a.pipelineStage = :sentenceSplitStage
+              AND a.pipelineStatus = :processingStatus
+              AND a.pipelineRetryCount < :maxRetryCount
+            """)
+    int failSentenceSplit(@Param("articleId") Long articleId,
+                          @Param("sentenceSplitStage") ArticlePipelineStage sentenceSplitStage,
+                          @Param("processingStatus") Status processingStatus,
+                          @Param("failedStatus") Status failedStatus,
+                          @Param("maxRetryCount") int maxRetryCount,
+                          @Param("updatedAt") LocalDateTime updatedAt);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE Article a
+            SET a.pipelineStatus = :failedStatus,
+                a.pipelineRetryCount = a.pipelineRetryCount + 1,
+                a.pipelineUpdatedAt = :updatedAt
+            WHERE a.id = :articleId
+              AND a.pipelineStage = :sentenceSplitStage
+              AND a.pipelineStatus = :processingStatus
+              AND a.pipelineRetryCount < :maxRetryCount
+              AND (a.pipelineUpdatedAt IS NULL OR a.pipelineUpdatedAt < :threshold)
+            """)
+    int recoverStaleSentenceSplit(@Param("articleId") Long articleId,
+                                  @Param("sentenceSplitStage") ArticlePipelineStage sentenceSplitStage,
+                                  @Param("processingStatus") Status processingStatus,
+                                  @Param("failedStatus") Status failedStatus,
+                                  @Param("maxRetryCount") int maxRetryCount,
+                                  @Param("threshold") LocalDateTime threshold,
+                                  @Param("updatedAt") LocalDateTime updatedAt);
 }

@@ -13,6 +13,12 @@ import com.newslit.backend.support.IntegrationTestSupport;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -88,6 +94,36 @@ class TranslationPipelineIntegrationTest extends IntegrationTestSupport {
 
         assertThat(firstClaim).isTrue();
         assertThat(secondClaim).isFalse();
+        assertThat(statusOf(sentence)).isEqualTo(Status.PROCESSING);
+    }
+
+    @Test
+    void 동시에_선점해도_같은_문장은_한_작업만_가져간다() throws Exception {
+        Article article = saveTranslationArticle();
+        Sentence sentence = saveSentence(article, 1, Status.PENDING);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch start = new CountDownLatch(1);
+        Callable<Boolean> claim = () -> {
+            ready.countDown();
+            start.await(5, TimeUnit.SECONDS);
+            return translationClaimService.claim(sentence.getId(), article.getId(), 3);
+        };
+
+        try {
+            Future<Boolean> first = executor.submit(claim);
+            Future<Boolean> second = executor.submit(claim);
+            assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+            start.countDown();
+
+            assertThat(List.of(
+                    first.get(5, TimeUnit.SECONDS),
+                    second.get(5, TimeUnit.SECONDS)))
+                    .containsExactlyInAnyOrder(true, false);
+        } finally {
+            executor.shutdownNow();
+        }
+
         assertThat(statusOf(sentence)).isEqualTo(Status.PROCESSING);
     }
 
