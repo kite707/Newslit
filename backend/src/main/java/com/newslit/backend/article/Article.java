@@ -1,14 +1,18 @@
 package com.newslit.backend.article;
 
 import com.newslit.backend.daily.Daily;
+import com.newslit.backend.global.common.enums.Status;
 import com.newslit.backend.sentence.Sentence;
 import com.newslit.backend.vocabulary.Vocabulary;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -20,6 +24,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -31,6 +36,12 @@ import org.hibernate.type.SqlTypes;
 @Builder
 @Table(
         name = "articles",
+        indexes = {
+                @Index(
+                        name = "idx_article_pipeline_work",
+                        columnList = "pipeline_stage, pipeline_status, pipeline_updated_at"
+                )
+        },
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_article_title_source",
@@ -70,13 +81,45 @@ public class Article {
     @Column(name = "source")
     private String source;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "pipeline_stage", nullable = false)
+    @ColumnDefault("'SENTENCE_SPLIT'")
+    @Builder.Default
+    private ArticlePipelineStage pipelineStage = ArticlePipelineStage.SENTENCE_SPLIT;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "pipeline_status", nullable = false)
+    @ColumnDefault("'PENDING'")
+    @Builder.Default
+    private Status pipelineStatus = Status.PENDING;
+
+    @Column(name = "pipeline_retry_count", nullable = false)
+    @ColumnDefault("0")
+    @Builder.Default
+    private int pipelineRetryCount = 0;
+
+    @CreationTimestamp
+    @Column(name = "pipeline_updated_at", nullable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    private LocalDateTime pipelineUpdatedAt;
+
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Sentence> sentences = new ArrayList<>();
 
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Vocabulary> vocabularies = new ArrayList<>();
 
     @OneToMany(mappedBy = "article", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Daily> dailies = new ArrayList<>();
+
+    public void advancePipelineTo(ArticlePipelineStage nextStage) {
+        this.pipelineStage = nextStage;
+        this.pipelineStatus = Status.PENDING;
+        this.pipelineRetryCount = 0;
+        this.pipelineUpdatedAt = LocalDateTime.now();
+    }
 
 }

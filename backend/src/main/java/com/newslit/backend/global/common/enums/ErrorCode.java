@@ -34,6 +34,7 @@ public enum ErrorCode {
     //Daily
     DUPLICATE_DAILY(HttpStatus.CONFLICT, "DLY-001", "이미 존재하는 일일 컨텐츠입니다"),
     DAILY_NOT_FOUND(HttpStatus.CONFLICT, "DLY-002", "존재하지 않는 일일 컨텐츠입니다"),
+    DAILY_CHUNK_FAILED(HttpStatus.UNPROCESSABLE_ENTITY, "DLY-003", "일일 컨텐츠를 생성할 수 없습니다"),
 
     //Sentence
     TRANSLATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "SNT-001", "번역 처리 중 오류가 발생했습니다"),

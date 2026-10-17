@@ -72,6 +72,8 @@ class SentenceTtsServiceTest {
 
         assertThat(failing.getTtsStatus()).isEqualTo(Status.FAILED);
         assertThat(failing.getAudioUrl()).isNull();
+        assertThat(failing.getTtsRetryCount()).isEqualTo(1);
+        assertThat(failing.getTranslationRetryCount()).isZero();
         assertThat(next.getTtsStatus()).isEqualTo(Status.SUCCESS);
     }
 

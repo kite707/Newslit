@@ -14,6 +14,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -25,7 +26,15 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
-@Table(name = "daily_article")
+@Table(
+        name = "daily_article",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_daily_article_range",
+                        columnNames = {"article_id", "start_index", "end_index"}
+                )
+        }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -36,7 +45,7 @@ public class Daily {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "display_date")
+    @Column(name = "display_date", nullable = false)
     private LocalDate displayDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -44,13 +53,13 @@ public class Daily {
     @JsonIgnore
     private Article article;
 
-    @Column(name = "start_index")
+    @Column(name = "start_index", nullable = false)
     private Integer startIndex;
 
-    @Column(name = "end_index")
+    @Column(name = "end_index", nullable = false)
     private Integer endIndex;
 
-    @Column(name = "word_count")
+    @Column(name = "word_count", nullable = false)
     private Integer wordCount;
 
     @CreationTimestamp
@@ -58,5 +67,6 @@ public class Daily {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "daily", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<ReadingHistory> readingHistories = new ArrayList<>();
 }

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import com.newslit.backend.article.Article;
 import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.daily.dto.DailyResponseDto;
+import com.newslit.backend.global.common.enums.Status;
 import com.newslit.backend.sentence.Sentence;
 import com.newslit.backend.sentence.SentenceRepository;
 import java.util.List;
@@ -42,11 +43,11 @@ class DailyServiceTest {
                 .mapToObj(this::sentence)
                 .toList();
         when(articleRepository.findById(ARTICLE_ID)).thenReturn(Optional.of(Article.builder().Id(ARTICLE_ID).build()));
-        when(sentenceRepository.findAllByArticleId(ARTICLE_ID)).thenReturn(shuffled);
+        when(sentenceRepository.findAllByArticleIdOrderByOrderIndexAsc(ARTICLE_ID)).thenReturn(shuffled);
         when(dailyRespository.findTopByOrderByDisplayDateDesc()).thenReturn(Optional.empty());
         when(dailyRespository.findByArticleIdAndStartIndexAndEndIndex(anyLong(), anyInt(), anyInt()))
                 .thenReturn(Optional.empty());
-        when(dailyRespository.save(any(Daily.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(dailyRespository.saveAndFlush(any(Daily.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         List<DailyResponseDto> chunks = dailyService.createChunks(ARTICLE_ID);
 
@@ -60,6 +61,7 @@ class DailyServiceTest {
         return Sentence.builder()
                 .orderIndex(orderIndex)
                 .englishText("word ".repeat(30).trim())
+                .translationStatus(Status.SUCCESS)
                 .build();
     }
 }

@@ -82,6 +82,7 @@ public class DataSetupRunner implements CommandLineRunner {
 
         articleIds.stream().limit(2).forEach(i -> {
             try {
+                sentenceService.splitSentences(i);
                 sentenceService.triggerTranslation(i);
                 log.info("Article {} 번역 완료", i);
             } catch (Exception e) {
