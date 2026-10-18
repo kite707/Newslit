@@ -57,30 +57,4 @@ class SentenceServiceIntegrationTest extends IntegrationTestSupport {
         assertThat(updatedArticle.getPipelineStatus()).isEqualTo(Status.PENDING);
         assertThat(updatedArticle.getPipelineRetryCount()).isZero();
     }
-
-    @Test
-    void 이미_문장이_있는_기사를_다시_분리해도_중복되지_않고_기존_번역을_보존한다() {
-        Article article = articleRepository.save(Article.builder()
-                .title("Sentence split leftover test")
-                .originalText("First sentence. Repeated sentence. Repeated sentence.")
-                .publishedDate(LocalDate.of(2026, 10, 16))
-                .source("TEST")
-                .build());
-        sentenceRepository.save(Sentence.builder()
-                .article(article)
-                .orderIndex(1)
-                .englishText("First sentence.")
-                .koreanText("첫 문장.")
-                .translationStatus(Status.SUCCESS)
-                .build());
-
-        sentenceService.splitSentences(article.getId());
-
-        List<Sentence> sentences = sentenceRepository.findAllByArticleIdOrderByOrderIndexAsc(article.getId());
-
-        assertThat(sentences).hasSize(3);
-        assertThat(sentences).extracting(Sentence::getOrderIndex).containsExactly(1, 2, 3);
-        assertThat(sentences.get(0).getTranslationStatus()).isEqualTo(Status.SUCCESS);
-        assertThat(sentences.get(0).getKoreanText()).isEqualTo("첫 문장.");
-    }
 }

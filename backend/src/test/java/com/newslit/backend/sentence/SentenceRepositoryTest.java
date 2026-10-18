@@ -72,9 +72,6 @@ class SentenceRepositoryTest extends OracleDatabaseTestSupport {
         assertThat(reload(processing).getTranslationRetryCount()).isZero();
     }
 
-    /**
-     * 프로덕션 호출자(TranslationStateService#recoverStale)와 동일한 파라미터로 호출한다.
-     */
     private int recoverStale(Sentence sentence, LocalDateTime threshold) {
         return sentenceRepository.recoverStaleTranslation(
                 sentence.getId(),
