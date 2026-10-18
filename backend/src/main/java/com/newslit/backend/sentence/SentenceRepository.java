@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface SentenceRepository extends JpaRepository<Sentence, Long> {
@@ -157,4 +158,109 @@ public interface SentenceRepository extends JpaRepository<Sentence, Long> {
 
     List<Sentence> findAllByArticleIdAndOrderIndexBetween(Long id, int startIndex, int endIndex);
 
+    interface TtsCandidate {
+        Long getSentenceId();
+
+        Long getArticleId();
+    }
+
+    @Query("""
+            SELECT s.id AS sentenceId, s.article.id AS articleId
+            FROM Sentence s
+            WHERE s.article.pipelineStage = :completedStage
+              AND s.article.pipelineStatus = :successStatus
+              AND s.ttsStatus IN :ttsStatuses
+              AND s.ttsRetryCount < :maxRetryCount
+            ORDER BY s.article.publishedDate DESC, s.id
+            """)
+    List<TtsCandidate> findTtsCandidates(
+            @Param("completedStage") com.newslit.backend.article.ArticlePipelineStage completedStage,
+            @Param("successStatus") Status successStatus,
+            @Param("ttsStatuses") List<Status> ttsStatuses,
+            @Param("maxRetryCount") int maxRetryCount,
+            Pageable pageable);
+
+    @Query("""
+            SELECT s.id AS sentenceId, s.article.id AS articleId
+            FROM Sentence s
+            WHERE s.article.id = :articleId
+              AND s.ttsStatus IN :ttsStatuses
+              AND s.ttsRetryCount < :maxRetryCount
+            ORDER BY s.orderIndex
+            """)
+    List<TtsCandidate> findTtsCandidatesByArticleId(
+            @Param("articleId") Long articleId,
+            @Param("ttsStatuses") List<Status> ttsStatuses,
+            @Param("maxRetryCount") int maxRetryCount,
+            Pageable pageable);
+
+    @Transactional
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE Sentence s
+            SET s.ttsStatus = :processingStatus,
+                s.updatedAt = :claimedAt
+            WHERE s.id = :sentenceId
+              AND s.ttsStatus IN :claimableStatuses
+              AND s.ttsRetryCount < :maxRetryCount
+            """)
+    int claimTts(@Param("sentenceId") Long sentenceId,
+                 @Param("claimableStatuses") List<Status> claimableStatuses,
+                 @Param("processingStatus") Status processingStatus,
+                 @Param("maxRetryCount") int maxRetryCount,
+                 @Param("claimedAt") LocalDateTime claimedAt);
+
+    @Query("""
+            SELECT s
+            FROM Sentence s
+            JOIN FETCH s.article
+            WHERE s.id = :sentenceId
+              AND s.ttsStatus = :status
+            """)
+    Optional<Sentence> findTtsWork(@Param("sentenceId") Long sentenceId,
+                                   @Param("status") Status status);
+
+    @Query("""
+            SELECT s.id AS sentenceId, s.article.id AS articleId
+            FROM Sentence s
+            WHERE s.ttsStatus = :processingStatus
+              AND s.ttsRetryCount < :maxRetryCount
+              AND (s.updatedAt IS NULL OR s.updatedAt < :threshold)
+            ORDER BY s.updatedAt, s.id
+            """)
+    List<TtsCandidate> findStaleTtsCandidates(
+            @Param("processingStatus") Status processingStatus,
+            @Param("maxRetryCount") int maxRetryCount,
+            @Param("threshold") LocalDateTime threshold,
+            Pageable pageable);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE Sentence s
+            SET s.ttsStatus = :failedStatus,
+                s.ttsRetryCount = s.ttsRetryCount + 1,
+                s.updatedAt = :updatedAt
+            WHERE s.id = :sentenceId
+              AND s.ttsStatus = :processingStatus
+              AND s.ttsRetryCount < :maxRetryCount
+              AND (s.updatedAt IS NULL OR s.updatedAt < :threshold)
+            """)
+    int recoverStaleTts(@Param("sentenceId") Long sentenceId,
+                        @Param("threshold") LocalDateTime threshold,
+                        @Param("failedStatus") Status failedStatus,
+                        @Param("processingStatus") Status processingStatus,
+                        @Param("maxRetryCount") int maxRetryCount,
+                        @Param("updatedAt") LocalDateTime updatedAt);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE Sentence s
+            SET s.ttsRetryCount = 0,
+                s.updatedAt = :updatedAt
+            WHERE s.article.id = :articleId
+              AND s.ttsStatus = :failedStatus
+            """)
+    int resetFailedTtsRetryCounts(@Param("articleId") Long articleId,
+                                  @Param("failedStatus") Status failedStatus,
+                                  @Param("updatedAt") LocalDateTime updatedAt);
 }

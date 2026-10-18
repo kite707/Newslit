@@ -4,5 +4,6 @@ public enum ArticlePipelineStage {
     SENTENCE_SPLIT,
     TRANSLATION,
     DAILY_CHUNK,
-    COMPLETED
+    COMPLETED,
+    TTS
 }

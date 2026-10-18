@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class SentenceController {
     private final SentenceService sentenceService;
     private final SentenceSplitPipelineService sentenceSplitPipelineService;
-    private final SentenceTtsService sentenceTtsService;
+    private final TtsBatchService ttsBatchService;
 
     @PostMapping("/translate")
     ResponseEntity<Void> triggerTranslation(@RequestParam(name = "articleId") Long articleId) {
@@ -29,7 +29,7 @@ public class SentenceController {
 
     @PostMapping("/tts")
     ResponseEntity<Void> triggerTts(@RequestParam(name = "articleId") Long articleId) {
-        sentenceTtsService.generateAudio(articleId);
+        ttsBatchService.processArticle(articleId);
         return ResponseEntity.accepted().build();
     }
 

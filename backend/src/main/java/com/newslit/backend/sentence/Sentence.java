@@ -35,6 +35,10 @@ import org.hibernate.type.SqlTypes;
                 @Index(
                         name = "idx_sentence_translation_work",
                         columnList = "translation_status, retry_count, id"
+                ),
+                @Index(
+                        name = "idx_sentence_tts_work",
+                        columnList = "tts_status, tts_retry_count, id"
                 )
         },
         uniqueConstraints = {
