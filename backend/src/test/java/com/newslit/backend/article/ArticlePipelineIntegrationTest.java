@@ -1,11 +1,13 @@
 package com.newslit.backend.article;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.newslit.backend.article.exception.ArticleNotFoundException;
 import com.newslit.backend.daily.DailyPipelineService;
 import com.newslit.backend.daily.DailyRespository;
 import com.newslit.backend.global.common.enums.Status;
@@ -190,6 +192,47 @@ class ArticlePipelineIntegrationTest extends IntegrationTestSupport {
         assertThat(notAdvanced.getPipelineStage()).isEqualTo(ArticlePipelineStage.SENTENCE_SPLIT);
         assertThat(notAdvanced.getPipelineStatus()).isEqualTo(Status.FAILED);
         assertThat(notAdvanced.getPipelineRetryCount()).isEqualTo(1);
+    }
+
+    @Test
+    void 수동_문장_분리는_이미_선점된_기사를_건드리지_않는다() {
+        Article article = articleRepository.save(Article.builder()
+                .title("split-manual-claimed-" + System.nanoTime())
+                .originalText("First sentence. Second sentence.")
+                .publishedDate(LocalDate.of(2026, 10, 17))
+                .source("TEST")
+                .pipelineStatus(Status.PROCESSING)
+                .build());
+
+        assertThat(sentenceSplitPipelineService.processArticle(article.getId())).isFalse();
+
+        assertThat(sentenceRepository.findAllByArticleId(article.getId())).isEmpty();
+        Article untouched = articleRepository.findById(article.getId()).orElseThrow();
+        assertThat(untouched.getPipelineStage()).isEqualTo(ArticlePipelineStage.SENTENCE_SPLIT);
+        assertThat(untouched.getPipelineStatus()).isEqualTo(Status.PROCESSING);
+    }
+
+    @Test
+    void 수동_문장_분리는_선점에_성공하면_TRANSLATION으로_전이한다() {
+        Article article = articleRepository.save(Article.builder()
+                .title("split-manual-ok-" + System.nanoTime())
+                .originalText("First sentence. Second sentence.")
+                .publishedDate(LocalDate.of(2026, 10, 17))
+                .source("TEST")
+                .build());
+
+        assertThat(sentenceSplitPipelineService.processArticle(article.getId())).isTrue();
+
+        Article advanced = articleRepository.findById(article.getId()).orElseThrow();
+        assertThat(advanced.getPipelineStage()).isEqualTo(ArticlePipelineStage.TRANSLATION);
+        assertThat(advanced.getPipelineStatus()).isEqualTo(Status.PENDING);
+        assertThat(sentenceRepository.findAllByArticleId(article.getId())).hasSize(2);
+    }
+
+    @Test
+    void 수동_문장_분리는_없는_기사면_예외를_던진다() {
+        assertThatThrownBy(() -> sentenceSplitPipelineService.processArticle(-1L))
+                .isInstanceOf(ArticleNotFoundException.class);
     }
 
     private String articleText(int sentenceCount, int wordsPerSentence) {

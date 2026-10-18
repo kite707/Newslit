@@ -2,6 +2,7 @@ package com.newslit.backend.sentence;
 
 import com.newslit.backend.article.ArticlePipelineStage;
 import com.newslit.backend.article.ArticleRepository;
+import com.newslit.backend.article.exception.ArticleNotFoundException;
 import com.newslit.backend.global.common.enums.Status;
 import com.newslit.backend.global.pipeline.PipelineFailureEventPublisher;
 import java.time.LocalDateTime;
@@ -43,6 +44,25 @@ public class SentenceSplitPipelineService {
 
         log.info("문장 분리 배치 처리 완료 - 조회: {}건, 선점: {}건", articleIds.size(), claimedCount);
         return claimedCount;
+    }
+
+    /**
+     * 운영자가 단건으로 문장 분리를 돌릴 때 쓰는 경로.
+     * 스케줄러와 같은 선점 프로토콜을 타므로, 이미 다른 인스턴스가 처리 중인 기사는 건드리지 않는다.
+     *
+     * @return 이번 호출이 기사를 선점해 처리했으면 true
+     */
+    public boolean processArticle(Long articleId) {
+        if (!articleRepository.existsById(articleId)) {
+            throw new ArticleNotFoundException();
+        }
+        if (!stateService.claim(articleId, properties.getMaxRetryCount())) {
+            log.info("문장 분리 선점 실패 - 처리 중이거나 이미 다음 단계입니다. articleId: {}", articleId);
+            return false;
+        }
+
+        processClaimedArticle(articleId);
+        return true;
     }
 
     public int recoverStaleProcessing() {
