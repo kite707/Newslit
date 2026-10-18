@@ -78,6 +78,29 @@ public class TranslationStateService {
         );
     }
 
+    /**
+     * 재시도 한도를 모두 소진해 FAILED로 멈춘 번역 단계를 다시 PENDING으로 되돌린다.
+     * 운영자가 수동 API로 호출하는 복구 경로이며, 진행 중(PROCESSING)인 문장은 건드리지 않고
+     * stale 복구에 맡긴다.
+     */
+    @Transactional
+    public boolean resetFinalFailure(Long articleId) {
+        LocalDateTime resetAt = LocalDateTime.now();
+        int reset = articleRepository.resetFailedTranslationPipeline(
+                articleId,
+                ArticlePipelineStage.TRANSLATION,
+                Status.FAILED,
+                Status.PENDING,
+                resetAt
+        );
+        if (reset == 0) {
+            return false;
+        }
+
+        sentenceRepository.resetFailedTranslationRetryCounts(articleId, Status.FAILED, resetAt);
+        return true;
+    }
+
     @Transactional
     public boolean advanceArticleIfComplete(Long articleId) {
         if (sentenceRepository.countByArticleId(articleId) == 0) {

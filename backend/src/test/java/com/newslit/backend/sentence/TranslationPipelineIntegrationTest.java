@@ -236,6 +236,30 @@ class TranslationPipelineIntegrationTest extends IntegrationTestSupport {
         verify(translationAsyncService, times(0)).translateAsync(org.mockito.ArgumentMatchers.anyLong());
     }
 
+    @Test
+    void 최종_실패한_번역은_자동_배치에서_제외되고_수동_재처리로만_복구된다() {
+        Article article = saveTranslationArticle();
+        article.setPipelineStatus(Status.FAILED);
+        article.setPipelineRetryCount(1);
+        articleRepository.save(article);
+        Sentence exhausted = saveSentence(article, 1, Status.FAILED);
+        exhausted.setTranslationRetryCount(3);
+        sentenceRepository.saveAndFlush(exhausted);
+
+        assertThat(translationBatchService.processBatch()).isZero();
+
+        int claimedCount = translationBatchService.processArticle(article.getId());
+
+        assertThat(claimedCount).isEqualTo(1);
+        Sentence recovered = sentenceRepository.findById(exhausted.getId()).orElseThrow();
+        assertThat(recovered.getTranslationRetryCount()).isZero();
+        assertThat(recovered.getTranslationStatus()).isEqualTo(Status.PROCESSING);
+        Article reopened = articleRepository.findById(article.getId()).orElseThrow();
+        assertThat(reopened.getPipelineStage()).isEqualTo(ArticlePipelineStage.TRANSLATION);
+        assertThat(reopened.getPipelineStatus()).isEqualTo(Status.PROCESSING);
+        verify(translationAsyncService).translateAsync(exhausted.getId());
+    }
+
     private Article saveTranslationArticle() {
         return articleRepository.save(Article.builder()
                 .title("Translation pipeline test " + System.nanoTime())

@@ -10,6 +10,7 @@ import com.newslit.backend.daily.DailyPipelineService;
 import com.newslit.backend.daily.DailyRespository;
 import com.newslit.backend.global.common.enums.Status;
 import com.newslit.backend.global.pipeline.PipelineFailureEventPublisher;
+import com.newslit.backend.sentence.Sentence;
 import com.newslit.backend.sentence.SentenceRepository;
 import com.newslit.backend.sentence.SentenceSplitPipelineService;
 import com.newslit.backend.sentence.TranslationBatchService;
@@ -166,6 +167,29 @@ class ArticlePipelineIntegrationTest extends IntegrationTestSupport {
                 3,
                 "stale-processing"
         );
+    }
+
+    @Test
+    void 기존_문장이_남아있어도_단계_전이에_실패하면_성공으로_처리하지_않는다() {
+        Article article = articleRepository.save(Article.builder()
+                .title("split-no-advance-" + System.nanoTime())
+                .originalText("   ")
+                .publishedDate(LocalDate.of(2026, 10, 17))
+                .source("TEST")
+                .build());
+        sentenceRepository.save(Sentence.builder()
+                .article(article)
+                .orderIndex(1)
+                .englishText("Leftover sentence.")
+                .translationStatus(Status.PENDING)
+                .build());
+
+        assertThat(sentenceSplitPipelineService.processBatch()).isEqualTo(1);
+
+        Article notAdvanced = articleRepository.findById(article.getId()).orElseThrow();
+        assertThat(notAdvanced.getPipelineStage()).isEqualTo(ArticlePipelineStage.SENTENCE_SPLIT);
+        assertThat(notAdvanced.getPipelineStatus()).isEqualTo(Status.FAILED);
+        assertThat(notAdvanced.getPipelineRetryCount()).isEqualTo(1);
     }
 
     private String articleText(int sentenceCount, int wordsPerSentence) {

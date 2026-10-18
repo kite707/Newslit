@@ -261,6 +261,22 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
             UPDATE Article a
+            SET a.pipelineStatus = :pendingStatus,
+                a.pipelineRetryCount = 0,
+                a.pipelineUpdatedAt = :updatedAt
+            WHERE a.id = :articleId
+              AND a.pipelineStage = :translationStage
+              AND a.pipelineStatus = :failedStatus
+            """)
+    int resetFailedTranslationPipeline(@Param("articleId") Long articleId,
+                                       @Param("translationStage") ArticlePipelineStage translationStage,
+                                       @Param("failedStatus") Status failedStatus,
+                                       @Param("pendingStatus") Status pendingStatus,
+                                       @Param("updatedAt") LocalDateTime updatedAt);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE Article a
             SET a.pipelineStatus = :processingStatus,
                 a.pipelineUpdatedAt = :updatedAt
             WHERE a.id = :articleId

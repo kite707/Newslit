@@ -32,6 +32,13 @@ import org.hibernate.annotations.CreationTimestamp;
                 @UniqueConstraint(
                         name = "uk_daily_article_range",
                         columnNames = {"article_id", "start_index", "end_index"}
+                ),
+                // 하루에 한 건이라는 도메인 규칙을 DB로 강제한다.
+                // 여러 인스턴스가 서로 다른 기사를 동시에 청킹하면 displayDate가 겹칠 수 있는데,
+                // 이 제약이 있으면 트랜잭션이 롤백되고 다음 주기에 비어 있는 날짜로 다시 생성된다.
+                @UniqueConstraint(
+                        name = "uk_daily_display_date",
+                        columnNames = {"display_date"}
                 )
         }
 )

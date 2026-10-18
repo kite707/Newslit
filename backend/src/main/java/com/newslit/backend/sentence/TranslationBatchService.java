@@ -35,6 +35,9 @@ public class TranslationBatchService {
     }
 
     public int processArticle(Long articleId) {
+        if (stateService.resetFinalFailure(articleId)) {
+            log.info("번역 최종 실패 상태를 수동 복구 - articleId: {}", articleId);
+        }
         stateService.advanceArticleIfComplete(articleId);
         List<SentenceRepository.TranslationCandidate> candidates = sentenceRepository
                 .findTranslationCandidatesByArticleId(

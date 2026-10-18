@@ -28,6 +28,13 @@ public class SentenceSplitPipelineStateService {
         ) == 1;
     }
 
+    @Transactional(readOnly = true)
+    public boolean isSplitCompleted(Long articleId) {
+        return articleRepository.findById(articleId)
+                .map(article -> article.getPipelineStage() != ArticlePipelineStage.SENTENCE_SPLIT)
+                .orElse(false);
+    }
+
     @Transactional
     public SplitFailure fail(Long articleId, int maxRetryCount) {
         int updated = articleRepository.failSentenceSplit(

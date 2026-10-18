@@ -99,6 +99,18 @@ public interface SentenceRepository extends JpaRepository<Sentence, Long> {
             @Param("pendingStatus") Status pendingStatus,
             @Param("successStatus") Status successStatus);
 
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            UPDATE Sentence s
+            SET s.translationRetryCount = 0,
+                s.updatedAt = :updatedAt
+            WHERE s.article.id = :articleId
+              AND s.translationStatus = :failedStatus
+            """)
+    int resetFailedTranslationRetryCounts(@Param("articleId") Long articleId,
+                                          @Param("failedStatus") Status failedStatus,
+                                          @Param("updatedAt") LocalDateTime updatedAt);
+
     @Query("""
             SELECT s.id AS sentenceId, s.article.id AS articleId
             FROM Sentence s

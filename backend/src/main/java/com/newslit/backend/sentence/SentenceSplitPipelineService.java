@@ -85,6 +85,9 @@ public class SentenceSplitPipelineService {
             if (sentenceCount == 0) {
                 throw new IllegalStateException("분리된 문장이 없습니다");
             }
+            if (!stateService.isSplitCompleted(articleId)) {
+                throw new IllegalStateException("문장 분리 완료 상태 전이에 실패했습니다");
+            }
             log.info("문장 분리 성공 - articleId: {}, sentenceCount: {}", articleId, sentenceCount);
         } catch (Exception e) {
             SentenceSplitPipelineStateService.SplitFailure failure = stateService.fail(

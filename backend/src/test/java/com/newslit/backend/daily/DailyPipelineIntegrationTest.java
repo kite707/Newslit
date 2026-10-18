@@ -1,6 +1,7 @@
 package com.newslit.backend.daily;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 
 import com.newslit.backend.article.Article;
@@ -18,6 +19,7 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
 
@@ -196,6 +198,29 @@ class DailyPipelineIntegrationTest extends IntegrationTestSupport {
                 3,
                 "stale-processing"
         );
+    }
+
+    @Test
+    void 서로_다른_기사의_Daily가_같은_날짜를_쓰면_DB가_거부한다() {
+        Article first = saveDailyChunkArticle("daily-date-a");
+        Article second = saveDailyChunkArticle("daily-date-b");
+        LocalDate displayDate = LocalDate.of(2026, 10, 20);
+        dailyRespository.saveAndFlush(Daily.builder()
+                .article(first)
+                .startIndex(1)
+                .endIndex(2)
+                .wordCount(100)
+                .displayDate(displayDate)
+                .build());
+
+        assertThatThrownBy(() -> dailyRespository.saveAndFlush(Daily.builder()
+                .article(second)
+                .startIndex(1)
+                .endIndex(2)
+                .wordCount(100)
+                .displayDate(displayDate)
+                .build()))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     private Article saveDailyChunkArticle(String title) {
