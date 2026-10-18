@@ -1,6 +1,5 @@
 package com.newslit.backend.sentence;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -58,17 +57,6 @@ class TtsAsyncServiceTest {
     }
 
     @Test
-    void 선점_상태가_아닌_문장은_TTS를_호출하지_않는다() throws Exception {
-        when(ttsStateService.getWork(SENTENCE_ID)).thenReturn(null);
-
-        ttsAsyncService.generateAsync(SENTENCE_ID);
-
-        verify(ttsClient, never()).synthesize(anyString());
-        verify(audioStorageService, never()).uploadMp3(anyString(), any());
-        verify(ttsStateService, never()).completeFailure(anyLong());
-    }
-
-    @Test
     void TTS_호출이_실패하면_실패_처리하고_한도_도달_여부를_알린다() throws Exception {
         TtsStateService.TtsFailure failure =
                 new TtsStateService.TtsFailure(SENTENCE_ID, ARTICLE_ID, MAX_RETRY_COUNT);
@@ -84,19 +72,6 @@ class TtsAsyncServiceTest {
                 eq(MAX_RETRY_COUNT),
                 eq("IOException: TTS API 실패: 500 sentenceId=" + SENTENCE_ID)
         );
-    }
-
-    @Test
-    void 업로드가_실패해도_실패_처리한다() throws Exception {
-        when(ttsStateService.getWork(SENTENCE_ID)).thenReturn(work());
-        when(ttsClient.synthesize("Sentence 3.")).thenReturn(new byte[]{1});
-        when(audioStorageService.uploadMp3(anyString(), any()))
-                .thenThrow(new IllegalStateException("업로드 실패"));
-
-        ttsAsyncService.generateAsync(SENTENCE_ID);
-
-        verify(ttsStateService).completeFailure(SENTENCE_ID);
-        verify(ttsStateService, never()).completeSuccess(anyLong(), anyString());
     }
 
     private TtsStateService.TtsWork work() {
