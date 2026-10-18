@@ -17,10 +17,12 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "SENTENCE", description = "문장 관련 API")
 public class SentenceController {
     private final SentenceService sentenceService;
+    private final SentenceSplitPipelineService sentenceSplitPipelineService;
     private final SentenceTtsService sentenceTtsService;
 
     @PostMapping("/translate")
     ResponseEntity<Void> triggerTranslation(@RequestParam(name = "articleId") Long articleId) {
+        sentenceSplitPipelineService.processArticle(articleId);
         sentenceService.triggerTranslation(articleId);
         return ResponseEntity.accepted().build();
     }

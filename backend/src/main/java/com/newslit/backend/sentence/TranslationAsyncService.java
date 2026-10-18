@@ -1,6 +1,5 @@
 package com.newslit.backend.sentence;
 
-import com.newslit.backend.global.common.enums.Status;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -11,19 +10,58 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class TranslationAsyncService {
 
-    private final SentenceRepository sentenceRepository;
     private final TranslationRetryService translationRetryService;
+    private final TranslationStateService translationStateService;
+    private final TranslationFailureService translationFailureService;
+    private final TranslationProperties properties;
 
     @Async("externalApiExecutor")
-    public void translateAsync(Sentence sentence, String englishText, Long articleId) {
-        sentence.setTranslationStatus(Status.PROCESSING);
-        sentenceRepository.save(sentence);
+    public void translateAsync(Long sentenceId) {
+        TranslationStateService.TranslationWork work = translationStateService.getWork(sentenceId);
+        if (work == null) {
+            log.info("선점 상태가 아닌 번역 작업 스킵 - sentenceId: {}", sentenceId);
+            return;
+        }
 
         try {
-            translationRetryService.translate(sentence, englishText, articleId);
+            String translatedText = translationRetryService.translate(work.englishText());
+            translationStateService.completeSuccess(sentenceId, translatedText);
+            translationStateService.advanceArticleIfComplete(work.articleId());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            TranslationStateService.TranslationFailure failure = handleFailure(sentenceId, "interrupted");
+            logFailure(work, failure, "interrupted", e);
         } catch (Exception e) {
-            log.error("번역 처리 중 복구되지 않은 예외 - sentenceId: {}, articleId: {}",
-                    sentence.getId(), articleId, e);
+            String reason = e.getClass().getSimpleName() + ": " + e.getMessage();
+            TranslationStateService.TranslationFailure failure = handleFailure(sentenceId, reason);
+            logFailure(work, failure, reason, e);
         }
+    }
+
+    private TranslationStateService.TranslationFailure handleFailure(Long sentenceId, String reason) {
+        TranslationStateService.TranslationFailure failure = translationStateService.completeFailure(sentenceId);
+        translationFailureService.finalizeIfExhausted(
+                failure,
+                properties.getMaxRetryCount(),
+                reason
+        );
+        return failure;
+    }
+
+    private void logFailure(
+            TranslationStateService.TranslationWork work,
+            TranslationStateService.TranslationFailure failure,
+            String reason,
+            Exception exception
+    ) {
+        int retryCount = failure == null ? -1 : failure.retryCount();
+        log.error(
+                "pipelineFailure=true articleId={} sentenceId={} stage=TRANSLATION retryCount={} reason={}",
+                work.articleId(),
+                work.sentenceId(),
+                retryCount,
+                reason,
+                exception
+        );
     }
 }

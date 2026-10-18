@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import com.newslit.backend.article.Article;
+import com.newslit.backend.article.ArticlePipelineStage;
 import com.newslit.backend.article.ArticleRepository;
 import com.newslit.backend.daily.DailyRespository;
 import com.newslit.backend.global.common.enums.Status;
@@ -130,6 +132,21 @@ class VoaArticleCrawlerServiceTest extends IntegrationTestSupport {
         latch.await();
 
         assertThat(articleRepository.count()).isEqualTo(ARTICLE_COUNT);
+    }
+
+    @Test
+    void 크롤링된_기사는_문장_분리_대기_상태로_저장된다() {
+        voaArticleCrawlerService.crawlAndSaveArticles(rssId);
+
+        List<Article> articles = articleRepository.findAll();
+
+        assertThat(articles).hasSize(ARTICLE_COUNT)
+                .allSatisfy(article -> {
+                    assertThat(article.getPipelineStage()).isEqualTo(ArticlePipelineStage.SENTENCE_SPLIT);
+                    assertThat(article.getPipelineStatus()).isEqualTo(Status.PENDING);
+                    assertThat(article.getPipelineRetryCount()).isZero();
+                    assertThat(article.getPipelineUpdatedAt()).isNotNull();
+                });
     }
 
     private String buildArticleHtml(String path) {

@@ -10,6 +10,7 @@ import com.newslit.backend.daily.exception.DuplicateDailyException;
 import com.newslit.backend.rss.Rss;
 import com.newslit.backend.rss.RssRepository;
 import com.newslit.backend.sentence.SentenceService;
+import com.newslit.backend.sentence.SentenceSplitPipelineService;
 import com.newslit.backend.user.Role;
 import com.newslit.backend.user.User;
 import com.newslit.backend.user.UserRepository;
@@ -43,6 +44,7 @@ public class DataSetupRunner implements CommandLineRunner {
     private final DailyService dailyService;
     private final ArticleRepository articleRepository;
     private final SentenceService sentenceService;
+    private final SentenceSplitPipelineService sentenceSplitPipelineService;
     private final VocabularyService vocabularyService;
     private final AudioService audioService;
     private final UserRepository userRepository;
@@ -82,6 +84,7 @@ public class DataSetupRunner implements CommandLineRunner {
 
         articleIds.stream().limit(2).forEach(i -> {
             try {
+                sentenceSplitPipelineService.processArticle(i);
                 sentenceService.triggerTranslation(i);
                 log.info("Article {} 번역 완료", i);
             } catch (Exception e) {

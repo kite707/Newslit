@@ -15,6 +15,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,9 +29,18 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 @Entity
-@Table(name = "sentences", indexes = {
-        @Index(name = "sentences_index_3", columnList = "article_id, order_index")
-})
+@Table(
+        name = "sentences",
+        indexes = {
+                @Index(
+                        name = "idx_sentence_translation_work",
+                        columnList = "translation_status, retry_count, id"
+                )
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_sentence_article_order", columnNames = {"article_id", "order_index"})
+        }
+)
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -80,7 +90,12 @@ public class Sentence {
 
     @Column(name = "retry_count", nullable = false)
     @Builder.Default
-    private int retryCount = 0;
+    private int translationRetryCount = 0;
+
+    @Column(name = "tts_retry_count", nullable = false)
+    @ColumnDefault("0")
+    @Builder.Default
+    private int ttsRetryCount = 0;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -90,7 +105,11 @@ public class Sentence {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public void incrementRetryCount() {
-        this.retryCount++;
+    public void incrementTranslationRetryCount() {
+        this.translationRetryCount++;
+    }
+
+    public void incrementTtsRetryCount() {
+        this.ttsRetryCount++;
     }
 }
