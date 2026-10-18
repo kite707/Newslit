@@ -1,6 +1,8 @@
 package com.newslit.backend.sentence;
 
+import com.newslit.backend.article.ArticlePipelineStage;
 import com.newslit.backend.global.common.enums.Status;
+import com.newslit.backend.global.pipeline.PipelineFailureEventPublisher;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -11,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TtsStateService {
 
     private final SentenceRepository sentenceRepository;
+    private final PipelineFailureEventPublisher failureEventPublisher;
 
     @Transactional(readOnly = true)
     public TtsWork getWork(Long sentenceId) {
@@ -72,11 +75,6 @@ public class TtsStateService {
         );
     }
 
-    /**
-     * 재시도 한도를 모두 소진해 FAILED로 멈춘 문장의 TTS 재시도 횟수를 0으로 되돌린다.
-     * 운영자가 수동 API로 호출하는 복구 경로이며, 진행 중(PROCESSING)인 문장은 건드리지 않고
-     * stale 복구에 맡긴다.
-     */
     @Transactional
     public int resetFinalFailure(Long articleId) {
         return sentenceRepository.resetFailedTtsRetryCounts(
@@ -84,6 +82,20 @@ public class TtsStateService {
                 Status.FAILED,
                 LocalDateTime.now()
         );
+    }
+
+    public boolean notifyIfExhausted(TtsFailure failure, int maxRetryCount, String reason) {
+        if (failure == null || failure.retryCount() < maxRetryCount) {
+            return false;
+        }
+
+        failureEventPublisher.publish(
+                failure.articleId(),
+                ArticlePipelineStage.TTS,
+                failure.retryCount(),
+                reason
+        );
+        return true;
     }
 
     public record TtsWork(Long sentenceId, Long articleId, Integer orderIndex, String englishText) {

@@ -41,9 +41,6 @@ class TtsPipelineIntegrationTest extends IntegrationTestSupport {
     private TtsBatchService ttsBatchService;
 
     @Autowired
-    private TtsClaimService ttsClaimService;
-
-    @Autowired
     private TtsStateService ttsStateService;
 
     @Autowired
@@ -122,8 +119,8 @@ class TtsPipelineIntegrationTest extends IntegrationTestSupport {
         Article article = saveCompletedArticle(LocalDate.of(2026, 10, 16));
         Sentence sentence = saveSentence(article, 1, Status.PENDING);
 
-        boolean firstClaim = ttsClaimService.claim(sentence.getId(), MAX_RETRY_COUNT);
-        boolean secondClaim = ttsClaimService.claim(sentence.getId(), MAX_RETRY_COUNT);
+        boolean firstClaim = ttsBatchService.claim(sentence.getId());
+        boolean secondClaim = ttsBatchService.claim(sentence.getId());
 
         assertThat(firstClaim).isTrue();
         assertThat(secondClaim).isFalse();
@@ -140,7 +137,7 @@ class TtsPipelineIntegrationTest extends IntegrationTestSupport {
         Callable<Boolean> claim = () -> {
             ready.countDown();
             start.await(5, TimeUnit.SECONDS);
-            return ttsClaimService.claim(sentence.getId(), MAX_RETRY_COUNT);
+            return ttsBatchService.claim(sentence.getId());
         };
 
         try {
@@ -170,7 +167,7 @@ class TtsPipelineIntegrationTest extends IntegrationTestSupport {
         int claimedCount = ttsBatchService.processBatch();
 
         assertThat(claimedCount).isZero();
-        assertThat(ttsClaimService.claim(exhausted.getId(), MAX_RETRY_COUNT)).isFalse();
+        assertThat(ttsBatchService.claim(exhausted.getId())).isFalse();
         verify(ttsAsyncService, never()).generateAsync(anyLong());
     }
 

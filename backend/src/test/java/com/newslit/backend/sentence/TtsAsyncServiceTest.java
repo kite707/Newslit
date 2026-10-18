@@ -27,8 +27,6 @@ class TtsAsyncServiceTest {
     @Mock
     private TtsStateService ttsStateService;
     @Mock
-    private TtsFailureService ttsFailureService;
-    @Mock
     private TtsClient ttsClient;
     @Mock
     private AudioStorageService audioStorageService;
@@ -41,7 +39,6 @@ class TtsAsyncServiceTest {
         properties.setMaxRetryCount(MAX_RETRY_COUNT);
         ttsAsyncService = new TtsAsyncService(
                 ttsStateService,
-                ttsFailureService,
                 ttsClient,
                 audioStorageService,
                 properties
@@ -82,7 +79,7 @@ class TtsAsyncServiceTest {
         ttsAsyncService.generateAsync(SENTENCE_ID);
 
         verify(ttsStateService, never()).completeSuccess(anyLong(), anyString());
-        verify(ttsFailureService).notifyIfExhausted(
+        verify(ttsStateService).notifyIfExhausted(
                 eq(failure),
                 eq(MAX_RETRY_COUNT),
                 eq("IOException: TTS API 실패: 500 sentenceId=" + SENTENCE_ID)

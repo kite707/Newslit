@@ -16,7 +16,6 @@ public class TtsRecoveryService {
     private final SentenceRepository sentenceRepository;
     private final TtsProperties properties;
     private final TtsStateService stateService;
-    private final TtsFailureService failureService;
 
     public int recoverStaleProcessing() {
         return recoverStaleProcessing(
@@ -48,7 +47,7 @@ public class TtsRecoveryService {
                     failure.articleId(),
                     failure.sentenceId(),
                     failure.retryCount());
-            failureService.notifyIfExhausted(
+            stateService.notifyIfExhausted(
                     failure,
                     properties.getMaxRetryCount(),
                     "stale-processing sentenceId=" + failure.sentenceId()

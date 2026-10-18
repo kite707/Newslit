@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 public class TtsAsyncService {
 
     private final TtsStateService ttsStateService;
-    private final TtsFailureService ttsFailureService;
     private final TtsClient ttsClient;
     private final AudioStorageService audioStorageService;
     private final TtsProperties properties;
@@ -32,19 +31,14 @@ public class TtsAsyncService {
             ttsStateService.completeSuccess(sentenceId, audioUrl);
         } catch (Exception e) {
             String reason = e.getClass().getSimpleName() + ": " + e.getMessage();
-            TtsStateService.TtsFailure failure = handleFailure(sentenceId, reason);
+            TtsStateService.TtsFailure failure = ttsStateService.completeFailure(sentenceId);
+            ttsStateService.notifyIfExhausted(
+                    failure,
+                    properties.getMaxRetryCount(),
+                    reason + " sentenceId=" + sentenceId
+            );
             logFailure(work, failure, reason, e);
         }
-    }
-
-    private TtsStateService.TtsFailure handleFailure(Long sentenceId, String reason) {
-        TtsStateService.TtsFailure failure = ttsStateService.completeFailure(sentenceId);
-        ttsFailureService.notifyIfExhausted(
-                failure,
-                properties.getMaxRetryCount(),
-                reason + " sentenceId=" + sentenceId
-        );
-        return failure;
     }
 
     private String objectName(TtsStateService.TtsWork work) {
